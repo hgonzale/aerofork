@@ -26,7 +26,7 @@
 #include "Arduino.h"
 #include <SensorsStatus.h>
 
-#include <AQ_SPI\ArdupilotSPIExt.h>
+#include <ArdupilotSPIExt.h>
 ArdupilotSPIExt spiMPU6000;
 
 #define DEBUG_INIT

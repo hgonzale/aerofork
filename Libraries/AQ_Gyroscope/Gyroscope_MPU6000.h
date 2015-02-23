@@ -23,7 +23,7 @@
 
 int gyroRaw[3] = {0,0,0};
 
-#include <AQ_Platform_MPU6000\APM_MPU6000.h>
+#include <APM_MPU6000.h>
 #include <Gyroscope.h>
 
 #define GYRO_CALIBRATION_TRESHOLD 25

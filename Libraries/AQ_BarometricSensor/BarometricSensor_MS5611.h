@@ -26,7 +26,7 @@
 //#include "Device_I2C.h"
 #include <AQMath.h>
 
-#include <AQ_SPI\ArdupilotSPIExt.h>
+#include <ArdupilotSPIExt.h>
 ArdupilotSPIExt spiMS5611;
 
 //#define MS5611_CS 40

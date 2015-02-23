@@ -21,7 +21,7 @@
 #ifndef _AEROQUAD_ACCELEROMETER_MPU6000_COMMON_H_
 #define _AEROQUAD_ACCELEROMETER_MPU6000_COMMON_H_
 
-#include <AQ_Platform_MPU6000\APM_MPU6000.h>
+#include <APM_MPU6000.h>
 #include <Accelerometer.h>
 
 void initializeAccel() {

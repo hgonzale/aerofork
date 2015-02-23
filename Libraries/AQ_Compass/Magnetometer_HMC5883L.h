@@ -22,11 +22,11 @@
 #ifndef _AEROQUAD_MAGNETOMETER_HMC5883L_H_
 #define _AEROQUAD_MAGNETOMETER_HMC5883L_H_
 
-#include <AQ_Compass\Compass.h>
+#include <Compass.h>
 
 #include "Arduino.h"
 
-#include <AQ_Compass\Magnetometer_HMC58xx.h>
+#include <Magnetometer_HMC58xx.h>
 
 void readSpecificMag(float *rawMag) {
 

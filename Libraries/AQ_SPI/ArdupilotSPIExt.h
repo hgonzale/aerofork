@@ -6,7 +6,7 @@
 // protocols taken from the Arduino SPI library and AP_Baro_MS5611.cpp
 // used by the MPU6000 and MS5611 library
 
-#include <AQ_SPI\SPI.h>
+#include <SPI.h>
 
 #define SPI_READ_FLAG  0x80
 #define SPI_MULTI_FLAG 0x40
