@@ -45,12 +45,8 @@
 #endif
 
 #if defined(ReceiverSBUS) && defined(SlowTelemetry)
-  #error "Receiver SWBUS and SlowTelemetry are in conflict for Seria2, they can't be used together"
+  #error "Receiver SWBUS and SlowTelemetry are in conflict for Serial2, they can't be used together"
 #endif
-
-#if defined (CameraTXControl) && !defined (CameraControl)
-  #error "CameraTXControl need to have CameraControl defined"
-#endif 
 
 #include <EEPROM.h>
 #include <Wire.h>
@@ -134,7 +130,7 @@
 
   
   /**
-   * Put ArduCopter specific initialization need here
+   * Put ArduCopter specific initialization needed here
    */
   void initPlatform() {
 
@@ -199,24 +195,16 @@
 //********************************************************
 //********************************************************
 
-//#ifdef AeroQuadSTM32
-//  #include "AeroQuad_STM32.h"
-//#endif
-
 // default to 10bit ADC (AVR)
 #ifndef ADC_NUMBER_OF_BITS
-#define ADC_NUMBER_OF_BITS 10
+    #define ADC_NUMBER_OF_BITS 10
 #endif
 
 //********************************************************
 //****************** KINEMATICS DECLARATION **************
 //********************************************************
 #include "Kinematics.h"
-#if defined(AeroQuadMega_CHR6DM) || defined(APM_OP_CHR6DM)
-  // CHR6DM has it's own kinematics, so, initialize in its scope
-#else
-  #include "Kinematics_ARG.h"
-#endif
+#include "Kinematics_ARG.h"
 
 //********************************************************
 //******************** RECEIVER DECLARATION **************
@@ -290,11 +278,11 @@
 //********************************************************
 //******* ALTITUDE HOLD BAROMETER DECLARATION ************
 //********************************************************
-#if defined(BMP085)
-  #include <BarometricSensor_BMP085.h>
-#elif defined(MS5611)
- #include <BarometricSensor_MS5611.h>
-#endif
+//#if defined(BMP085)
+//  #include <BarometricSensor_BMP085.h>
+//#elif defined(MS5611)
+#include <BarometricSensor_MS5611.h>
+//#endif
 #if defined(XLMAXSONAR)
   #include <MaxSonarRangeFinder.h>
 #endif 
@@ -308,19 +296,20 @@
   #endif
   struct BatteryData batteryData[] = {BattCustomConfig};
 #endif
+
 //********************************************************
 //************** CAMERA CONTROL DECLARATION **************
 //********************************************************
 // used only on mega for now
-#if defined(CameraControl_STM32)
-  #include <CameraStabilizer_STM32.h>
-#elif defined(CameraControl)
-  #include <CameraStabilizer_Aeroquad.h>
-#endif
-
-#if defined (CameraTXControl)
-  #include <CameraStabilizer_TXControl.h>
-#endif
+//#if defined(CameraControl_STM32)
+//  #include <CameraStabilizer_STM32.h>
+//#elif defined(CameraControl)
+//  #include <CameraStabilizer_Aeroquad.h>
+//#endif
+//
+//#if defined (CameraTXControl)
+//  #include <CameraStabilizer_TXControl.h>
+//#endif
 
 //********************************************************
 //******** FLIGHT CONFIGURATION DECLARATION **************
@@ -361,22 +350,22 @@
 //********************************************************
 //****************** OSD DEVICE DECLARATION **************
 //********************************************************
-#ifdef MAX7456_OSD     // only OSD supported for now is the MAX7456
-  #include <Device_SPI.h>
-  #include "OSDDisplayController.h"
-  #include "MAX7456.h"
-#endif
+//#ifdef MAX7456_OSD     // only OSD supported for now is the MAX7456
+//  #include <Device_SPI.h>
+//  #include "OSDDisplayController.h"
+//  #include "MAX7456.h"
+//#endif
+//
+//#if defined(SERIAL_LCD)
+//  #include "SerialLCD.h"
+//#endif
 
-#if defined(SERIAL_LCD)
-  #include "SerialLCD.h"
-#endif
-
-#ifdef OSD_SYSTEM_MENU
-  #if !defined(MAX7456_OSD) && !defined(SERIAL_LCD)
-    #error "Menu cannot be used without OSD or LCD"
-  #endif
-  #include "OSDMenu.h"
-#endif
+//#ifdef OSD_SYSTEM_MENU
+//  #if !defined(MAX7456_OSD) && !defined(SERIAL_LCD)
+//    #error "Menu cannot be used without OSD or LCD"
+//  #endif
+//  #include "OSDMenu.h"
+//#endif
 
 
 //********************************************************
@@ -543,23 +532,23 @@ void setup() {
   //
 
   //
-  #if defined(CameraControl)
-    initializeCameraStabilization();
-    vehicleState |= CAMERASTABLE_ENABLED;
-  #endif
-  //
-
-  //
-  #if defined(MAX7456_OSD)
-    initializeSPI();
-    initializeOSD();
-  #endif
-  //
-
-  //
-  #if defined(SERIAL_LCD)
-    InitSerialLCD();
-  #endif
+//  #if defined(CameraControl)
+//    initializeCameraStabilization();
+//    vehicleState |= CAMERASTABLE_ENABLED;
+//  #endif
+//  //
+//
+//  //
+//  #if defined(MAX7456_OSD)
+//    initializeSPI();
+//    initializeOSD();
+//  #endif
+//  //
+//
+//  //
+//  #if defined(SERIAL_LCD)
+//    InitSerialLCD();
+//  #endif
   //
 
   //
@@ -675,12 +664,12 @@ void process100HzTask() {
   //
 
   //
-  #if defined(CameraControl)
-    moveCamera(kinematicsAngle[YAXIS],kinematicsAngle[XAXIS],kinematicsAngle[ZAXIS]);
-    #if defined CameraTXControl
-      processCameraTXControl();
-    #endif
-  #endif       
+//  #if defined(CameraControl)
+//    moveCamera(kinematicsAngle[YAXIS],kinematicsAngle[XAXIS],kinematicsAngle[ZAXIS]);
+//    #if defined CameraTXControl
+//      processCameraTXControl();
+//    #endif
+//  #endif       
   //
 
 }
@@ -720,7 +709,7 @@ void process20HzTask() {
     G_Dt = (currentTime - twentyHZpreviousTime) / 1000000.0;
     twentyHZpreviousTime = currentTime;
      
-	PIDControl((float *)motorCommand, sensorReadings, G_Dt); //PIDControl(.,.,.) takes floats as input --> motorCommand must be cast accordingly
+	PIDControl((float *)motorCommand, sensorReadings, G_Dt); //PIDControl(...) takes floats as input --> hence the float* casting of motorCommand variable
 	     
 }
 
@@ -768,13 +757,13 @@ void process10HzTask3() {
     G_Dt = (currentTime - lowPriorityTenHZpreviousTime2) / 1000000.0;
     lowPriorityTenHZpreviousTime2 = currentTime;
 
-    #ifdef OSD_SYSTEM_MENU
-      updateOSDMenu();
-    #endif
-
-    #ifdef MAX7456_OSD
-      updateOSD();
-    #endif
+//    #ifdef OSD_SYSTEM_MENU
+//      updateOSDMenu();
+//    #endif
+//
+//    #ifdef MAX7456_OSD
+//      updateOSD();
+//    #endif
     
     #if defined(UseGPS) || defined(BattMonitor)
       processLedStatus();
@@ -826,7 +815,7 @@ void loop () {
 
     }
 
-	//200Hz task loop.
+	//20Hz task loop.
 	//
 	if ((frameCounter % TASK_20HZ == 0) && (beginControl == true)) {  //  20 Hz tasks
 
