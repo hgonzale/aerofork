@@ -58,6 +58,44 @@ bool validateCalibrateCommand(byte command) {
 
 }
 
+/* bool validateUserInput() {
+
+  if (readFloatSerial() == 1) {// use a specific float value to validate full throttle call is being sent
+	
+	stateIndex = 0;
+    return true;
+
+  }
+
+  else if (readFloatSerial() == 2) {// use a specific float value to validate full throttle call is being sent
+	
+	stateIndex = 1;
+    return true;
+
+  }
+  
+  else if (readFloatSerial() == 3) {// use a specific float value to validate full throttle call is being sent
+	
+	stateIndex = 2;
+    return true;
+
+  }
+  
+  else if (readFloatSerial() == 4) {// use a specific float value to validate full throttle call is being sent
+	
+	stateIndex = 3;
+    return true;
+
+  }
+  
+  else {
+
+    return false;
+
+  }
+
+} */
+
 void readSerialPID(unsigned char PIDid) {
 
   struct PIDdata* pid = &PID[PIDid];
@@ -293,12 +331,56 @@ void readSerialCommand() {
           motorConfiguratorCommand[motor] = (int)readFloatSerial();
         }
       }
-      break;
-	
-	case '>':
-		beginControl = true;
-	  break;
+    break;
 
+    case '+': //Set user's desired steady state values for altitude, roll, pitch and yaw.
+		userInput[0] = readFloatSerial();
+		userInput[1] = readFloatSerial();
+		userInput[2] = readFloatSerial();
+		userInput[3] = readFloatSerial();		
+    break;
+
+	case '<': //Stop control-loop function and motors.
+		beginControl = false;
+		//startBaroMeasure = false;
+		rollBias = 0.0;
+		pitchBias = 0.0;
+		yawBias = 0.0;
+		zBias = 0.0;
+		calibrateESC = 2;
+	break;
+	
+	case ']': //Begin execution of PID control-loop.
+		beginControl = true;
+		calibrateESC = 5;
+		countStop = 0;
+	break;
+	
+	case '_': //Reset sensor calibration and stops data collection until user initiates and completes another round of calibration.
+		startCalibrate = false;
+		startBaroMeasure = false;
+		calibrateReadyTilt = false;	
+		calibrateReady = false;
+		rollBias = 0.0;
+		pitchBias = 0.0;
+		yawBias = 0.0;
+		zBias = 0.0;
+	break;
+	
+	case '@': //When all initial calibration procedures are complete for accelerometer, gyroscope and barometer.
+		calibration();
+	break;
+	
+	case '*': //When all initial calibration procedures are complete for accelerometer, gyroscope and barometer.
+		startCalibrate = true;
+	break;
+	
+	case '/': //Calibrate barometer.
+		measureGroundBaro();
+		startBaroMeasure = true;
+		Serial.print(1);
+	break;
+		
     case 'Z': // fast telemetry transfer <--- get rid if this?
       if (readFloatSerial() == 1.0)
         fastTransfer = ON;
@@ -462,9 +544,10 @@ void sendSerialTelemetry() {
     queryType = 'X';
     break;
 
-  case 'i': // Send sensor data
+  case 'i': // Send sensor data	
 
-    for (byte axis = XAXIS; axis <= ZAXIS; axis++) {
+	
+/*     for (byte axis = XAXIS; axis <= ZAXIS; axis++) {
 
       PrintValueComma(gyroRate[axis]);
 
@@ -475,8 +558,9 @@ void sendSerialTelemetry() {
       PrintValueComma(filteredAccel[axis]);
 
     }
+	
 
-    for (byte axis = XAXIS; axis <= ZAXIS; axis++) {
+    /*for (byte axis = XAXIS; axis <= ZAXIS; axis++) {
 
       #if defined(HeadingMagHold)
         PrintValueComma(getMagnetometerData(axis));
@@ -484,10 +568,11 @@ void sendSerialTelemetry() {
         PrintValueComma(0);
       #endif
 
-    }
-
-    SERIAL_PRINTLN();
-    break;
+    }*/ 	
+	printSensors = true;
+	
+    //SERIAL_PRINTLN();
+  break;
 
   case 'j': // Send raw mag values
     #ifdef HeadingMagHold
@@ -512,7 +597,7 @@ void sendSerialTelemetry() {
     queryType = 'X';
     break;
 
-  case 'l': // Send raw accel values
+  case 'l': //Send raw accelerometer values.
     measureAccelSum();
     PrintValueComma((int)(accelSample[XAXIS]/accelSampleCount));
     accelSample[XAXIS] = 0;
@@ -590,17 +675,45 @@ void sendSerialTelemetry() {
     queryType = 'X';
     break;
 
-  case 'q': // Send Vehicle State Value
+  case 'q': //Send Vehicle State Value
     SERIAL_PRINTLN(vehicleState);
     queryType = 'X';
     break;
 
-  case 'r': // Vehicle attitude
-    PrintValueComma(kinematicsAngle[XAXIS]);
-    PrintValueComma(kinematicsAngle[YAXIS]);
-	PrintValueComma(kinematicsAngle[ZAXIS]);
+  case 'r': //Vehicle 'steady state' values for altitude, roll, pitch and yaw.
+    PrintValueComma(userInput[0]);
+    PrintValueComma(userInput[1]);
+    PrintValueComma(userInput[2]);
+    PrintValueComma(userInput[3]);
+    //PrintValueComma(baroGroundAltitude);	
     SERIAL_PRINTLN();
-    break;
+  break;
+  
+  case '?': 
+    PrintValueComma(uk[0]);
+    PrintValueComma(uk[1]);
+    PrintValueComma(uk[2]);
+    PrintValueComma(uk[3]);	
+    PrintValueComma(yk[0]);
+    PrintValueComma(yk[1]);
+    PrintValueComma(yk[2]);
+    PrintValueComma(yk[3]);		
+    SERIAL_PRINTLN();	
+  break;
+  
+  case '>':
+	countStop = 0;
+	//
+    PrintValueComma(motorConfiguratorCommand[0]);
+    PrintValueComma(motorConfiguratorCommand[1]);
+    PrintValueComma(motorConfiguratorCommand[2]);
+    PrintValueComma(motorConfiguratorCommand[3]);
+	PrintValueComma(sensorReadings[0]);
+    PrintValueComma(sensorReadings[1]);	
+    PrintValueComma(sensorReadings[2]);	
+    PrintValueComma(sensorReadings[3]);
+    SERIAL_PRINTLN();
+  break;
 
   case 's': // Send all flight data
     PrintValueComma(motorArmed);
@@ -698,6 +811,15 @@ void sendSerialTelemetry() {
       SERIAL_PRINTLN(0); 
     #endif 
     break;
+
+  case '}':
+	  PrintValueComma(sensorReadings[0]); 
+	  PrintValueComma(sensorReadings[1]); 
+	  PrintValueComma(sensorReadings[2]); 
+	  PrintValueComma(sensorReadings[3]); 
+	  SERIAL_PRINTLN();
+	  break;
+
     
   case '$': // send BatteryMonitor voltage/current readings
     #if defined (BattMonitor)
@@ -740,6 +862,15 @@ void sendSerialTelemetry() {
       PrintValueComma(motorCommand[motor]);
     }
 
+    SERIAL_PRINTLN();
+    queryType = 'X';
+    break;
+
+  case '|': // Report remote commands
+    PrintValueComma(zBias);
+    PrintValueComma(rollBias);
+    PrintValueComma(pitchBias);
+    PrintValueComma(yawBias);
     SERIAL_PRINTLN();
     queryType = 'X';
     break;

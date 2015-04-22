@@ -1,3 +1,4 @@
+
 /*
   AeroQuad v3.0.1 - February 2012
   www.AeroQuad.com
@@ -50,8 +51,8 @@
 
 #include <EEPROM.h>
 #include <Wire.h>
-#include <Device_I2C.h> // For some reason, we can include this here, but not in Magnetometer_HMC58xx.h
-#include "GlobalDefined.h"
+#include <Device_I2C.h>
+#include <GlobalDefined.h>
 #include "AeroQuad.h"
 #include "PID.h"
 #include <AQMath.h>
@@ -71,9 +72,11 @@
   #define LED_Red 35
   #define LED_Yellow 36
   #define DEBUG_INIT
-  //#define HeadingMagHold //uncomment to remove magnetometer <-- this setting should be handled in <UserConfiguration.h>
+  //#define HeadingMagHold //uncomment to remove magnetometer
   #include <APM_ADC.h>
   #include <APM_RC.h>
+
+  #include <ArdupilotSPIExt.h>
   #include <APM_MPU6000.h>
   #include <controlLoop.h>
 
@@ -639,6 +642,7 @@ void process100HzTask() {
     }
 
   #endif
+  
         
   processFlightControl();
   
@@ -662,15 +666,8 @@ void process100HzTask() {
     updateGps();
   #endif      
   //
-
-  //
-//  #if defined(CameraControl)
-//    moveCamera(kinematicsAngle[YAXIS],kinematicsAngle[XAXIS],kinematicsAngle[ZAXIS]);
-//    #if defined CameraTXControl
-//      processCameraTXControl();
-//    #endif
-//  #endif       
-  //
+      readSerialCommand();
+    sendSerialTelemetry();
 
 }
 
@@ -744,8 +741,8 @@ void process10HzTask2() {
   #endif
 
   // Listen for configuration commands and reports telemetry
-  readSerialCommand();
-  sendSerialTelemetry();
+//    readSerialCommand();
+//    sendSerialTelemetry();
 
 }
 

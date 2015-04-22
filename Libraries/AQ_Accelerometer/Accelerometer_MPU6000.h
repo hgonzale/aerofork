@@ -65,6 +65,141 @@ void evaluateMetersPerSec() {
 
 }
 
+void meansensors(){
+
+  // read raw accel/gyro measurements from device
+	for (int i=0; i<1000; i++) {
+	
+		readMPU6000Sensors();
+		measureAccelSum();
+		delayMicroseconds(2500);
+	
+	}
+	
+    mean_ax = ((float)accelSample[XAXIS]) / 1000.00;
+    mean_ay = ((float)accelSample[YAXIS]) / 1000.00;
+    mean_az = ((float)accelSample[ZAXIS]) / 1000.00;
+	
+	accelSample[XAXIS] = 0;
+	accelSample[YAXIS] = 0;
+	accelSample[ZAXIS] = 0;
+	
+	accelSampleCount = 0;
+	  
+}
+
+void getScaleFactor(int axis) { //converts accelerometer readings to scale around g = 9.81 m/s2.
+
+	float sum = 0.0;
+
+	if (axis == XAXIS) {
+	
+		Serial.println("+x downwards");
+                
+        while (Serial.available() && Serial.read()); // empty buffer
+		
+		while(!Serial.available()) {
+		
+		}
+		
+		meansensors();
+		
+		sum += mean_ax;
+                
+        while (Serial.available() && Serial.read()); // empty buffer
+		
+		Serial.println("-x downwards");
+		
+		while(!Serial.available()) {
+		
+		}
+		
+		meansensors();	
+		
+		sum -= mean_ax;
+		
+		accelScaleFactor[XAXIS] = 19.62/sum;
+		
+		sum = 0.0;
+
+        while (Serial.available() && Serial.read()); // empty buffer
+		
+	}
+
+	else if (axis == YAXIS) {
+  
+        while (Serial.available() && Serial.read()); // empty buffer
+
+		Serial.println("+y downwards");
+		
+		while(!Serial.available()) {
+		
+		}
+		
+		meansensors();
+		
+		sum += mean_ay;
+
+        while (Serial.available() && Serial.read()); // empty buffer
+		
+		Serial.println("-y downwards");
+		
+		while(!Serial.available()) {
+		
+		}
+		
+		meansensors();	
+		
+		sum -= mean_ay;
+		
+		accelScaleFactor[YAXIS] = 19.62/sum;
+		
+		sum = 0.0;
+
+        while (Serial.available() && Serial.read()); // empty buffer
+		
+	}	
+	
+	else if (axis == ZAXIS) {
+  
+        while (Serial.available() && Serial.read()); // empty buffer
+	
+		Serial.println("+z downwards");
+		
+		while(!Serial.available()) {
+		
+		}
+		
+		meansensors();
+		
+		sum += mean_az;
+
+        while (Serial.available() && Serial.read()); // empty buffer
+		
+		Serial.println("-z downwards");
+		
+		while(!Serial.available()) {
+		
+		}
+		
+		meansensors();	
+		
+		sum -= mean_az;
+		
+		accelScaleFactor[ZAXIS] = 19.62/sum;
+		
+		sum = 0.0;
+
+        while (Serial.available() && Serial.read()); // empty buffer
+		
+	}
+	
+	else {
+	
+	}
+
+}	
+
 void computeAccelBias() {
 
   for (int samples = 0; samples < SAMPLECOUNT; samples++) {
@@ -90,6 +225,87 @@ void computeAccelBias() {
 
   accelOneG = abs(meterPerSecSec[ZAXIS] + runTimeAccelBias[ZAXIS]);
 
+}
+
+void calibration() {
+
+  if (state==0){
+  
+    Serial.println("\nReading sensors for first time...");
+    meansensors();
+    state++;
+    delay(1000);
+	
+  }
+
+  if (state==1) { //Find Accelerometer scale factor for each axis.
+  
+    for (int i=0; i<3; i++){
+      
+      getScaleFactor(i);
+      
+      delay(1000);
+      
+    }
+    
+    state++;
+    delay(1000);
+	
+  }
+ 
+   if (state==2) {
+     
+     while (Serial.available() && Serial.read()); // empty buffer
+     
+     while (!Serial.available()){
+       
+       Serial.println(F("Send any character to continue.\n"));
+       delay(1500);
+       
+     }   
+     
+     while (Serial.available() && Serial.read()); // empty buffer again  
+     
+     Serial.println("\nCalculating offsets...");
+     computeAccelBias();
+	 storeSensorsZeroToEEPROM();
+     state++;
+     delay(1000);
+	
+  }
+
+  if (state==3) {
+  
+    measureAccel();
+	
+    Serial.println("\nFINISHED!");
+    Serial.print("\nSensor readings with offsets:\t");
+	
+	for (byte axis = XAXIS; axis <= ZAXIS; axis++) {
+	
+		Serial.print(meterPerSecSec[axis]); 
+		Serial.print("\t");
+		
+	}
+	
+    while (Serial.available() && Serial.read()); // empty buffer
+    
+    while(!Serial.available()) {
+	
+		measureAccel();
+		Serial.print("Roll: ");
+		Serial.print(meterPerSecSec[XAXIS]);
+		Serial.print(" Pitch: ");
+		Serial.print(meterPerSecSec[YAXIS]);
+		Serial.print(" Yaw: ");
+		Serial.print(meterPerSecSec[ZAXIS]);
+		Serial.println();
+		delayMicroseconds(10000);
+	  
+    }
+	
+  }
+  
 }
 
 #endif
