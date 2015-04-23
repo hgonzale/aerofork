@@ -91,27 +91,21 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
     
   // integral error scaled integral gain
   exInt = exInt + ex*Ki;
-
   if (isSwitched(previousEx,ex)) {
     exInt = 0.0;
   }
-
   previousEx = ex;
 	
   eyInt = eyInt + ey*Ki;
-
   if (isSwitched(previousEy,ey)) {
     eyInt = 0.0;
   }
-
   previousEy = ey;
 
   ezInt = ezInt + ez*Ki;
-
   if (isSwitched(previousEz,ez)) {
     ezInt = 0.0;
   }
-
   previousEz = ez;
 	
   // adjusted gyroscope measurements
@@ -131,12 +125,10 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
     
   // normalise quaternion
   norm = sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3);
-
   q0 = q0 / norm;
   q1 = q1 / norm;
   q2 = q2 / norm;
   q3 = q3 / norm;
-
 }
   
 void eulerAngles()
@@ -179,9 +171,7 @@ void calculateKinematics(float rollRate,          float pitchRate,    float yawR
   argUpdate(rollRate,          pitchRate,    yawRate, 
             longitudinalAccel, lateralAccel, verticalAccel,  
 		    G_Dt);
-
   eulerAngles();
-
 }
   
 float getGyroUnbias(byte axis) {
@@ -192,4 +182,3 @@ void calibrateKinematics() {}
 
 
 #endif
-

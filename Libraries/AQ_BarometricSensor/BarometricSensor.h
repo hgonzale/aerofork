@@ -27,8 +27,13 @@
 float baroAltitude      = 0.0; 
 float baroRawAltitude   = 0.0;
 float baroGroundAltitude = 0.0;
-float baroSmoothFactor   = 0.02;
-  
+float baroSmoothFactor   = 0.2;
+
+float zSum = 0.0;
+float zBias = 0.0;
+
+int zIndex = 0;
+
 // **********************************************************************
 // The following function calls must be defined inside any new subclasses
 // **********************************************************************
@@ -41,23 +46,80 @@ void evaluateBaroAltitude();
 // The following functions are common between all subclasses
 // *********************************************************
 const float getBaroAltitude() {
-  return baroAltitude - baroGroundAltitude;
+
+  return baroAltitude - baroGroundAltitude - zBias;
+
 }
  
 void measureGroundBaro() {
   // measure initial ground pressure (multiple samples)
   float altSum = 0.0;
+  int numAlt = 0;
+  
+  delay(10000);
+  
+  for (int i=0; i<50; i++) {
+	
+	for (int j=0; j<25; j++) {
+	
+		measureBaroSum();
+		
+		delay(20);
 
-  for (int i=0; i < 25; i++) {
-    measureBaro();
+	}
+
+	evaluateBaroAltitude();
+
 	altSum += baroRawAltitude;
-    delay(12);
+	numAlt++;
+	
+    delay(100);
+
   }
 
-  baroGroundAltitude = altSum / 25;
+  baroGroundAltitude = altSum/numAlt;
+  
+  baroAltitude = baroGroundAltitude;
+  	
+  for (int k=0; k<25; k++) {
+  
+  	measureBaroSum();
+  	
+  	delay(20);
+  
+  }
+  
+  evaluateBaroAltitude();
+  
+  baroGroundAltitude = baroAltitude;
+  
+  delay(100);
+
 }
 
+void Addz(float i) {
 
+	if (zIndex < 100) {
+
+		zSum += i;
+
+		zIndex += 1;
+
+	}
+
+	else {
+
+		zBias = zSum/zIndex;
+
+		zSum = 0.0;
+		
+		zIndex = 0;
+
+		calibrateReady = true;
+
+	}
+
+}
 
 
 #endif

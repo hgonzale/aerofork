@@ -69,15 +69,23 @@ void processCalibrateESC()
     for (byte motor = 0; motor < LASTMOTOR; motor++)
       motorCommand[motor] = MAXCOMMAND;
     break;
+
+  case 2:
+	for (byte motor = 0; motor < LASTMOTOR; motor++)
+      motorCommand[motor] = MINCOMMAND;
+    break;
+
   case 3:
     for (byte motor = 0; motor < LASTMOTOR; motor++)
       motorCommand[motor] = constrain(testCommand, 1000, 1200);
     break;
+
   case 5:
     for (byte motor = 0; motor < LASTMOTOR; motor++)
       motorCommand[motor] = constrain(motorConfiguratorCommand[motor], 1000, 1200);
     safetyCheck = ON;
     break;
+
   default:
     for (byte motor = 0; motor < LASTMOTOR; motor++)
       motorCommand[motor] = MINCOMMAND;

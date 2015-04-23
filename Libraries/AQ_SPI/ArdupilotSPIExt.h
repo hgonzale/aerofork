@@ -24,7 +24,7 @@ public:
 	//SPI initiation sequence taken from Arduino SPI library
 	void setBitOrder(uint8_t bitOrder) {
 		if(bitOrder == LSBFIRST) {
-		SPCR |= _BV(DORD);
+			SPCR |= _BV(DORD);
 		} 
 		else {
 			SPCR &= ~(_BV(DORD));

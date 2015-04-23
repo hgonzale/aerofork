@@ -82,11 +82,16 @@ void testMotor(int motor) {
   Serial.println();
   Serial.print("TEST MOTOR ");
   Serial.println(motor);
+
   for (int motorTrust = 1000; motorTrust < 1200; motorTrust+=10) {
+
     motorCommand[motor] = motorTrust;
     writeMotors();
+
     delay(200);
+
   }
+
   for (int motorTrust = 1200; motorTrust > 1000; motorTrust-=10) {
     motorCommand[motor] = motorTrust;
     writeMotors();

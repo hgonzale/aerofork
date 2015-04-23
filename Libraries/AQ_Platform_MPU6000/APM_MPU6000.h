@@ -219,11 +219,11 @@ void initializeMPU6000Sensors() {
   MPU6000_WriteReg(MPUREG_PWR_MGMT_2, 0);
 
   // SAMPLE RATE
-  MPU6000_WriteReg(MPUREG_SMPLRT_DIV,0x00);     // Sample rate = 1KHz
+  MPU6000_WriteReg(MPUREG_SMPLRT_DIV, 0x04);     // Sample rate = 250 Hz.
 
-  // FS & DLPF   FS=1000º/s, DLPF = 188Hz (low pass filter)
-  MPU6000_WriteReg(MPUREG_CONFIG, BITS_DLPF_CFG_188HZ);
-  MPU6000_WriteReg(MPUREG_GYRO_CONFIG,BITS_FS_1000DPS);  // Gyro scale 2000º/s
+  // FS & DLPF   FS=1000º/s, DLPF = 42Hz (low pass filter)
+  MPU6000_WriteReg(MPUREG_CONFIG, BITS_DLPF_CFG_42HZ);
+  MPU6000_WriteReg(MPUREG_GYRO_CONFIG,BITS_FS_1000DPS);  // Gyro scale 1000º/s
   MPU6000_WriteReg(MPUREG_ACCEL_CONFIG,0x08);   // Accel scale +/-4g (4096LSB/g)
 
   // switch to high clock rate

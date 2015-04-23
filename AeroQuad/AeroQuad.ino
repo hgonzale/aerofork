@@ -1,4 +1,3 @@
-
 /*
   AeroQuad v3.0.1 - February 2012
   www.AeroQuad.com
@@ -23,7 +22,7 @@
    Before flight, select the different user options for your AeroQuad by
    editing UserConfiguration.h.
 
-   If you need additional assistance go to http://www.aeroquad.com/forum.php
+   If you need additional assistance go to ht tp://www.aeroquad.com/forum.php
    or talk to us live on IRC #aeroquad
 *****************************************************************************/
 
@@ -46,8 +45,12 @@
 #endif
 
 #if defined(ReceiverSBUS) && defined(SlowTelemetry)
-  #error "Receiver SWBUS and SlowTelemetry are in conflict for Serial2, they can't be used together"
+  #error "Receiver SWBUS and SlowTelemetry are in conflict for Seria2, they can't be used together"
 #endif
+
+#if defined (CameraTXControl) && !defined (CameraControl)
+  #error "CameraTXControl need to have CameraControl defined"
+#endif 
 
 #include <EEPROM.h>
 #include <Wire.h>
@@ -57,26 +60,36 @@
 #include "PID.h"
 #include <AQMath.h>
 #include <FourtOrderFilter.h>
+//#include <XBee/XBee.h>
+
+
 #ifdef BattMonitor
   #include <BatteryMonitorTypes.h>
 #endif
+
+//XBee library objects.
+/* XBee xbee = XBee();
+XBeeResponse response = XBeeResponse();
+// create reusable response objects for responses we expect to handle 
+ZBRxResponse rx = ZBRxResponse();
+ModemStatusResponse msr = ModemStatusResponse(); */
+//XBee library objects.
 
 //********************************************************
 //********************************************************
 //********* PLATFORM SPECIFIC SECTION ********************
 //********************************************************
 //********************************************************
+
 #ifdef ArduCopter
 
   #define LED_Green 37
   #define LED_Red 35
   #define LED_Yellow 36
   #define DEBUG_INIT
-  //#define HeadingMagHold //uncomment to remove magnetometer
+  #define HeadingMagHold //uncomment to remove magnetometer
   #include <APM_ADC.h>
   #include <APM_RC.h>
-
-  #include <ArdupilotSPIExt.h>
   #include <APM_MPU6000.h>
   #include <controlLoop.h>
 
@@ -93,11 +106,9 @@
   #define MOTOR_PWM_Timer
 
   // heading mag hold declaration
-  #ifdef HeadingMagHold
-    #define HMC5883L
-    #include <Magnetometer_HMC5883L.h>
-    #define SPARKFUN_9DOF_5883L
-  #endif
+  #define HMC5883L
+  #include <Magnetometer_HMC5883L.h>
+  #define SPARKFUN_9DOF_5883L
   //
 
   #ifdef AltitudeHoldRangeFinder
@@ -133,7 +144,7 @@
 
   
   /**
-   * Put ArduCopter specific initialization needed here
+   * Put ArduCopter specific initialization need here
    */
   void initPlatform() {
 
@@ -153,7 +164,7 @@
 
 	initializeBaro();
 
-	initializeMagnetometer(); // assumes Magnetometer has been included
+	initializeMagnetometer();
 
   }
   
@@ -161,12 +172,14 @@
   void initializePlatformSpecificAccelCalibration() {
 
     // Accel Cal
-    accelScaleFactor[XAXIS] = -0.134555;
-    runTimeAccelBias[XAXIS] = 32.625213;
-    accelScaleFactor[YAXIS] = 0.148372;
-    runTimeAccelBias[YAXIS] = -3.774584;
-    accelScaleFactor[ZAXIS] = -0.001165;
-    runTimeAccelBias[ZAXIS] = -1.694807;
+	//-0.143264,42.472400,-0.092744,8.995472,-0.001165,-1.469050
+
+    accelScaleFactor[XAXIS] = 1.0;
+    runTimeAccelBias[XAXIS] = 0.0;
+    accelScaleFactor[YAXIS] = 1.0;
+    runTimeAccelBias[YAXIS] = 0.0;
+    accelScaleFactor[ZAXIS] = 1.0;
+    runTimeAccelBias[ZAXIS] = 0.0;
 
     #ifdef HeadingMagHold
       magBias[XAXIS]  = 0.0;
@@ -198,40 +211,48 @@
 //********************************************************
 //********************************************************
 
+#ifdef AeroQuadSTM32
+  #include "AeroQuad_STM32.h"
+#endif
+
 // default to 10bit ADC (AVR)
 #ifndef ADC_NUMBER_OF_BITS
-    #define ADC_NUMBER_OF_BITS 10
+#define ADC_NUMBER_OF_BITS 10
 #endif
 
 //********************************************************
 //****************** KINEMATICS DECLARATION **************
 //********************************************************
 #include "Kinematics.h"
-#include "Kinematics_ARG.h"
+#if defined(AeroQuadMega_CHR6DM) || defined(APM_OP_CHR6DM)
+  // CHR6DM have it's own kinematics, so, initialize in it's scope
+#else
+  #include "Kinematics_ARG.h"
+#endif
 
 //********************************************************
 //******************** RECEIVER DECLARATION **************
 //********************************************************
 #if defined(ReceiverHWPPM)
   #include <Receiver_HWPPM.h>
-//#elif defined(ReceiverPPM)
-//  #include <Receiver_PPM.h>
-//#elif defined(AeroQuad_Mini) && (defined(hexPlusConfig) || defined(hexXConfig) || defined(hexY6Config))
-//  #include <Receiver_PPM.h>
-//#elif defined(RemotePCReceiver)
-//  #include <Receiver_RemotePC.h>
-//#elif defined(ReceiverSBUS)
-//  #include <Receiver_SBUS.h>
-//#elif defined(RECEIVER_328P)
-//  #include <Receiver_328p.h>
-//#elif defined(RECEIVER_MEGA)
-//  #include <Receiver_MEGA.h>
+#elif defined(ReceiverPPM)
+  #include <Receiver_PPM.h>
+#elif defined(AeroQuad_Mini) && (defined(hexPlusConfig) || defined(hexXConfig) || defined(hexY6Config))
+  #include <Receiver_PPM.h>
+#elif defined(RemotePCReceiver)
+  #include <Receiver_RemotePC.h>
+#elif defined(ReceiverSBUS)
+  #include <Receiver_SBUS.h>
+#elif defined(RECEIVER_328P)
+  #include <Receiver_328p.h>
+#elif defined(RECEIVER_MEGA)
+  #include <Receiver_MEGA.h>
 #elif defined(RECEIVER_APM)
   #include <Receiver_APM.h>
-//#elif defined(RECEIVER_STM32PPM)
-//  #include <Receiver_STM32PPM.h>  
-//#elif defined(RECEIVER_STM32)
-//  #include <Receiver_STM32.h>  
+#elif defined(RECEIVER_STM32PPM)
+  #include <Receiver_STM32PPM.h>  
+#elif defined(RECEIVER_STM32)
+  #include <Receiver_STM32.h>  
 #endif
 
 #if defined(UseAnalogRSSIReader) 
@@ -241,6 +262,8 @@
 #elif defined(UseSBUSRSSIReader)
   #include <SBUSRSSIReader.h>
 #endif
+
+
 
 //********************************************************
 //********************** MOTORS DECLARATION **************
@@ -275,17 +298,17 @@
   #include <HeadingFusionProcessorMARG.h>
   #include <Magnetometer_HMC5883L.h>
 
-//#elif defined(COMPASS_CHR6DM)
+#elif defined(COMPASS_CHR6DM)
 #endif
 
 //********************************************************
 //******* ALTITUDE HOLD BAROMETER DECLARATION ************
 //********************************************************
-//#if defined(BMP085)
-//  #include <BarometricSensor_BMP085.h>
-//#elif defined(MS5611)
-#include <BarometricSensor_MS5611.h>
-//#endif
+#if defined(BMP085)
+  #include <BarometricSensor_BMP085.h>
+#elif defined(MS5611)
+ #include <BarometricSensor_MS5611.h>
+#endif
 #if defined(XLMAXSONAR)
   #include <MaxSonarRangeFinder.h>
 #endif 
@@ -299,20 +322,19 @@
   #endif
   struct BatteryData batteryData[] = {BattCustomConfig};
 #endif
-
 //********************************************************
 //************** CAMERA CONTROL DECLARATION **************
 //********************************************************
 // used only on mega for now
-//#if defined(CameraControl_STM32)
-//  #include <CameraStabilizer_STM32.h>
-//#elif defined(CameraControl)
-//  #include <CameraStabilizer_Aeroquad.h>
-//#endif
-//
-//#if defined (CameraTXControl)
-//  #include <CameraStabilizer_TXControl.h>
-//#endif
+#if defined(CameraControl_STM32)
+  #include <CameraStabilizer_STM32.h>
+#elif defined(CameraControl)
+  #include <CameraStabilizer_Aeroquad.h>
+#endif
+
+#if defined (CameraTXControl)
+  #include <CameraStabilizer_TXControl.h>
+#endif
 
 //********************************************************
 //******** FLIGHT CONFIGURATION DECLARATION **************
@@ -321,22 +343,22 @@
   #include "FlightControlQuadX.h"
 #elif defined(quadPlusConfig)
   #include "FlightControlQuadPlus.h"
-//#elif defined(hexPlusConfig)
-//  #include "FlightControlHexPlus.h"
-//#elif defined(hexXConfig)
-//  #include "FlightControlHexX.h"
-//#elif defined(triConfig)
-//  #include "FlightControlTri.h"
-//#elif defined(quadY4Config)
-//  #include "FlightControlQuadY4.h"
-//#elif defined(hexY6Config)
-//  #include "FlightControlHexY6.h"
-//#elif defined(octoX8Config)
-//  #include "FlightControlOctoX8.h"
-//#elif defined(octoXConfig)
-//  #include "FlightControlOctoX.h"
-//#elif defined(octoPlusConfig)
-//  #include "FlightControlOctoPlus.h"
+#elif defined(hexPlusConfig)
+  #include "FlightControlHexPlus.h"
+#elif defined(hexXConfig)
+  #include "FlightControlHexX.h"
+#elif defined(triConfig)
+  #include "FlightControlTri.h"
+#elif defined(quadY4Config)
+  #include "FlightControlQuadY4.h"
+#elif defined(hexY6Config)
+  #include "FlightControlHexY6.h"
+#elif defined(octoX8Config)
+  #include "FlightControlOctoX8.h"
+#elif defined(octoXConfig)
+  #include "FlightControlOctoX.h"
+#elif defined(octoPlusConfig)
+  #include "FlightControlOctoPlus.h"
 #endif
 
 //********************************************************
@@ -353,22 +375,22 @@
 //********************************************************
 //****************** OSD DEVICE DECLARATION **************
 //********************************************************
-//#ifdef MAX7456_OSD     // only OSD supported for now is the MAX7456
-//  #include <Device_SPI.h>
-//  #include "OSDDisplayController.h"
-//  #include "MAX7456.h"
-//#endif
-//
-//#if defined(SERIAL_LCD)
-//  #include "SerialLCD.h"
-//#endif
+#ifdef MAX7456_OSD     // only OSD supported for now is the MAX7456
+  #include <Device_SPI.h>
+  #include "OSDDisplayController.h"
+  #include "MAX7456.h"
+#endif
 
-//#ifdef OSD_SYSTEM_MENU
-//  #if !defined(MAX7456_OSD) && !defined(SERIAL_LCD)
-//    #error "Menu cannot be used without OSD or LCD"
-//  #endif
-//  #include "OSDMenu.h"
-//#endif
+#if defined(SERIAL_LCD)
+  #include "SerialLCD.h"
+#endif
+
+#ifdef OSD_SYSTEM_MENU
+  #if !defined(MAX7456_OSD) && !defined(SERIAL_LCD)
+    #error "Menu cannot be used without OSD or LCD"
+  #endif
+  #include "OSDMenu.h"
+#endif
 
 
 //********************************************************
@@ -433,64 +455,47 @@ void setup() {
   
   readEEPROM(); // defined in DataStorage.h
   boolean firstTimeBoot = false;
-
+  
   if (readFloat(SOFTWARE_VERSION_ADR) != SOFTWARE_VERSION) { // If we detect the wrong soft version, we init all parameters
-
+  
     initializeEEPROM();
     writeEEPROM();
     firstTimeBoot = true;
-
+	
   }
   
   initPlatform();
   
-  //
   #if defined(quadXConfig) || defined(quadPlusConfig) || defined(quadY4Config) || defined(triConfig)
      initializeMotors(FOUR_Motors);
-  //
-
-  //
   #elif defined(hexPlusConfig) || defined(hexXConfig) || defined(hexY6Config)
      initializeMotors(SIX_Motors);
-  //
-
-  //
   #elif defined(octoX8Config) || defined(octoXConfig) || defined(octoPlusConfig)
      initializeMotors(EIGHT_Motors);
   #endif
-  //
 
-  //
   initializeReceiver(LASTCHANNEL);
   initReceiverFromEEPROM();
-  //
-
+  
   // Initialize sensors
   // If sensors have a common initialization routine
   // insert it into the gyro class because it executes first
-
   initializeGyro(); // defined in Gyro.h
-  while (!calibrateGyro()); // this make sure the craft is still before to continue init process
-
-  initializeAccel(); // defined in Accelerometer.h
-  //
-
-  //
+  
+  while (!calibrateGyro()); // this make sure the craft is still befor to continue init process
+  
+  initializeAccel(); // defined in Accel.h
+  
   if (firstTimeBoot) {
-
+  
     computeAccelBias();
     writeEEPROM();
-
+	
   }
-  //
-
-  //
+  
   setupFourthOrder();
   initSensorsZeroFromEEPROM();
-  //
-
-
-
+  
   // Integral Limit for attitude mode
   // This overrides default set in readEEPROM()
   // Set for 1/2 max attitude command (+/-0.75 radians)
@@ -509,14 +514,9 @@ void setup() {
   
   // Optional Sensors
   #ifdef AltitudeHoldBaro
-
     initializeBaro();
     vehicleState |= ALTITUDEHOLD_ENABLED;
-
   #endif
-  //
-
-  //
   #ifdef AltitudeHoldRangeFinder
     inititalizeRangeFinders();
     vehicleState |= RANGE_ENABLED;
@@ -525,36 +525,26 @@ void setup() {
     PID[SONAR_ALTITUDE_HOLD_PID_IDX].D = PID[BARO_ALTITUDE_HOLD_PID_IDX].D;
     PID[SONAR_ALTITUDE_HOLD_PID_IDX].windupGuard = PID[BARO_ALTITUDE_HOLD_PID_IDX].windupGuard;
   #endif
-  //
-
-  //
+  
   #ifdef BattMonitor
     initializeBatteryMonitor(sizeof(batteryData) / sizeof(struct BatteryData), batteryMonitorAlarmVoltage);
     vehicleState |= BATTMONITOR_ENABLED;
   #endif
-  //
+  
+  #if defined(CameraControl)
+    initializeCameraStabilization();
+    vehicleState |= CAMERASTABLE_ENABLED;
+  #endif
 
-  //
-//  #if defined(CameraControl)
-//    initializeCameraStabilization();
-//    vehicleState |= CAMERASTABLE_ENABLED;
-//  #endif
-//  //
-//
-//  //
-//  #if defined(MAX7456_OSD)
-//    initializeSPI();
-//    initializeOSD();
-//  #endif
-//  //
-//
-//  //
-//  #if defined(SERIAL_LCD)
-//    InitSerialLCD();
-//  #endif
-  //
+  #if defined(MAX7456_OSD)
+    initializeSPI();
+    initializeOSD();
+  #endif
+  
+  #if defined(SERIAL_LCD)
+    InitSerialLCD();
+  #endif
 
-  //
   #if defined(BinaryWrite) || defined(BinaryWritePID)
     #ifdef OpenlogBinaryWrite
       binaryPort = &Serial1;
@@ -564,25 +554,19 @@ void setup() {
      binaryPort = &Serial;
     #endif
   #endif
-  //
-
-  //
+  
   #if defined(UseGPS)
     initializeGps();
   #endif 
-  //
 
-  //
   #ifdef SlowTelemetry
      initSlowTelemetry();
   #endif
-  //
 
   previousTime = micros();
   digitalWrite(LED_Green, HIGH);
   safetyCheck = 0;
 
-  initsensorArray();
 
 }
 
@@ -607,11 +591,26 @@ void process100HzTask() {
     
   calculateKinematics(gyroRate[XAXIS], gyroRate[YAXIS], gyroRate[ZAXIS], filteredAccel[XAXIS], filteredAccel[YAXIS], filteredAccel[ZAXIS], G_Dt);
 
-  for (int axis = XAXIS; axis <= ZAXIS; axis++) {
+  
 
-	ENQueueSensorReading(kinematicsAngle[axis], axis + 1);
+	if (calibrateReadyTilt == true) {
 
-  }
+		ENQueueSensorReading(kinematicsAngle[0] - rollBias, 1);
+		ENQueueSensorReading(kinematicsAngle[1] - pitchBias, 2);
+		ENQueueSensorReading(kinematicsAngle[2] - yawBias, 3);
+
+	}
+
+	else {
+	
+		if (startCalibrate == true) {
+
+			AddTilt(kinematicsAngle[0],kinematicsAngle[1],kinematicsAngle[2]);
+		
+		}
+
+	}
+
   
   #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
 
@@ -630,19 +629,18 @@ void process100HzTask() {
   #endif    
 
   #if defined(AltitudeHoldBaro)
-
-    measureBaroSum(); 
-
-    if (frameCounter % THROTTLE_ADJUST_TASK_SPEED == 0) {  //  50 Hz tasks
-
-      evaluateBaroAltitude();
-
-	  ENQueueSensorReading(getBaroAltitude(), 0);
-
-    }
-
-  #endif
+	
+  if (startBaroMeasure == true) { 
   
+	if (frameCounter % THROTTLE_ADJUST_TASK_SPEED == 0) {
+	
+		measureBaroSum();
+	
+	}
+	 
+  }
+	
+  #endif
         
   processFlightControl();
   
@@ -666,8 +664,15 @@ void process100HzTask() {
     updateGps();
   #endif      
   //
-      readSerialCommand();
-    sendSerialTelemetry();
+
+  //
+  #if defined(CameraControl)
+    moveCamera(kinematicsAngle[YAXIS],kinematicsAngle[XAXIS],kinematicsAngle[ZAXIS]);
+    #if defined CameraTXControl
+      processCameraTXControl();
+    #endif
+  #endif       
+  //
 
 }
 
@@ -676,13 +681,31 @@ void process100HzTask() {
  ******************************************************************/
 void process50HzTask() {
 
-  G_Dt = (currentTime - fiftyHZpreviousTime) / 1000000.0;
-  fiftyHZpreviousTime = currentTime;
-
-  // Reads external pilot commands and performs functions based on stick configuration
-  readPilotCommands(); 
-  
-  #if defined(UseAnalogRSSIReader) || defined(UseEzUHFRSSIReader) || defined(UseSBUSRSSIReader)
+	if (beginControl == true) {
+		
+/* 		if (firstRead == true) {
+		
+			xbee.begin(BAUD);
+			firstRead = false;
+			
+		} */
+	
+		G_Dt = (currentTime - fiftyHZpreviousTime) / 1000000.0;
+		fiftyHZpreviousTime = currentTime;
+		
+		// Reads external pilot commands and performs functions based on stick configuration
+		//readPilotCommands(); 
+		
+		PIDControl(userInput, sensorReadings, G_Dt);
+		
+		for (int i=0; i<4; i++){
+		
+			motorConfiguratorCommand[i] = constrain((int(yk[i] + 1000.5)), 1000, 1200);
+		
+		}
+    
+	}
+/*   #if defined(UseAnalogRSSIReader) || defined(UseEzUHFRSSIReader) || defined(UseSBUSRSSIReader)
     readRSSI();
   #endif
 
@@ -694,27 +717,30 @@ void process50HzTask() {
     if (haveAGpsLock() && !isHomeBaseInitialized()) {
       initHomeBase();
     }
-  #endif  
+  #endif   */
       
 }
 
 /*******************************************************************
  * 20Hz task
  ******************************************************************/
-void process20HzTask() {
+/*void process20HzTask() {
 
-    G_Dt = (currentTime - twentyHZpreviousTime) / 1000000.0;
-    twentyHZpreviousTime = currentTime;
-     
-	PIDControl((float *)motorCommand, sensorReadings, G_Dt); //PIDControl(...) takes floats as input --> hence the float* casting of motorCommand variable
+	  writeMotors();
 	     
 }
+
+void process5HzTask() {
+
+	writeMotors();
+
+}*/
 
 /*******************************************************************
  * 10Hz task
  ******************************************************************/
 void process10HzTask1() {
-  
+	
   #if defined(HeadingMagHold)
   
     G_Dt = (currentTime - tenHZpreviousTime) / 1000000.0;
@@ -725,7 +751,29 @@ void process10HzTask1() {
     calculateHeading();
     
   #endif
-
+	
+	if (startBaroMeasure == true) {
+	
+  		evaluateBaroAltitude();
+		
+		if (calibrateReady == true) {
+		
+			ENQueueSensorReading(getBaroAltitude(), 0);
+		
+		}
+		
+		else {
+			
+			if (startCalibrate == true) {
+			
+				Addz(getBaroAltitude());
+				
+			}	
+		
+		}
+	
+	}
+	
 }
 
 /*******************************************************************
@@ -741,8 +789,8 @@ void process10HzTask2() {
   #endif
 
   // Listen for configuration commands and reports telemetry
-//    readSerialCommand();
-//    sendSerialTelemetry();
+  readSerialCommand();
+  sendSerialTelemetry();
 
 }
 
@@ -754,13 +802,13 @@ void process10HzTask3() {
     G_Dt = (currentTime - lowPriorityTenHZpreviousTime2) / 1000000.0;
     lowPriorityTenHZpreviousTime2 = currentTime;
 
-//    #ifdef OSD_SYSTEM_MENU
-//      updateOSDMenu();
-//    #endif
-//
-//    #ifdef MAX7456_OSD
-//      updateOSD();
-//    #endif
+    #ifdef OSD_SYSTEM_MENU
+      updateOSDMenu();
+    #endif
+
+    #ifdef MAX7456_OSD
+      updateOSD();
+    #endif
     
     #if defined(UseGPS) || defined(BattMonitor)
       processLedStatus();
@@ -771,36 +819,98 @@ void process10HzTask3() {
     #endif
 }
 
+
+	
+void process2HzTask() {
+	
+    /* xbee.readPacket();
+    
+    if (xbee.getResponse().isAvailable()) {
+	
+		if (xbee.getResponse().getApiId() == MODEM_STATUS_RESPONSE) {
+	  
+			xbee.getResponse().getModemStatusResponse(msr);
+			// the local XBee sends this response on certain events, like association/dissociation
+        
+			if (msr.getStatus() == ASSOCIATED) {
+
+			} 
+		
+			else if (msr.getStatus() == DISASSOCIATED) {
+				
+				beginControl = false;
+				calibrateESC = 2;
+				
+			} 
+		
+			else {
+
+			}
+		
+		}
+		
+	} */
+}
+
+
+
 /*******************************************************************
  * 1Hz task 
  ******************************************************************/
 void process1HzTask() {
-  #ifdef MavLink
+
+  /*#ifdef MavLink
     G_Dt = (currentTime - oneHZpreviousTime) / 1000000.0;
     oneHZpreviousTime = currentTime;
     
     sendSerialHeartbeat();   
-  #endif
-}
-
+  #endif*/
+	
+	if (beginControl == true) {
+		
+		if (msg == '>') {
+	
+			countStop = 0;
+		
+		}
+		
+		else {
+		
+			countStop++;
+			
+		}
+		
+		msg = ' ';
+		
+	}
+  
+}  
 /*******************************************************************
  * Main loop funtions
  ******************************************************************/
 void loop () {
-  
-  currentTime = micros();
-  deltaTime = currentTime - previousTime;
 
-  measureCriticalSensors();
+	currentTime = micros();
+	deltaTime = currentTime - previousTime;
+
+	measureCriticalSensors();
+	
+	/*if (countStop > 5) {
+	
+		//beginControl = false;
+		calibrateESC = 2;
+	
+	}*/ 
+	//Need new emergency stop procedure.
 
   // ================================================================
   // 100Hz task loop
   // ================================================================
-  if (deltaTime >= 10000) {
+	if (deltaTime >= 10000) {
     
-    frameCounter++;
+		frameCounter++;
     
-    process100HzTask();
+		process100HzTask();
 
     // ================================================================
     // 50Hz task loop
@@ -811,15 +921,6 @@ void loop () {
       process50HzTask();
 
     }
-
-	//20Hz task loop.
-	//
-	if ((frameCounter % TASK_20HZ == 0) && (beginControl == true)) {  //  20 Hz tasks
-
-      process20HzTask();
-
-    }
-	//
 
     // ================================================================
     // 10Hz task loop
@@ -845,21 +946,31 @@ void loop () {
     // ================================================================
     // 1Hz task loop
     // ================================================================
-    if (frameCounter % TASK_1HZ == 0) {  //   1 Hz tasks
+    if (frameCounter % TASK_2HZ == 0) {  //   2 Hz tasks
+		
+		if (beginControl == true) {
+		
+			process2HzTask();
+		
+		}
+		
+    }
+	
+    /*if (frameCounter % TASK_1HZ == 0) {  //  1 Hz tasks
 
       process1HzTask();
 
-    }
+    }*/
     
     previousTime = currentTime;
 
   }
   
-  if (frameCounter >= 100) {
+	if (frameCounter >= 100) {
 
       frameCounter = 0;
 
-  }
+	}
 
 }
 

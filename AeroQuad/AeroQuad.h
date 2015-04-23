@@ -26,7 +26,7 @@
 #include <math.h>
 #include "Arduino.h"
 #include "pins_arduino.h"
-#include "GpsDataType.h"
+#include <GpsDataType.h>
 #include "AQMath.h"
 #include "Receiver.h"
 
@@ -60,6 +60,8 @@ byte previousFlightMode = ATTITUDE_FLIGHT_MODE;
 #define TASK_50HZ 2
 #define TASK_20HZ 5
 #define TASK_10HZ 10
+#define TASK_5HZ 20
+#define TASK_2HZ 50
 #define TASK_1HZ 100
 #define THROTTLE_ADJUST_TASK_SPEED TASK_50HZ
 //#define NUMCOL 3
@@ -82,6 +84,18 @@ byte minLimit = OFF;
 float filteredAccel[3] = {0.0,0.0,0.0};
 boolean inFlight = false; // true when motor are armed and that the user pass one time the min throttle
 boolean beginControl = false;
+boolean startBaroMeasure = false;
+boolean firstRead = true;
+
+boolean startCalibrate = false;
+boolean calibrateReady = false;
+boolean calibrateReadyTilt = false;
+
+char msg = ' ';
+int countStop = 0;
+
+int stateIndex = 0;
+
 float rotationSpeedFactor = 1.0;
 
 // main loop time variable
@@ -100,21 +114,80 @@ unsigned long hundredHZpreviousTime = 0;
 
 float sensorReadings[NUMROW];
 
+float rollSum = 0;
+float pitchSum = 0;
+float yawSum = 0;
+
+float rollBias = 0;
+float pitchBias = 0;
+float yawBias = 0;
+
+int rollIndex = 0;
+
+float userInput[NUMROW] = {0.0, 0.0, 0.0, 0.0};
+
 void initsensorArray() {
 	
 	for (int i=0; i<NUMROW; i++){
 
 		sensorReadings[i] = 0.0;
+		//userInput[i] = 0.0;
+	}
+
+	/*userInput[0] = 2.0;*/
+
+}
+
+
+
+void ENQueueSensorReading(float k, int axis) {
+
+	sensorReadings[axis] = k;
+	
+	//if(axis > 0) {
+
+	//	userInput[axis] = k;
+
+	//}
+
+	//else {
+
+	//}
+
+
+}
+
+void AddTilt(float i, float j, float k) {
+
+	if (rollIndex < 500) {
+
+		rollSum += i;
+		pitchSum += j;
+		yawSum += k;
+
+		rollIndex += 1;
+
+	}
+
+	else {
+
+		rollBias = rollSum/rollIndex;
+		pitchBias = pitchSum/rollIndex;
+		yawBias = yawSum/rollIndex;
+
+		rollSum = 0;
+		pitchSum = 0;
+		yawSum = 0;
+
+		rollIndex = 0;
+
+		calibrateReadyTilt = true;
 
 	}
 
 }
 
-void ENQueueSensorReading(float k, int axis) {
 
-	sensorReadings[axis] = k;
-
-}
 
 //////////////////////////////////////////////////////
 

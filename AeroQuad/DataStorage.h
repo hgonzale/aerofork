@@ -170,7 +170,7 @@ void initializeEEPROM() {
     minThrottleAdjust = -50.0;
     maxThrottleAdjust = 50.0; //we don't want it to be able to take over totally
     #if defined AltitudeHoldBaro
-      baroSmoothFactor = 0.1;
+      baroSmoothFactor = 0.2;
     #endif
     altitudeHoldBump = 90;
     altitudeHoldPanicStickMovement = 250;

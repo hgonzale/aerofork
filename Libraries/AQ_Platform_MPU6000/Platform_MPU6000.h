@@ -144,7 +144,7 @@ union uMPU6000 {
 
 #else
 
-  #include <HardwareSPIExt.h>
+  #include <AQ_SPI\HardwareSPIExt.h>
   HardwareSPIExt spiMPU6000;
 
 #endif

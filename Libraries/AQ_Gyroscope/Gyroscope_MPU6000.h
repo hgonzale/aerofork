@@ -111,7 +111,7 @@ boolean calibrateGyro() {
 
   for (byte axis = 0; axis < 3; axis++) {
 
-    for (int i=0; i<FINDZERO; i++) {
+    for (int i=0; i<FINDZERO; i++) { //FINDZERO 49.
 
       readMPU6000Sensors();
 

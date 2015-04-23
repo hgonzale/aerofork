@@ -38,5 +38,8 @@ void measureAccel();
 void measureAccelSum();
 void evaluateMetersPerSec();
 void computeAccelBias();
+
+float mean_ax,mean_ay,mean_az=0.0;
+int state = 0;
   
 #endif

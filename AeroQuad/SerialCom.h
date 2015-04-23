@@ -544,10 +544,9 @@ void sendSerialTelemetry() {
     queryType = 'X';
     break;
 
-  case 'i': // Send sensor data	
+  case 'i': // Send sensor data
 
-	
-/*     for (byte axis = XAXIS; axis <= ZAXIS; axis++) {
+    for (byte axis = XAXIS; axis <= ZAXIS; axis++) {
 
       PrintValueComma(gyroRate[axis]);
 
@@ -558,9 +557,8 @@ void sendSerialTelemetry() {
       PrintValueComma(filteredAccel[axis]);
 
     }
-	
 
-    /*for (byte axis = XAXIS; axis <= ZAXIS; axis++) {
+    for (byte axis = XAXIS; axis <= ZAXIS; axis++) {
 
       #if defined(HeadingMagHold)
         PrintValueComma(getMagnetometerData(axis));
@@ -568,11 +566,10 @@ void sendSerialTelemetry() {
         PrintValueComma(0);
       #endif
 
-    }*/ 	
-	printSensors = true;
-	
-    //SERIAL_PRINTLN();
-  break;
+    }
+
+    SERIAL_PRINTLN();
+    break;
 
   case 'j': // Send raw mag values
     #ifdef HeadingMagHold

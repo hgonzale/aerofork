@@ -23,7 +23,7 @@
 		http://aeroquad.com/showwiki.php?title=Book:AeroQuad+Manual
  ****************************************************************************/
 
-//Server push test
+
 /****************************************************************************
  ************************* Hardware Configuration ***************************
  ****************************************************************************/
@@ -71,7 +71,7 @@
 // MOTOR ADVANCE CONFIG SECTION
 //#define CHANGE_YAW_DIRECTION	// only needed if you want to reverse the yaw correction direction
 
-//#define USE_400HZ_ESC			// For ESC that support 400Hz update rate, ESC OR PLATFORM MAY NOT SUPPORT IT
+#define USE_400HZ_ESC			// For ESC that support 400Hz update rate, ESC OR PLATFORM MAY NOT SUPPORT IT
 
 
 //
@@ -86,7 +86,7 @@
 //
 // *******************************************************************************************************************************
 // Optional Sensors
-// Warning:  If you enable HeadingMagHold or AltitudeHold and do not have the correct sensors connected, the flight software may hang
+// Warning:  If you enable HeadingMagHold or AltitudeHold and do not have the correct sensors connected, the flight software may hang.
 // For more information on how to activate theese features with your transmitter
 // Please refer to http://aeroquad.com/showwiki.php?title=Using+the+transmitters+sticks+and+switches+to+operate+your+AeroQuad
 // *******************************************************************************************************************************

@@ -68,7 +68,7 @@ void evaluateMetersPerSec() {
 void meansensors(){
 
   // read raw accel/gyro measurements from device
-	for (int i=0; i<1000; i++) {
+	for (int i=0; i<400; i++) {
 	
 		readMPU6000Sensors();
 		measureAccelSum();
@@ -76,9 +76,9 @@ void meansensors(){
 	
 	}
 	
-    mean_ax = ((float)accelSample[XAXIS]) / 1000.00;
-    mean_ay = ((float)accelSample[YAXIS]) / 1000.00;
-    mean_az = ((float)accelSample[ZAXIS]) / 1000.00;
+    mean_ax = ((float)accelSample[XAXIS]) / 400.00;
+    mean_ay = ((float)accelSample[YAXIS]) / 400.00;
+    mean_az = ((float)accelSample[ZAXIS]) / 400.00;
 	
 	accelSample[XAXIS] = 0;
 	accelSample[YAXIS] = 0;

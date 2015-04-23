@@ -18,6 +18,8 @@
   along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+// parts of this code were taken from AN520, an early version of fabio's library and the AQ BMP085 code
+
 #ifndef _AQ_BAROMETRIC_SENSOR_MS5611_
 #define _AQ_BAROMETRIC_SENSOR_MS5611_
 
@@ -29,7 +31,7 @@
 #include <ArdupilotSPIExt.h>
 ArdupilotSPIExt spiMS5611;
 
-//#define MS5611_CS 40
+#define MS5611_CS 40
 #define CMD_MS5611_RESET 0x1E
 #define CMD_MS5611_PROM_Setup 0xA0
 #define CMD_MS5611_PROM_C1 0xA2
@@ -65,6 +67,8 @@ boolean isReadPressure   = false;
 float rawPressureSum     = 0;
 byte rawPressureSumCount = 0;
 
+unsigned long startRead = 0;
+unsigned long endRead = 0;
 
 void requestRawTemperature() {
 
@@ -116,18 +120,18 @@ unsigned long baroStartTime;
 //initialize
 void initializeBaro() {
 
-  baroStartTime = micros();
-
-  pressure = 0;
-  baroGroundAltitude = 0;
+  pressure = 0.0;
+  baroGroundAltitude = 0.0;
   pressureFactor = 1/5.255;
-
+  
   spiMS5611.begin(SPI_CLOCK_DIV16, MSBFIRST, SPI_MODE3);
 
-  delay(1);
+  pinMode(MS5611_CS, OUTPUT);          // Chip select Pin
+  digitalWrite(MS5611_CS, HIGH);
+  delay(20);
 
   spiMS5611.spi_write(CMD_MS5611_RESET);
-  delay(4);
+  delay(20);
 
   byte val = spiMS5611.spi_read(CMD_MS5611_PROM_Setup);
 
@@ -137,7 +141,7 @@ void initializeBaro() {
 
   }
 
-  delay(4);
+  delay(20);
 
   //conversion factors
   C1 = spiMS5611.spi_read_16bits(CMD_MS5611_PROM_C1);
@@ -158,17 +162,18 @@ void initializeBaro() {
   pressureCount = 0;
   delay(10);
 
-  measureBaroSum(); // read temperature
+  baroStartTime = micros();
+
+  measureBaroSum(); // first read temperature
   delay(10);
 
-  measureBaro(); // read pressure
+  measureBaroSum(); // read pressure
   delay(10);
-
-  measureGroundBaro();
-  measureGroundBaro();
-
-  baroAltitude = baroGroundAltitude;
-
+	
+  //measureGroundBaro();
+  
+  //baroAltitude = baroGroundAltitude;
+  
 }
 
 //
@@ -210,7 +215,9 @@ void measureBaroSum() {
   else { // select must equal TEMPERATURE
 
     readRawTemperature();
+
     requestRawPressure();
+
     isReadPressure = true;
 
   }
@@ -226,18 +233,18 @@ bool MS5611_first_read = true;
 
 //return altitude
 void evaluateBaroAltitude() {
+	  
+  if (rawPressureSumCount > 0) { // it may occur at init time that no pressure has been read yet!
 
-  if (rawPressureSumCount == 0) { // it may occur at init time that no pressure has been read yet!
-
-    return;
+    pressure = ((float)rawPressureSum)/ rawPressureSumCount;
 
   }
 
-  pressure = rawPressureSum / rawPressureSumCount;
-
-  baroRawAltitude = 44330 * (1 - pow(pressure/101325.0, pressureFactor)); // returns absolute baroAltitude in meters
+  baroRawAltitude = 44330.0 * (1 - pow(pressure/101325.0, pressureFactor)); // returns absolute baroAltitude in meters
   // use calculation below in case you need a smaller binary file for CPUs having just 32KB flash ROM
-  // baroRawAltitude = (101325.0-pressure)/4096*346;
+  //baroRawAltitude = (101325.0-pressure)/4096*346;
+  
+  startRead = micros();
 
   if(MS5611_first_read) {
 
@@ -248,22 +255,14 @@ void evaluateBaroAltitude() {
 
   else {
 
-    baroAltitude = filterSmooth(baroRawAltitude, baroAltitude, baroSmoothFactor);
-
+	baroAltitude = filterSmoothWithTime(baroRawAltitude, baroAltitude, baroSmoothFactor, ((startRead - endRead)/100000.0)); //100 ms per altitude read
+	
   }
-
+	
   rawPressureSum = 0.0;
   rawPressureSumCount = 0;
-
-  // set ground altitude after a delay, so sensor has time to heat up
-  const unsigned long updateDelayInSeconds = 10;
-
-  if(!baroGroundUpdateDone && (micros()-baroStartTime) > updateDelayInSeconds*1000000) {
-
-	  baroGroundAltitude = baroAltitude;
-	  baroGroundUpdateDone = true;
-
-  }
+	
+  endRead = startRead;
 
 }
 //

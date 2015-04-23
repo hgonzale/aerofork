@@ -26,9 +26,9 @@
 #include <SensorsStatus.h>
 
 #include "Arduino.h"
-
 #include <Wire.h>             // Arduino IDE bug, needed because that the ITG3200 use Wire!
-#include <Device_I2C.h>      // Arduino IDE bug, needed because that the ITG3200 use Wire!
+#include <Device_I2C.h>       // Arduino IDE bug, needed because that the ITG3200 use Wire!
+
 
 #include <GlobalDefined.h>
 #include <AQMath.h>
