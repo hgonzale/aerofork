@@ -24,9 +24,6 @@
 #ifndef _AQ_FLIGHT_COMMAND_READER_
 #define _AQ_FLIGHT_COMMAND_READER_
 
-
-
-
 #if defined (AltitudeHoldBaro) || defined (AltitudeHoldRangeFinder)
   boolean isPositionHoldEnabledByUser() {
     #if defined (UseGPSNavigator)

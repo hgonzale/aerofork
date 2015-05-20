@@ -108,6 +108,9 @@ void initializeMotors(NB_Motors numbers) {
       TCCR4B = (1<<WGM43)|(1<<WGM42)|(1<<CS41);
       ICR4 = PWM_COUNTER_PERIOD;
     }
+    
+    
+    
     else if ((numberOfMotors == SIX_Motors) || (numberOfMotors == EIGHT_Motors)) {  // for 8 motors
       // Init PWM Timer 4
       TCCR4A = (1<<WGM41)|(1<<COM4A1)|(1<<COM4B1)|(1<<COM4C1);

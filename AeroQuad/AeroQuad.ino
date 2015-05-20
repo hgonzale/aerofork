@@ -27,10 +27,18 @@
 *****************************************************************************/
 
 
-//Interrupt test variables
+//Interrupt test variables and functions
  volatile boolean togglePin = true;
  volatile int myFlag = 0;
-//Interrupt test variables
+ volatile int dummyCommand[8] = {0,0,0,0,0,0,0,0};
+ 
+ void writeDumbCommand() {
+   OCR3B = dummyCommand[2] * 2;
+   OCR3C = dummyCommand[1] * 2;
+   OCR3A = dummyCommand[0] * 2 + 1;
+   OCR4A = dummyCommand[3] * 2;
+ }
+
 
 
 
@@ -457,15 +465,15 @@ void setup() {
 
     cli(); //disable global interrupts for setup function
 
-    TCCR1A = 0; // initialize TCRR1A register to 0
-    TCCR1B = 0; // same for TCCR1B register
-    TCNT1 = 0; // initialize counter value to 0 (for Timer 1)
+    TCCR5A = 0; // initialize TCRR1A register to 0
+    TCCR5B = 0; // same for TCCR1B register
+    TCNT5 = 0; // initialize counter value to 0 (for Timer 1)
     
     //set compare match register for 100hz increments
-    OCR1A = 3124; // run compare match for 20hz task
-    TCCR1B |= (1 << WGM12); // turn on Clear Timer on Compare Match (CTC) mode
-    TCCR1B |= (1 << CS12); // enable 256 pre-scaler
-    TIMSK1 |= (1 << OCIE1A);
+    OCR5A = 3124; // run compare match for 20hz task
+    TCCR5B |= (1 << WGM12); // Enable CTC interrupt
+    TCCR5B |= (1 << CS12); // enable 256 pre-scaler
+    TIMSK5 |= (1 << OCIE1A);
     
     sei(); // re-enable global interrupts
 
@@ -590,12 +598,10 @@ void setup() {
   safetyCheck = 0;
 }
 
-// 20Hz interrupt task for Timer 1
-ISR(TIMER1_COMPA_vect) {
-    if (togglePin) {
-      myFlag++;
-    }
-    togglePin = !togglePin;
+// 20Hz interrupt task for Timer 5
+ISR(TIMER5_COMPA_vect) {
+    writeDumbCommand(); //send current motor commands to motors
+    myFlag++;
 }
 
 
@@ -708,7 +714,7 @@ void process100HzTask() {
  * 50Hz task
  ******************************************************************/
 void process50HzTask() {
-
+  
 	if (beginControl == true) {
 		
 /* 		if (firstRead == true) {
@@ -921,7 +927,7 @@ void loop () {
 	deltaTime = currentTime - previousTime;
 
 	measureCriticalSensors();
-	
+
 	/*if (countStop > 5) {
 	
 		//beginControl = false;
@@ -944,8 +950,7 @@ void loop () {
     // ================================================================
 
     if (frameCounter % TASK_50HZ == 0) {  //  50 Hz tasks
-      SERIAL_PRINT(myFlag);
-      SERIAL_PRINT('\n');
+
       process50HzTask();
 
     }
@@ -975,7 +980,13 @@ void loop () {
     // 1Hz task loop
     // ================================================================
     if (frameCounter % TASK_2HZ == 0) {  //   2 Hz tasks
-		
+                 //interrupt debugging code starts here...
+		 // Dummy motorCommand[] incrementer (used for testing purposes)
+                dummyCommand[0] = dummyCommand[0] + 1;
+                someTediousFunction();
+                // ... and ends here. 
+                
+                
 		if (beginControl == true) {
 		
 			process2HzTask();
@@ -999,8 +1010,19 @@ void loop () {
       frameCounter = 0;
 
 	}
-
 }
+
+// Function to simulate a long, tedious calculation.
+ void someTediousFunction() {
+  SERIAL_PRINT("I'm starting...");
+  SERIAL_PRINT(OCR3A);
+  delay(1000); // the interrupt will change the value in register OCR3A during the delay
+  SERIAL_PRINT('\n');
+  SERIAL_PRINT(OCR3A);
+  SERIAL_PRINT("...and I'm done");
+  SERIAL_PRINT('\n');
+  
+ }
 
 
 

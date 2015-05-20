@@ -107,26 +107,28 @@ void writeMotors() {
   analogWrite(MOTORPIN0, motorCommand[MOTOR1] / 8);
   analogWrite(MOTORPIN1, motorCommand[MOTOR2] / 8);
   analogWrite(MOTORPIN2, motorCommand[MOTOR3] / 8);
-  analogWrite(MOTORPIN3, motorCommand[MOTOR4] / 8); 
-  if (numberOfMotors == SIX_Motors) {
-	#if defined (__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
-	  analogWrite(MOTORPIN4, motorCommand[MOTOR5] / 8);
-      analogWrite(MOTORPIN5, motorCommand[MOTOR6] / 8);
-	#else
-	  atomicPWM_PIN5_highState = motorCommand[MOTOR6]/8;
-      atomicPWM_PIN5_lowState = 255-atomicPWM_PIN5_highState;
-      atomicPWM_PIN6_highState = motorCommand[MOTOR5]/8;
-      atomicPWM_PIN6_lowState = 255-atomicPWM_PIN6_highState;
-    #endif
-  }
-  #if defined (__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
-    else if (numberOfMotors == EIGHT_Motors) {
-      analogWrite(MOTORPIN4, motorCommand[MOTOR5] / 8);
-      analogWrite(MOTORPIN5, motorCommand[MOTOR6] / 8);
-      analogWrite(MOTORPIN6, motorCommand[MOTOR7] / 8);
-      analogWrite(MOTORPIN7, motorCommand[MOTOR8] / 8);
-    }
-  #endif
+  analogWrite(MOTORPIN3, motorCommand[MOTOR4] / 8);
+    
+    
+//  if (numberOfMotors == SIX_Motors) {
+//	#if defined (__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+//	  analogWrite(MOTORPIN4, motorCommand[MOTOR5] / 8);
+//      analogWrite(MOTORPIN5, motorCommand[MOTOR6] / 8);
+//	#else
+//	  atomicPWM_PIN5_highState = motorCommand[MOTOR6]/8;
+//      atomicPWM_PIN5_lowState = 255-atomicPWM_PIN5_highState;
+//      atomicPWM_PIN6_highState = motorCommand[MOTOR5]/8;
+//      atomicPWM_PIN6_lowState = 255-atomicPWM_PIN6_highState;
+//    #endif
+//  }
+//  #if defined (__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+//    else if (numberOfMotors == EIGHT_Motors) {
+//      analogWrite(MOTORPIN4, motorCommand[MOTOR5] / 8);
+//      analogWrite(MOTORPIN5, motorCommand[MOTOR6] / 8);
+//      analogWrite(MOTORPIN6, motorCommand[MOTOR7] / 8);
+//      analogWrite(MOTORPIN7, motorCommand[MOTOR8] / 8);
+//    }
+//  #endif
 }
 
 void commandAllMotors(int command) {
@@ -134,27 +136,29 @@ void commandAllMotors(int command) {
   analogWrite(MOTORPIN1, command / 8);
   analogWrite(MOTORPIN2, command / 8);
   analogWrite(MOTORPIN3, command / 8);
-  if (numberOfMotors == SIX_Motors) {
-	#if defined (__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
-	  analogWrite(MOTORPIN4, command / 8);
-      analogWrite(MOTORPIN5, command / 8);
-	#else
-	  atomicPWM_PIN5_highState = command/8;
-      atomicPWM_PIN5_lowState = 255-atomicPWM_PIN5_highState;
-      atomicPWM_PIN6_highState = command/8;
-      atomicPWM_PIN6_lowState = 255-atomicPWM_PIN6_highState;
-    #endif
-	  
-  }
-  #if defined (__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
-    else if (numberOfMotors == EIGHT_Motors) {
-      analogWrite(MOTORPIN4, command / 8);
-      analogWrite(MOTORPIN5, command / 8);
-      analogWrite(MOTORPIN6, command / 8);
-      analogWrite(MOTORPIN7, command / 8);
-    }
-  #endif
-}  
+    
+    
+//  if (numberOfMotors == SIX_Motors) {
+//	#if defined (__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+//	  analogWrite(MOTORPIN4, command / 8);
+//      analogWrite(MOTORPIN5, command / 8);
+//	#else
+//	  atomicPWM_PIN5_highState = command/8;
+//      atomicPWM_PIN5_lowState = 255-atomicPWM_PIN5_highState;
+//      atomicPWM_PIN6_highState = command/8;
+//      atomicPWM_PIN6_lowState = 255-atomicPWM_PIN6_highState;
+//    #endif
+//	  
+//  }
+//  #if defined (__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+//    else if (numberOfMotors == EIGHT_Motors) {
+//      analogWrite(MOTORPIN4, command / 8);
+//      analogWrite(MOTORPIN5, command / 8);
+//      analogWrite(MOTORPIN6, command / 8);
+//      analogWrite(MOTORPIN7, command / 8);
+//    }
+//  #endif
+}
 
 
 #endif
