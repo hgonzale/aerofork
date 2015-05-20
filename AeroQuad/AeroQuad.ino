@@ -26,6 +26,14 @@
    or talk to us live on IRC #aeroquad
 *****************************************************************************/
 
+
+//Interrupt test variables
+ volatile boolean togglePin = true;
+ volatile int myFlag = 0;
+//Interrupt test variables
+
+
+
 #include "UserConfiguration.h" // Edit this file first before uploading to the AeroQuad
 
 //
@@ -447,6 +455,20 @@ ModemStatusResponse msr = ModemStatusResponse(); */
  ******************************************************************/
 void setup() {
 
+    cli(); //disable global interrupts for setup function
+
+    TCCR1A = 0; // initialize TCRR1A register to 0
+    TCCR1B = 0; // same for TCCR1B register
+    TCNT1 = 0; // initialize counter value to 0 (for Timer 1)
+    
+    //set compare match register for 100hz increments
+    OCR1A = 3124; // run compare match for 20hz task
+    TCCR1B |= (1 << WGM12); // turn on Clear Timer on Compare Match (CTC) mode
+    TCCR1B |= (1 << CS12); // enable 256 pre-scaler
+    TIMSK1 |= (1 << OCIE1A);
+    
+    sei(); // re-enable global interrupts
+
   SERIAL_BEGIN(BAUD);
   pinMode(LED_Green, OUTPUT);
   digitalWrite(LED_Green, LOW);
@@ -566,8 +588,14 @@ void setup() {
   previousTime = micros();
   digitalWrite(LED_Green, HIGH);
   safetyCheck = 0;
+}
 
-
+// 20Hz interrupt task for Timer 1
+ISR(TIMER1_COMPA_vect) {
+    if (togglePin) {
+      myFlag++;
+    }
+    togglePin = !togglePin;
 }
 
 
@@ -858,7 +886,7 @@ void process2HzTask() {
  * 1Hz task 
  ******************************************************************/
 void process1HzTask() {
-
+  
   /*#ifdef MavLink
     G_Dt = (currentTime - oneHZpreviousTime) / 1000000.0;
     oneHZpreviousTime = currentTime;
@@ -889,7 +917,6 @@ void process1HzTask() {
  * Main loop funtions
  ******************************************************************/
 void loop () {
-
 	currentTime = micros();
 	deltaTime = currentTime - previousTime;
 
@@ -917,7 +944,8 @@ void loop () {
     // ================================================================
 
     if (frameCounter % TASK_50HZ == 0) {  //  50 Hz tasks
-
+      SERIAL_PRINT(myFlag);
+      SERIAL_PRINT('\n');
       process50HzTask();
 
     }
@@ -926,7 +954,7 @@ void loop () {
     // 10Hz task loop
     // ================================================================
     if (frameCounter % TASK_10HZ == 0) {  //   10 Hz tasks
-
+ 
       process10HzTask1();
 
     }
