@@ -36,13 +36,6 @@ float yk[4] = {0.0, 0.0, 0.0, 0.0};
 
 void PIDControl(float w[4], float states[4], float delta) {
 
-	/*int len = (sizeof(w)/sizeof(w[0]));
-
-    if (len != 4) {
-
-        Serial.println("Error: you do not have the correct number of inputs");
-    }*/
-
     //form the error signal:
         
     for (int i=0; i<4; i++) {
@@ -82,8 +75,9 @@ void PIDControl(float w[4], float states[4], float delta) {
     yk[1] = .25*uk[0] +.5*uk[1] - .25*uk[3];
     yk[2] = .25*uk[0] +.5*uk[2] + .25*uk[3];
     yk[3] = .25*uk[0] -.5*uk[1] - .25*uk[3];
+    
 	//output control signals.
-/*     yk[0] = constrain(yk[0], 0.0, 200.0);
+/*  yk[0] = constrain(yk[0], 0.0, 200.0);
     yk[1] = constrain(yk[1], 0.0, 200.0);
     yk[2] = constrain(yk[2], 0.0, 200.0);
     yk[3] = constrain(yk[3], 0.0, 200.0); */

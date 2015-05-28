@@ -465,12 +465,16 @@ void setup() {
 
     cli(); //disable global interrupts for setup function
 
-    TCCR5A = 0; // initialize TCRR1A register to 0
-    TCCR5B = 0; // same for TCCR1B register
-    TCNT5 = 0; // initialize counter value to 0 (for Timer 1)
+    TCCR5A = 0; // initialize TCRR5A register to 0
+    TCCR5B = 0; // same for TCCR5B register
+    TCNT5 = 0; // initialize counter value to 0 (for Timer 5)
     
-    //set compare match register for 100hz increments
-    OCR5A = 3124; // run compare match for 20hz task
+
+    /* Pre-Scale values for OCR5A register
+     1249 --> 50Hz
+     3124 --> 20Hz
+     */
+    OCR5A = 1249;
     TCCR5B |= (1 << WGM12); // Enable CTC interrupt
     TCCR5B |= (1 << CS12); // enable 256 pre-scaler
     TIMSK5 |= (1 << OCIE1A);
@@ -600,8 +604,11 @@ void setup() {
 
 // 20Hz interrupt task for Timer 5
 ISR(TIMER5_COMPA_vect) {
-    writeDumbCommand(); //send current motor commands to motors
-    myFlag++;
+    writeMotors();
+
+//    Used for ISR debugging
+//    writeDumbCommand(); //send current "motor commands" to motors
+//    myFlag++;
 }
 
 
@@ -884,6 +891,26 @@ void process2HzTask() {
 		}
 		
 	} */
+    
+    // Serial heartbeat code
+    if (beginControl == true) {
+        
+        if (resetEmergencyStop == true) {
+            
+            countStop = 0;
+            
+        }
+        
+        else {
+            
+            countStop++;
+            
+        }
+        
+        resetEmergencyStop = false;
+        
+    }
+
 }
 
 
@@ -928,12 +955,12 @@ void loop () {
 
 	measureCriticalSensors();
 
-	/*if (countStop > 5) {
+	if (countStop > 5) {
 	
-		//beginControl = false;
+		beginControl = false;
 		calibrateESC = 2;
 	
-	}*/ 
+	}
 	//Need new emergency stop procedure.
 
   // ================================================================
@@ -980,11 +1007,11 @@ void loop () {
     // 1Hz task loop
     // ================================================================
     if (frameCounter % TASK_2HZ == 0) {  //   2 Hz tasks
-                 //interrupt debugging code starts here...
-		 // Dummy motorCommand[] incrementer (used for testing purposes)
+        
+                // Used for ISR debugging
                 dummyCommand[0] = dummyCommand[0] + 1;
                 someTediousFunction();
-                // ... and ends here. 
+
                 
                 
 		if (beginControl == true) {
@@ -1013,6 +1040,7 @@ void loop () {
 }
 
 // Function to simulate a long, tedious calculation.
+// Used for ISR debugging
  void someTediousFunction() {
   SERIAL_PRINT("I'm starting...");
   SERIAL_PRINT(OCR3A);

@@ -58,6 +58,22 @@ bool validateCalibrateCommand(byte command) {
 
 }
 
+bool validateSerialStatus() {
+    
+    if (readFloatSerial() == 78.9) {
+        
+        return true;
+        
+    }
+    
+    else {
+        
+        return false;
+        
+    }
+    
+}
+
 /* bool validateUserInput() {
 
   if (readFloatSerial() == 1) {// use a specific float value to validate full throttle call is being sent
@@ -388,6 +404,9 @@ void readSerialCommand() {
         fastTransfer = OFF;
       break;
     }
+      
+      resetEmergencyStop = validateSerialStatus(); //Checks for float serial verification message '78.9' for xBee connection status.
+
   }
 }
 

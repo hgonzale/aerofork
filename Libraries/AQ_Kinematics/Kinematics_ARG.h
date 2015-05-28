@@ -61,12 +61,67 @@ float previousEx = 0.0;
 float previousEy = 0.0;
 float previousEz = 0.0;
 
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Defining variables for KF
+////////////////////////////////////////////////////////////////////////////////
+
+// 4x4 identity matrix -- Acts as Ak matrix for the KF
+const int[16] idMat = {1,0,0,0,
+    0,1,0,0,
+    0,0,1,0,
+    0,0,0,1};
+
+// 4x4 sensor noise covariance matrix
+const float[16] Rk = {0.1,0,0,0,
+    0,0.1,0,0,
+    0,0,0.1,0,
+    0,0,0,0.1};
+
+//  4x4 error covariance matrix (arbitrarily large diagonal)
+float[16] Qkmin = {100000000000,0,0,0,
+    0,10000000000,0,0,
+    0,0,10000000000,0,
+    0,0,0,10000000000};
+
+// 4x1 a priori estimate of quaternion.
+float [4] qkmin = {q0,q1,q2,q3};
+
+// 4x1, arrange euler to measurement matrix
+float[4] zk;
+
+// Uninitialized 4x4 roll rate matrix
+float [16] Ok;
+
+// 4x4 transition matrix, transpose
+float[16] Tk;
+float[16] tk_trans;
+
+// 4x4 Kalman gain
+float[16] Kk;
+
+// 4x1 estimate correction
+float[4] qk;
+
+// 4x4 holding matrices for multi-step KF calculations
+float[16] A,B,C,D;
+
+// 4x1 holding vectors for multi-step KF calculations
+float[4] a,b;
+
+// model noise, currently unused
+//    int Wk = 0;
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // argUpdate
 ////////////////////////////////////////////////////////////////////////////////
 void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float G_Dt) {
   
-  float norm;
+  float norm,vnorm;
   float vx, vy, vz;
   float q0i, q1i, q2i, q3i;
   float ex, ey, ez;
@@ -107,28 +162,77 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
     ezInt = 0.0;
   }
   previousEz = ez;
-	
+
   // adjusted gyroscope measurements
   gx = gx + Kp*ex + exInt;
   gy = gy + Kp*ey + eyInt;
   gz = gz + Kp*ez + ezInt;
     
-  // integrate quaternion rate and normalise
-  q0i = (-q1*gx - q2*gy - q3*gz) * halfT;
-  q1i = ( q0*gx + q2*gz - q3*gy) * halfT;
-  q2i = ( q0*gy - q1*gz + q3*gx) * halfT;
-  q3i = ( q0*gz + q1*gy - q2*gx) * halfT;
-  q0 += q0i;
-  q1 += q1i;
-  q2 += q2i;
-  q3 += q3i;
+    // integrate quaternion rate and normalise
+    q0i = (-q1*gx - q2*gy - q3*gz) * halfT;
+    q1i = ( q0*gx + q2*gz - q3*gy) * halfT;
+    q2i = ( q0*gy - q1*gz + q3*gx) * halfT;
+    q3i = ( q0*gz + q1*gy - q2*gx) * halfT;
+    q0 += q0i;
+    q1 += q1i;
+    q2 += q2i;
+    q3 += q3i;
     
-  // normalise quaternion
-  norm = sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3);
-  q0 = q0 / norm;
-  q1 = q1 / norm;
-  q2 = q2 / norm;
-  q3 = q3 / norm;
+    // normalise quaternion
+    norm = sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3);
+    q0 = q0 / norm;
+    q1 = q1 / norm;
+    q2 = q2 / norm;
+    q3 = q3 / norm;
+    
+    // measurement vector
+    zk = {q0,q1,q2,q3};
+    
+    // roll rate matrix
+    Ok = {0,-gx,-gy,-gz,
+        gx,0,gz,-gy,
+        gy,-gz,0,gx,
+        gz,gy,-gx,0};
+    
+    ///////////////////////////////////////
+    /* Iteration of Kalman filter update */
+    ///////////////////////////////////////
+    
+    matrixScale(4,4,Tk,halfT,Ok); // do Tk = halfT * Ok
+    matrixAdd(4,4,4,Tk,idMat,Tk); // do Tk = I + TK
+    
+    
+    matrixAdd(4,4,A,Qkmin,Rk); // do A = Qkmin + Rk
+    matrixInverse4x4(B,A); // do B = inv(A)
+    matrixMultiply(4,4,4,Kk,Qkmin,B); // do Kk = Qkmin * B
+    
+    
+    vectorSubtract(4,a,zk,qkmin); // do a = zk - qkmin
+    matrixMultiply(4,4,1,b,Kk,a); // do b = Kk * a
+    vectorAdd(4,qk,qkmin,b); // do qk = qkmin + b
+    
+    
+    matrixSubtract(4,4,C,idMat,Kk); // do C = I - Kk
+    matrixMultiply(4,4,4,Qk,C,Qkmin); // do Qk = C * Qkmin
+    
+    
+    matrixMultiply(4,4,1,qkmin,Tk,qk); // do qkmin = Tk * qk
+    
+    
+    matrixMultiply(4,4,4,D,Tk,Qk); // do D = Tk * Qk
+    matrixTranspose4x4(Tk_trans,Tk); // do Tk_trans = transpose(Tk)
+    matrixMultiply(4,4,4,Qkmin,D,Tk_trans); // to Qkmin = D * Tk_trans
+    // NOTE: to incorporate model noise, add Wk to the Qkmin term here
+    
+   
+    vnorm = sqrt(qkmin[0]*qkmin[0] + qkmin[1]*qkmin[1] + qkmin[2]*qkmin[2] + qkmin[3]*qkmin[3]);
+    qkmin[0] = qkmin[0] / vnorm;
+    qkmin[1] = qkmin[1] / vnorm;
+    qkmin[2] = qkmin[2] / vnorm;
+    qkmin[3] = qkmin[3] / vnorm;
+    // end of Kalman Filter section
+ 
+
 }
   
 void eulerAngles()
