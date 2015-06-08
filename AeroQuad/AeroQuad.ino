@@ -1,3 +1,4 @@
+
 /*
   AeroQuad v3.0.1 - February 2012
   www.AeroQuad.com
@@ -76,20 +77,10 @@
 #include "PID.h"
 #include <AQMath.h>
 #include <FourtOrderFilter.h>
-//#include <XBee/XBee.h>
-
 
 #ifdef BattMonitor
   #include <BatteryMonitorTypes.h>
 #endif
-
-//XBee library objects.
-/* XBee xbee = XBee();
-XBeeResponse response = XBeeResponse();
-// create reusable response objects for responses we expect to handle 
-ZBRxResponse rx = ZBRxResponse();
-ModemStatusResponse msr = ModemStatusResponse(); */
-//XBee library objects.
 
 //********************************************************
 //********************************************************
@@ -106,6 +97,7 @@ ModemStatusResponse msr = ModemStatusResponse(); */
   #define HeadingMagHold //uncomment to remove magnetometer
   #include <APM_ADC.h>
   #include <APM_RC.h>
+//  #include <ArdupilotSPIExt.h>
   #include <APM_MPU6000.h>
   #include <controlLoop.h>
 
@@ -153,9 +145,7 @@ ModemStatusResponse msr = ModemStatusResponse(); */
   #undef OSD
 
   #ifndef UseGPS
-
     #undef UseGPSNavigator
-
   #endif
 
   
@@ -186,9 +176,6 @@ ModemStatusResponse msr = ModemStatusResponse(); */
   
   // called when eeprom is initialized
   void initializePlatformSpecificAccelCalibration() {
-
-    // Accel Cal
-	//-0.143264,42.472400,-0.092744,8.995472,-0.001165,-1.469050
 
     accelScaleFactor[XAXIS] = 1.0;
     runTimeAccelBias[XAXIS] = 0.0;
@@ -227,10 +214,6 @@ ModemStatusResponse msr = ModemStatusResponse(); */
 //********************************************************
 //********************************************************
 
-#ifdef AeroQuadSTM32
-  #include "AeroQuad_STM32.h"
-#endif
-
 // default to 10bit ADC (AVR)
 #ifndef ADC_NUMBER_OF_BITS
 #define ADC_NUMBER_OF_BITS 10
@@ -240,11 +223,8 @@ ModemStatusResponse msr = ModemStatusResponse(); */
 //****************** KINEMATICS DECLARATION **************
 //********************************************************
 #include "Kinematics.h"
-#if defined(AeroQuadMega_CHR6DM) || defined(APM_OP_CHR6DM)
-  // CHR6DM have it's own kinematics, so, initialize in it's scope
-#else
-  #include "Kinematics_ARG.h"
-#endif
+#include "Kinematics_ARG.h"
+
 
 //********************************************************
 //******************** RECEIVER DECLARATION **************
@@ -284,14 +264,8 @@ ModemStatusResponse msr = ModemStatusResponse(); */
 //********************************************************
 //********************** MOTORS DECLARATION **************
 //********************************************************
-#if defined(triConfig)
-  #if defined (MOTOR_STM32)
-    #define MOTORS_STM32_TRI
-    #include <Motors_STM32.h>    
-  #else
-    #include <Motors_Tri.h>
-  #endif
-#elif defined(MOTOR_PWM)
+
+#if defined(MOTOR_PWM)
   #include <Motors_PWM.h>
 #elif defined(MOTOR_PWM_Timer)
   #include <Motors_PWM_Timer.h>
@@ -314,7 +288,6 @@ ModemStatusResponse msr = ModemStatusResponse(); */
   #include <HeadingFusionProcessorMARG.h>
   #include <Magnetometer_HMC5883L.h>
 
-#elif defined(COMPASS_CHR6DM)
 #endif
 
 //********************************************************
@@ -342,15 +315,15 @@ ModemStatusResponse msr = ModemStatusResponse(); */
 //************** CAMERA CONTROL DECLARATION **************
 //********************************************************
 // used only on mega for now
-#if defined(CameraControl_STM32)
-  #include <CameraStabilizer_STM32.h>
-#elif defined(CameraControl)
-  #include <CameraStabilizer_Aeroquad.h>
-#endif
-
-#if defined (CameraTXControl)
-  #include <CameraStabilizer_TXControl.h>
-#endif
+//#if defined(CameraControl_STM32)
+//  #include <CameraStabilizer_STM32.h>
+//#elif defined(CameraControl)
+//  #include <CameraStabilizer_Aeroquad.h>
+//#endif
+//
+//#if defined (CameraTXControl)
+//  #include <CameraStabilizer_TXControl.h>
+//#endif
 
 //********************************************************
 //******** FLIGHT CONFIGURATION DECLARATION **************
@@ -359,22 +332,6 @@ ModemStatusResponse msr = ModemStatusResponse(); */
   #include "FlightControlQuadX.h"
 #elif defined(quadPlusConfig)
   #include "FlightControlQuadPlus.h"
-#elif defined(hexPlusConfig)
-  #include "FlightControlHexPlus.h"
-#elif defined(hexXConfig)
-  #include "FlightControlHexX.h"
-#elif defined(triConfig)
-  #include "FlightControlTri.h"
-#elif defined(quadY4Config)
-  #include "FlightControlQuadY4.h"
-#elif defined(hexY6Config)
-  #include "FlightControlHexY6.h"
-#elif defined(octoX8Config)
-  #include "FlightControlOctoX8.h"
-#elif defined(octoXConfig)
-  #include "FlightControlOctoX.h"
-#elif defined(octoPlusConfig)
-  #include "FlightControlOctoPlus.h"
 #endif
 
 //********************************************************
@@ -386,26 +343,6 @@ ModemStatusResponse msr = ModemStatusResponse(); */
   #endif 
   #include <GpsAdapter.h>
   #include "GpsNavigator.h"
-#endif
-
-//********************************************************
-//****************** OSD DEVICE DECLARATION **************
-//********************************************************
-#ifdef MAX7456_OSD     // only OSD supported for now is the MAX7456
-  #include <Device_SPI.h>
-  #include "OSDDisplayController.h"
-  #include "MAX7456.h"
-#endif
-
-#if defined(SERIAL_LCD)
-  #include "SerialLCD.h"
-#endif
-
-#ifdef OSD_SYSTEM_MENU
-  #if !defined(MAX7456_OSD) && !defined(SERIAL_LCD)
-    #error "Menu cannot be used without OSD or LCD"
-  #endif
-  #include "OSDMenu.h"
 #endif
 
 
@@ -470,7 +407,7 @@ void setup() {
     TCNT5 = 0; // initialize counter value to 0 (for Timer 5)
     
 
-    /* Pre-Scale values for OCR5A register
+    /* Pre-Scale values for OCR5A register:
      1249 --> 50Hz
      3124 --> 20Hz
      */
@@ -500,13 +437,7 @@ void setup() {
   
   initPlatform();
   
-  #if defined(quadXConfig) || defined(quadPlusConfig) || defined(quadY4Config) || defined(triConfig)
-     initializeMotors(FOUR_Motors);
-  #elif defined(hexPlusConfig) || defined(hexXConfig) || defined(hexY6Config)
-     initializeMotors(SIX_Motors);
-  #elif defined(octoX8Config) || defined(octoXConfig) || defined(octoPlusConfig)
-     initializeMotors(EIGHT_Motors);
-  #endif
+  initializeMotors(FOUR_Motors);
 
   initializeReceiver(LASTCHANNEL);
   initReceiverFromEEPROM();
@@ -564,17 +495,7 @@ void setup() {
     initializeBatteryMonitor(sizeof(batteryData) / sizeof(struct BatteryData), batteryMonitorAlarmVoltage);
     vehicleState |= BATTMONITOR_ENABLED;
   #endif
-  
-  #if defined(CameraControl)
-    initializeCameraStabilization();
-    vehicleState |= CAMERASTABLE_ENABLED;
-  #endif
 
-  #if defined(MAX7456_OSD)
-    initializeSPI();
-    initializeOSD();
-  #endif
-  
   #if defined(SERIAL_LCD)
     InitSerialLCD();
   #endif
@@ -602,7 +523,7 @@ void setup() {
   safetyCheck = 0;
 }
 
-// 20Hz interrupt task for Timer 5
+// 50Hz interrupt task for Timer 5
 ISR(TIMER5_COMPA_vect) {
     writeMotors();
 
@@ -610,6 +531,34 @@ ISR(TIMER5_COMPA_vect) {
 //    writeDumbCommand(); //send current "motor commands" to motors
 //    myFlag++;
 }
+
+
+/*
+ Quick implementation of closed PID loop for flight control
+ */
+//float[4] positionRef = {3.0,0.0,0.0,0.0};
+//float[4] positionReal = {0.0,0.0,0.0,0.0};
+//
+//void processFlightControl_alt() {
+//    updateState();
+//    PIDControl(positionRef, positionReal, G_Dt);
+//    applyMotorCommand();
+//    
+//}
+//
+//void updateState() {
+//    positionReal[0] = getBaroAltitude();
+//    positionReal[1] = kinematicsAngles[0];
+//    positionReal[2] = kinematicsAngles[1];
+//    positionReal[3] = kinematicsAngles[2];
+//}
+//
+//void applyMotorCommand () {
+//    motorCommand[FRONT] = yk[0];
+//    motorCommand[REAR] = yk[1];
+//    motorCommand[RIGHT] = yk]2];
+//    motorCommand[LEFT] = yk[3];
+//}
 
 
 /*******************************************************************
@@ -632,24 +581,15 @@ void process100HzTask() {
     
   calculateKinematics(gyroRate[XAXIS], gyroRate[YAXIS], gyroRate[ZAXIS], filteredAccel[XAXIS], filteredAccel[YAXIS], filteredAccel[ZAXIS], G_Dt);
 
-  
-
 	if (calibrateReadyTilt == true) {
-
 		ENQueueSensorReading(kinematicsAngle[0] - rollBias, 1);
 		ENQueueSensorReading(kinematicsAngle[1] - pitchBias, 2);
 		ENQueueSensorReading(kinematicsAngle[2] - yawBias, 3);
-
 	}
-
 	else {
-	
-		if (startCalibrate == true) {
-
+        if (startCalibrate == true) {
 			AddTilt(kinematicsAngle[0],kinematicsAngle[1],kinematicsAngle[2]);
-		
 		}
-
 	}
 
   
@@ -670,15 +610,11 @@ void process100HzTask() {
   #endif    
 
   #if defined(AltitudeHoldBaro)
-	
-  if (startBaroMeasure == true) { 
-  
+
+  if (startBaroMeasure == true) {
 	if (frameCounter % THROTTLE_ADJUST_TASK_SPEED == 0) {
-	
 		measureBaroSum();
-	
 	}
-	 
   }
 	
   #endif
@@ -733,10 +669,7 @@ void process50HzTask() {
 	
 		G_Dt = (currentTime - fiftyHZpreviousTime) / 1000000.0;
 		fiftyHZpreviousTime = currentTime;
-		
-		// Reads external pilot commands and performs functions based on stick configuration
-		//readPilotCommands(); 
-		
+
 		PIDControl(userInput, sensorReadings, G_Dt);
 		
 		for (int i=0; i<4; i++){
@@ -1009,8 +942,8 @@ void loop () {
     if (frameCounter % TASK_2HZ == 0) {  //   2 Hz tasks
         
                 // Used for ISR debugging
-                dummyCommand[0] = dummyCommand[0] + 1;
-                someTediousFunction();
+//                dummyCommand[0] = dummyCommand[0] + 1;
+//                someTediousFunction();
 
                 
                 

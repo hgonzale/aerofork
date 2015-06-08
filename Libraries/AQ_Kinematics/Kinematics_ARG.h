@@ -62,54 +62,52 @@ float previousEy = 0.0;
 float previousEz = 0.0;
 
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // Defining variables for KF
 ////////////////////////////////////////////////////////////////////////////////
 
-// 4x4 identity matrix -- Acts as Ak matrix for the KF
-const int[16] idMat = {1,0,0,0,
-    0,1,0,0,
-    0,0,1,0,
-    0,0,0,1};
-
-// 4x4 sensor noise covariance matrix
-const float[16] Rk = {0.1,0,0,0,
-    0,0.1,0,0,
-    0,0,0.1,0,
-    0,0,0,0.1};
-
-//  4x4 error covariance matrix (arbitrarily large diagonal)
-float[16] Qkmin = {100000000000,0,0,0,
-    0,10000000000,0,0,
-    0,0,10000000000,0,
-    0,0,0,10000000000};
-
-// 4x1 a priori estimate of quaternion.
-float [4] qkmin = {q0,q1,q2,q3};
-
-// 4x1, arrange euler to measurement matrix
-float[4] zk;
-
-// Uninitialized 4x4 roll rate matrix
-float [16] Ok;
-
-// 4x4 transition matrix, transpose
-float[16] Tk;
-float[16] tk_trans;
-
-// 4x4 Kalman gain
-float[16] Kk;
-
-// 4x1 estimate correction
-float[4] qk;
-
-// 4x4 holding matrices for multi-step KF calculations
-float[16] A,B,C,D;
-
-// 4x1 holding vectors for multi-step KF calculations
-float[4] a,b;
+//// 4x4 identity matrix -- Acts as Ak matrix for the KF
+//const int[16] idMat = {1,0,0,0,
+//    0,1,0,0,
+//    0,0,1,0,
+//    0,0,0,1};
+//
+//// 4x4 sensor noise covariance matrix
+//const float[16] Rk = {0.1,0,0,0,
+//    0,0.1,0,0,
+//    0,0,0.1,0,
+//    0,0,0,0.1};
+//
+////  4x4 error covariance matrix (arbitrarily large diagonal)
+//float[16] Qkmin = {100000000000,0,0,0,
+//    0,10000000000,0,0,
+//    0,0,10000000000,0,
+//    0,0,0,10000000000};
+//
+//// 4x1 a priori estimate of quaternion.
+//float [4] qkmin = {q0,q1,q2,q3};
+//
+//// 4x1, arrange euler to measurement matrix
+//float[4] zk;
+//
+//// Uninitialized 4x4 roll rate matrix
+//float [16] Ok;
+//
+//// 4x4 transition matrix, transpose
+//float[16] Tk;
+//float[16] tk_trans;
+//
+//// 4x4 Kalman gain
+//float[16] Kk;
+//
+//// 4x1 estimate correction
+//float[4] qk;
+//
+//// 4x4 holding matrices for multi-step KF calculations
+//float[16] A,B,C,D;
+//
+//// 4x1 holding vectors for multi-step KF calculations
+//float[4] a,b;
 
 // model noise, currently unused
 //    int Wk = 0;
@@ -185,6 +183,11 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
     q2 = q2 / norm;
     q3 = q3 / norm;
     
+    /*
+    ///////////////////////////////////////
+    // Iteration of Kalman filter update //
+    ///////////////////////////////////////
+    
     // measurement vector
     zk = {q0,q1,q2,q3};
     
@@ -193,10 +196,6 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
         gx,0,gz,-gy,
         gy,-gz,0,gx,
         gz,gy,-gx,0};
-    
-    ///////////////////////////////////////
-    /* Iteration of Kalman filter update */
-    ///////////////////////////////////////
     
     matrixScale(4,4,Tk,halfT,Ok); // do Tk = halfT * Ok
     matrixAdd(4,4,4,Tk,idMat,Tk); // do Tk = I + TK
@@ -231,8 +230,9 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
     qkmin[2] = qkmin[2] / vnorm;
     qkmin[3] = qkmin[3] / vnorm;
     // end of Kalman Filter section
+    */
+    
  
-
 }
   
 void eulerAngles()
