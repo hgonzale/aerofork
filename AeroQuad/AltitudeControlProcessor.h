@@ -52,15 +52,15 @@ void processAltitudeHold()
   if (altitudeHoldState == ON) {
     int altitudeHoldThrottleCorrection = INVALID_THROTTLE_CORRECTION;
     // computer altitude error!
-    #if defined AltitudeHoldRangeFinder
-      if (isOnRangerRange(rangeFinderRange[ALTITUDE_RANGE_FINDER_INDEX])) {
-        if (sonarAltitudeToHoldTarget == INVALID_RANGE) {
-          sonarAltitudeToHoldTarget = rangeFinderRange[ALTITUDE_RANGE_FINDER_INDEX];
-        }
-        altitudeHoldThrottleCorrection = updatePID(sonarAltitudeToHoldTarget, rangeFinderRange[ALTITUDE_RANGE_FINDER_INDEX], &PID[SONAR_ALTITUDE_HOLD_PID_IDX]);
-        altitudeHoldThrottleCorrection = constrain(altitudeHoldThrottleCorrection, minThrottleAdjust, maxThrottleAdjust);
-      }
-    #endif
+    // #if defined AltitudeHoldRangeFinder
+    //   if (isOnRangerRange(rangeFinderRange[ALTITUDE_RANGE_FINDER_INDEX])) {
+    //     if (sonarAltitudeToHoldTarget == INVALID_RANGE) {
+    //       sonarAltitudeToHoldTarget = rangeFinderRange[ALTITUDE_RANGE_FINDER_INDEX];
+    //     }
+    //     altitudeHoldThrottleCorrection = updatePID(sonarAltitudeToHoldTarget, rangeFinderRange[ALTITUDE_RANGE_FINDER_INDEX], &PID[SONAR_ALTITUDE_HOLD_PID_IDX]);
+    //     altitudeHoldThrottleCorrection = constrain(altitudeHoldThrottleCorrection, minThrottleAdjust, maxThrottleAdjust);
+    //   }
+    // #endif
     #if defined AltitudeHoldBaro
       if (altitudeHoldThrottleCorrection == INVALID_THROTTLE_CORRECTION) {
         altitudeHoldThrottleCorrection = updatePID(baroAltitudeToHoldTarget, getBaroAltitude(), &PID[BARO_ALTITUDE_HOLD_PID_IDX]);

@@ -79,6 +79,7 @@ float updatePID(float targetPosition, float currentPosition, struct PIDdata *PID
   else {
     PIDparameters->integratedError = 0.0;
   }
+  
   PIDparameters->integratedError = constrain(PIDparameters->integratedError, -PIDparameters->windupGuard, PIDparameters->windupGuard);
   float dTerm = PIDparameters->D * (currentPosition - PIDparameters->lastError) / (deltaPIDTime * 100); // dT fix from Honk
   PIDparameters->lastError = currentPosition;

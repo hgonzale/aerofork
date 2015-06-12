@@ -392,6 +392,7 @@ void readSerialCommand() {
 	break;
 	
 	case '/': //Calibrate barometer.
+    SERIAL_PRINTLN('\n' + "Calibrating barometer...");
 		measureGroundBaro();
 		startBaroMeasure = true;
 		Serial.print(1);
@@ -705,16 +706,35 @@ void sendSerialTelemetry() {
     SERIAL_PRINTLN();
   break;
   
-  case '?': 
+  case '?': // Custom serial command -- Used in debugging
+
+    SERIAL_PRINTLN("BREAK");
+    // See calculated Euler angles
+    PrintValueComma(getBaroAltitude());
+    PrintValueComma(kinematicsAngle[0]);
+    PrintValueComma(kinematicsAngle[1]);
+    PrintValueComma(kinematicsAngle[2]);
+    SERIAL_PRINTLN();
+
+    // See PID in/out
+    SERIAL_PRINT("Error: ");
     PrintValueComma(uk[0]);
     PrintValueComma(uk[1]);
     PrintValueComma(uk[2]);
     PrintValueComma(uk[3]);	
+    SERIAL_PRINTLN();
+    SERIAL_PRINT("Output: ");
     PrintValueComma(yk[0]);
     PrintValueComma(yk[1]);
     PrintValueComma(yk[2]);
-    PrintValueComma(yk[3]);		
-    SERIAL_PRINTLN();	
+    PrintValueComma(yk[3]);
+
+    // See motor commands		
+    // for (byte motor = 0; motor < LASTMOTOR; motor++) {
+    //   PrintValueComma(motorCommand[motor]);
+    // }
+    // // PrintDummyValues(8 - LASTMOTOR); // max of 8 motor outputs supported
+    SERIAL_PRINTLN('\n');
   break;
   
   case '>':

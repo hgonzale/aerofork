@@ -33,12 +33,12 @@
  volatile int myFlag = 0;
  volatile int dummyCommand[8] = {0,0,0,0,0,0,0,0};
  
- void writeDumbCommand() {
-   OCR3B = dummyCommand[2] * 2;
-   OCR3C = dummyCommand[1] * 2;
-   OCR3A = dummyCommand[0] * 2 + 1;
-   OCR4A = dummyCommand[3] * 2;
- }
+ // void writeDumbCommand() {
+ //   OCR3B = dummyCommand[2] * 2;
+ //   OCR3C = dummyCommand[1] * 2;
+ //   OCR3A = dummyCommand[0] * 2 + 1;
+ //   OCR4A = dummyCommand[3] * 2;
+ // }
 
 
 
@@ -97,7 +97,7 @@
   #define HeadingMagHold //uncomment to remove magnetometer
   #include <APM_ADC.h>
   #include <APM_RC.h>
-//  #include <ArdupilotSPIExt.h>
+  #include <ArdupilotSPIExt.h>
   #include <APM_MPU6000.h>
   #include <controlLoop.h>
 
@@ -406,12 +406,12 @@ void setup() {
     TCCR5B = 0; // same for TCCR5B register
     TCNT5 = 0; // initialize counter value to 0 (for Timer 5)
     
-
-    /* Pre-Scale values for OCR5A register:
-     1249 --> 50Hz
-     3124 --> 20Hz
-     */
-    OCR5A = 1249;
+    // Pre-Scale values for OCR5A register:
+    // 624 --> 100Hz
+    // 1249 --> 50Hz
+    // 3124 --> 20Hz
+     
+    OCR5A = 624;
     TCCR5B |= (1 << WGM12); // Enable CTC interrupt
     TCCR5B |= (1 << CS12); // enable 256 pre-scaler
     TIMSK5 |= (1 << OCIE1A);
@@ -524,41 +524,56 @@ void setup() {
 }
 
 // 50Hz interrupt task for Timer 5
-ISR(TIMER5_COMPA_vect) {
-    writeMotors();
+//ISR(TIMER5_COMPA_vect) {
+//    writeMotors();
+//
+////    Used for ISR debugging
+////    writeDumbCommand(); //send current "motor commands" to motors
+////    myFlag++;
+//}
 
-//    Used for ISR debugging
-//    writeDumbCommand(); //send current "motor commands" to motors
-//    myFlag++;
+/*Interrupt for PID computation
+  Runs at 100Hz
+  Using DELTA_T = 10ms = 0.01s
+*/
+const float DELTA_T = 0.01;
+ISR(TIMER5_COMPA_vect) {
+    uk[0] += (Kd[0]/DELTA_T + Kp[0] + Ki[0]*DELTA_T)*ekpo[0] - (Kp[0] + 2*Kd[0]/DELTA_T)*ek[0] + (Kd[0]/DELTA_T*ekmo[0]);
+    uk[1] += (Kd[1]/DELTA_T + Kp[1] + Ki[1]*DELTA_T)*ekpo[1] - (Kp[1] + 2*Kd[1]/DELTA_T)*ek[1] + (Kd[1]/DELTA_T*ekmo[1]);
+    uk[2] += (Kd[2]/DELTA_T + Kp[2] + Ki[2]*DELTA_T)*ekpo[2] - (Kp[2] + 2*Kd[2]/DELTA_T)*ek[2] + (Kd[2]/DELTA_T*ekmo[2]);
+    uk[3] += (Kd[3]/DELTA_T + Kp[3] + Ki[3]*DELTA_T)*ekpo[3] - (Kp[3] + 2*Kd[3]/DELTA_T)*ek[3] + (Kd[3]/DELTA_T*ekmo[3]);
 }
 
 
 /*
  Quick implementation of closed PID loop for flight control
  */
-//float[4] positionRef = {3.0,0.0,0.0,0.0};
-//float[4] positionReal = {0.0,0.0,0.0,0.0};
-//
-//void processFlightControl_alt() {
-//    updateState();
-//    PIDControl(positionRef, positionReal, G_Dt);
-//    applyMotorCommand();
-//    
-//}
-//
-//void updateState() {
-//    positionReal[0] = getBaroAltitude();
-//    positionReal[1] = kinematicsAngles[0];
-//    positionReal[2] = kinematicsAngles[1];
-//    positionReal[3] = kinematicsAngles[2];
-//}
-//
-//void applyMotorCommand () {
-//    motorCommand[FRONT] = yk[0];
-//    motorCommand[REAR] = yk[1];
-//    motorCommand[RIGHT] = yk]2];
-//    motorCommand[LEFT] = yk[3];
-//}
+
+float positionRef[4] = {0.0,0.0,0.0,0.0};
+float positionReal[4] = {0.0,0.0,0.0,0.0};
+
+void processFlightControl_alt() {
+   updateState();
+   PIDControl(positionRef, positionReal, G_Dt);
+   applyMotorCommand_alt();
+   
+}
+
+void updateState() {
+   positionReal[0] = getBaroAltitude();
+   positionReal[1] = kinematicsAngle[0];
+   positionReal[2] = kinematicsAngle[1];
+   positionReal[3] = kinematicsAngle[2];
+
+   positionRef[0] = positionReal[0];
+}
+
+void applyMotorCommand_alt () {
+   motorCommand[FRONT_LEFT] = yk[0];
+   motorCommand[FRONT_RIGHT] = yk[1];
+   motorCommand[REAR_LEFT] = yk[2];
+   motorCommand[REAR_RIGHT] = yk[3];
+}
 
 
 /*******************************************************************
@@ -578,7 +593,8 @@ void process100HzTask() {
     filteredAccel[axis] = computeFourthOrder(meterPerSecSec[axis], &fourthOrder[axis]);
 
   }
-    
+  
+  // kinematicsAngle[] is updated here
   calculateKinematics(gyroRate[XAXIS], gyroRate[YAXIS], gyroRate[ZAXIS], filteredAccel[XAXIS], filteredAccel[YAXIS], filteredAccel[ZAXIS], G_Dt);
 
 	if (calibrateReadyTilt == true) {
@@ -618,8 +634,9 @@ void process100HzTask() {
   }
 	
   #endif
-        
-  processFlightControl();
+  
+  processFlightControl_alt();
+  //processFlightControl();
   
   //
   #if defined(BinaryWrite)
@@ -670,13 +687,13 @@ void process50HzTask() {
 		G_Dt = (currentTime - fiftyHZpreviousTime) / 1000000.0;
 		fiftyHZpreviousTime = currentTime;
 
-		PIDControl(userInput, sensorReadings, G_Dt);
+		//PIDControl(userInput, sensorReadings, G_Dt);
 		
-		for (int i=0; i<4; i++){
+		// for (int i=0; i<4; i++){
 		
-			motorConfiguratorCommand[i] = constrain((int(yk[i] + 1000.5)), 1000, 1200);
+		// 	motorConfiguratorCommand[i] = constrain((int(yk[i] + 1000.5)), 1000, 1200);
 		
-		}
+		// }
     
 	}
 /*   #if defined(UseAnalogRSSIReader) || defined(UseEzUHFRSSIReader) || defined(UseSBUSRSSIReader)
@@ -694,21 +711,6 @@ void process50HzTask() {
   #endif   */
       
 }
-
-/*******************************************************************
- * 20Hz task
- ******************************************************************/
-/*void process20HzTask() {
-
-	  writeMotors();
-	     
-}
-
-void process5HzTask() {
-
-	writeMotors();
-
-}*/
 
 /*******************************************************************
  * 10Hz task
@@ -776,14 +778,6 @@ void process10HzTask3() {
     G_Dt = (currentTime - lowPriorityTenHZpreviousTime2) / 1000000.0;
     lowPriorityTenHZpreviousTime2 = currentTime;
 
-    #ifdef OSD_SYSTEM_MENU
-      updateOSDMenu();
-    #endif
-
-    #ifdef MAX7456_OSD
-      updateOSD();
-    #endif
-    
     #if defined(UseGPS) || defined(BattMonitor)
       processLedStatus();
     #endif
@@ -940,13 +934,7 @@ void loop () {
     // 1Hz task loop
     // ================================================================
     if (frameCounter % TASK_2HZ == 0) {  //   2 Hz tasks
-        
-                // Used for ISR debugging
-//                dummyCommand[0] = dummyCommand[0] + 1;
-//                someTediousFunction();
-
-                
-                
+    
 		if (beginControl == true) {
 		
 			process2HzTask();
@@ -955,12 +943,6 @@ void loop () {
 		
     }
 	
-    /*if (frameCounter % TASK_1HZ == 0) {  //  1 Hz tasks
-
-      process1HzTask();
-
-    }*/
-    
     previousTime = currentTime;
 
   }
@@ -972,18 +954,6 @@ void loop () {
 	}
 }
 
-// Function to simulate a long, tedious calculation.
-// Used for ISR debugging
- void someTediousFunction() {
-  SERIAL_PRINT("I'm starting...");
-  SERIAL_PRINT(OCR3A);
-  delay(1000); // the interrupt will change the value in register OCR3A during the delay
-  SERIAL_PRINT('\n');
-  SERIAL_PRINT(OCR3A);
-  SERIAL_PRINT("...and I'm done");
-  SERIAL_PRINT('\n');
-  
- }
 
 
 
