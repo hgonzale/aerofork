@@ -84,6 +84,7 @@ byte minLimit = OFF;
 float filteredAccel[3] = {0.0,0.0,0.0};
 boolean inFlight = false; // true when motor are armed and that the user pass one time the min throttle
 boolean beginControl = false;
+boolean stopAll = false;
 boolean startBaroMeasure = false;
 boolean firstRead = true;
 

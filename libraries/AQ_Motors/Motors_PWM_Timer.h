@@ -139,7 +139,7 @@ void writeMotors() {
 
   #if defined (__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
     
-	OCR3B = motorCommand[MOTOR3] * 2;
+	  OCR3B = motorCommand[MOTOR3] * 2;
     OCR3C = motorCommand[MOTOR2] * 2;
     OCR3A = motorCommand[MOTOR1] * 2;
     OCR4A = motorCommand[MOTOR4] * 2;

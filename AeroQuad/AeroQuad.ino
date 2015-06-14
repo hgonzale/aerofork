@@ -796,7 +796,6 @@ void process2HzTask() {
 		}
 		
 	} */
-    
     // Serial heartbeat code
     if (beginControl) {
         
@@ -829,7 +828,7 @@ void process1HzTask() {
     
     sendSerialHeartbeat();   
   #endif*/
-	
+
 	if (beginControl) {
 		
 		if (msg == '>') {
@@ -846,11 +845,39 @@ void process1HzTask() {
 		
 	}
   
-}  
+}
+
+
+/*******************************************************************
+ * Emergency Stop triggered by manual stopping command
+ ******************************************************************/
+void emergencyStop() {
+
+  // kill the motors
+  OCR3B = 0;
+  OCR3C = 0;
+  OCR3A = 0;
+  OCR4A = 0;
+
+  // disable control processes
+  beginControl = false;
+
+  // keep QR from doing anything else
+  stopAll = true;
+
+  
+}
+
+
+
+
 /*******************************************************************
  * Main loop funtions
  ******************************************************************/
 void loop () {
+
+  while (stopAll) {}; // don't allow anything to happen
+
 	currentTime = micros();
 	deltaTime = currentTime - previousTime;
 
@@ -905,10 +932,9 @@ void loop () {
     }
     
     // ================================================================
-    // 1Hz task loop
+    // 2Hz task loop
     // ================================================================
     if (frameCounter % TASK_2HZ == 0) {  //   2 Hz tasks
-    
   		if (beginControl) {
   		
   			process2HzTask();

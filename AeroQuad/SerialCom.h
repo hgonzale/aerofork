@@ -59,18 +59,8 @@ bool validateCalibrateCommand(byte command) {
 }
 
 bool validateSerialStatus() {
-    
-    if (readFloatSerial() == 78.9) {
-        
-        return true;
-        
-    }
-    
-    else {
-        
-        return false;
-        
-    }
+
+  return (readFloatSerial() == 78.9);
     
 }
 
@@ -134,6 +124,12 @@ void readSerialCommand() {
   if (SERIAL_AVAILABLE()) {
     queryType = SERIAL_READ();
     switch (queryType) {
+
+    case '~': // Manual emergency stop
+      emergencyStop();
+      break;
+
+
     case 'A': // Receive roll and pitch rate mode PID
       readSerialPID(RATE_XAXIS_PID_IDX);
       readSerialPID(RATE_YAXIS_PID_IDX);
@@ -350,10 +346,10 @@ void readSerialCommand() {
     break;
 
     case '+': //Set user's desired steady state values for altitude, roll, pitch and yaw.
-		userInput[0] = readFloatSerial();
-		userInput[1] = readFloatSerial();
-		userInput[2] = readFloatSerial();
-		userInput[3] = readFloatSerial();		
+  		userInput[0] = readFloatSerial();
+  		userInput[1] = readFloatSerial();
+  		userInput[2] = readFloatSerial();
+  		userInput[3] = readFloatSerial();		
     break;
 
 	case '<': //Stop control-loop function and motors.
@@ -398,15 +394,15 @@ void readSerialCommand() {
 		Serial.print(1);
 	break;
 		
-    case 'Z': // fast telemetry transfer <--- get rid if this?
-      if (readFloatSerial() == 1.0)
-        fastTransfer = ON;
-      else
-        fastTransfer = OFF;
-      break;
-    }
+  case 'Z': // fast telemetry transfer <--- get rid if this?
+    if (readFloatSerial() == 1.0)
+      fastTransfer = ON;
+    else
+      fastTransfer = OFF;
+    break;
+  }
       
-      resetEmergencyStop = validateSerialStatus(); //Checks for float serial verification message '78.9' for xBee connection status.
+  resetEmergencyStop = validateSerialStatus(); //Checks for float serial verification message '78.9' for xBee connection status.
 
   }
 }
@@ -708,26 +704,27 @@ void sendSerialTelemetry() {
   
   case '?': // Custom serial command -- Used in debugging
 
-    SERIAL_PRINTLN("BREAK");
-    // See calculated Euler angles
-    PrintValueComma(getBaroAltitude());
-    PrintValueComma(kinematicsAngle[0]);
-    PrintValueComma(kinematicsAngle[1]);
-    PrintValueComma(kinematicsAngle[2]);
-    SERIAL_PRINTLN();
+    SERIAL_PRINTLN("*waves back*");
+    // SERIAL_PRINTLN("BREAK");
+    // // See calculated Euler angles
+    // PrintValueComma(getBaroAltitude());
+    // PrintValueComma(kinematicsAngle[0]);
+    // PrintValueComma(kinematicsAngle[1]);
+    // PrintValueComma(kinematicsAngle[2]);
+    // SERIAL_PRINTLN();
 
-    // See PID in/out
-    SERIAL_PRINT("Error: ");
-    PrintValueComma(uk[0]);
-    PrintValueComma(uk[1]);
-    PrintValueComma(uk[2]);
-    PrintValueComma(uk[3]);	
-    SERIAL_PRINTLN();
-    SERIAL_PRINT("Output: ");
-    PrintValueComma(yk[0]);
-    PrintValueComma(yk[1]);
-    PrintValueComma(yk[2]);
-    PrintValueComma(yk[3]);
+    // // See PID in/out
+    // SERIAL_PRINT("Error: ");
+    // PrintValueComma(uk[0]);
+    // PrintValueComma(uk[1]);
+    // PrintValueComma(uk[2]);
+    // PrintValueComma(uk[3]);	
+    // SERIAL_PRINTLN();
+    // SERIAL_PRINT("Output: ");
+    // PrintValueComma(yk[0]);
+    // PrintValueComma(yk[1]);
+    // PrintValueComma(yk[2]);
+    // PrintValueComma(yk[3]);
 
     // See motor commands		
     // for (byte motor = 0; motor < LASTMOTOR; motor++) {
