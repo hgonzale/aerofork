@@ -51,6 +51,16 @@ int testCommand = 1000;
 //////////////////////////////////////////////////////
 
 /**
+ * Quadcopter state declaration
+ */
+ #define BOOTUP 0
+ #define CALIBRATE 1
+ #define FLIGHT 2
+ #define EMGSTOP 3
+ int STATE = BOOTUP; // default state
+
+
+/**
  * Flight control global declaration
  */
 #define RATE_FLIGHT_MODE 0

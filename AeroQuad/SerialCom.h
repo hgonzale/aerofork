@@ -366,6 +366,7 @@ void readSerialCommand() {
 		beginControl = true;
 		calibrateESC = 5;
 		countStop = 0;
+    STATE = FLIGHT;
 	break;
 	
 	case '_': //Reset sensor calibration and stops data collection until user initiates and completes another round of calibration.
@@ -380,6 +381,7 @@ void readSerialCommand() {
 	break;
 	
 	case '@': //When all initial calibration procedures are complete for accelerometer, gyroscope and barometer.
+    STATE = CALIBRATE;
 		calibration();
 	break;
 	
@@ -391,7 +393,7 @@ void readSerialCommand() {
     SERIAL_PRINTLN('\n' + "Calibrating barometer...");
 		measureGroundBaro();
 		startBaroMeasure = true;
-		Serial.print(1);
+		Serial.print("...finished");
 	break;
 		
   case 'Z': // fast telemetry transfer <--- get rid if this?

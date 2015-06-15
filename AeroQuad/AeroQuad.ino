@@ -865,6 +865,8 @@ void emergencyStop() {
   // keep QR from doing anything else
   stopAll = true;
 
+  // change system state
+  STATE = EMGSTOP;
   
 }
 
