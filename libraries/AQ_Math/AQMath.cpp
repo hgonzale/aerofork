@@ -201,6 +201,18 @@ void matrixMultiply(int aRows, int aCols_bRows, int bCols, float matrixC[], floa
   }
 }
 
+void matrixMultiply_alt(int d1, int d2, int d3, float matC[], float matA[], float matB[]) {
+  for (int i = 0; i < d1 * d3; i++) {
+    matC[i] = 0.0;
+  }
+
+  matC[0] = matA[0] * matB[0] + matA[1] * matB[1] + matA[2] * matB[2] + matA[3] * matB[3];
+  matC[1] = matA[4] * matB[0] + matA[5] * matB[1] + matA[6] * matB[2] + matA[7] * matB[3];
+  matC[2] = matA[8] * matB[0] + matA[9] * matB[1] + matA[10] * matB[2] + matA[11] * matB[3];
+  matC[3] = matA[12] * matB[0] + matA[13] * matB[1] + matA[14] * matB[2] + matA[15] * matB[3];
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //  Matrix Addition
 //  Add matrix A to matrix B, dimensions m x n

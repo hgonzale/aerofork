@@ -179,8 +179,8 @@ void initializeBaro() {
 //
 void measureBaro() {
 
-  measureBaroSum();
-  evaluateBaroAltitude();
+  // measureBaroSum();
+  // evaluateBaroAltitude();
 
 }
 //

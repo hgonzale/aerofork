@@ -110,6 +110,8 @@ void vectorSubtract(int length, float vectorC[], float vectorA[], float vectorB[
 
 void matrixMultiply(int aRows, int aCols_bRows, int bCols, float matrixC[], float matrixA[], float matrixB[]);
 
+void matrixMultiply_alt(int d1, int d2, int d3, float matC[], float matA[], float matB[]);
+
 ////////////////////////////////////////////////////////////////////////////////
 //  Matrix Addition
 //  Add matrix A to matrix B, dimensions m x n

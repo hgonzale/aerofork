@@ -366,7 +366,7 @@ void readSerialCommand() {
 		beginControl = true;
 		calibrateESC = 5;
 		countStop = 0;
-    STATE = FLIGHT;
+    status = FLIGHT;
 	break;
 	
 	case '_': //Reset sensor calibration and stops data collection until user initiates and completes another round of calibration.
@@ -381,7 +381,7 @@ void readSerialCommand() {
 	break;
 	
 	case '@': //When all initial calibration procedures are complete for accelerometer, gyroscope and barometer.
-    STATE = CALIBRATE;
+    status = CALIBRATE;
 		calibration();
 	break;
 	
@@ -393,9 +393,9 @@ void readSerialCommand() {
     SERIAL_PRINTLN('\n' + "Calibrating barometer...");
 		measureGroundBaro();
 		startBaroMeasure = true;
-		Serial.print("...finished");
+		Serial.print("...finished!*");
 	break;
-		
+	
   case 'Z': // fast telemetry transfer <--- get rid if this?
     if (readFloatSerial() == 1.0)
       fastTransfer = ON;
@@ -706,33 +706,51 @@ void sendSerialTelemetry() {
   
   case '?': // Custom serial command -- Used in debugging
 
-    SERIAL_PRINTLN("*waves back*");
-    // SERIAL_PRINTLN("BREAK");
+    // SERIAL_PRINTLN(deltaTime);
+
     // // See calculated Euler angles
-    // PrintValueComma(getBaroAltitude());
-    // PrintValueComma(kinematicsAngle[0]);
-    // PrintValueComma(kinematicsAngle[1]);
-    // PrintValueComma(kinematicsAngle[2]);
-    // SERIAL_PRINTLN();
+    PrintValueComma(getBaroAltitude());
+    PrintValueComma(kinematicsAngle[XAXIS]);
+    PrintValueComma(kinematicsAngle[YAXIS]);
+    PrintValueComma(kinematicsAngle[ZAXIS]);
 
-    // // See PID in/out
-    // SERIAL_PRINT("Error: ");
-    // PrintValueComma(uk[0]);
-    // PrintValueComma(uk[1]);
-    // PrintValueComma(uk[2]);
-    // PrintValueComma(uk[3]);	
-    // SERIAL_PRINTLN();
-    // SERIAL_PRINT("Output: ");
-    // PrintValueComma(yk[0]);
-    // PrintValueComma(yk[1]);
-    // PrintValueComma(yk[2]);
-    // PrintValueComma(yk[3]);
+    SERIAL_PRINT( "\t gyroRate:" );
 
-    // See motor commands		
-    // for (byte motor = 0; motor < LASTMOTOR; motor++) {
-    //   PrintValueComma(motorCommand[motor]);
-    // }
-    // // PrintDummyValues(8 - LASTMOTOR); // max of 8 motor outputs supported
+    PrintValueComma(gyroRate[XAXIS]);
+    PrintValueComma(gyroRate[YAXIS]);
+    PrintValueComma(gyroRate[ZAXIS]);
+
+    if (indic > 0) {
+      SERIAL_PRINT("\t MPU6000.data.gyro: ");
+      PrintValueComma(indic);
+    }
+    // SERIAL_PRINT( "\t gyroRaw: ");
+    // PrintValueComma(gyroRaw[XAXIS]);
+    // PrintValueComma(gyroRaw[YAXIS]);
+    // PrintValueComma(gyroRaw[ZAXIS]);
+
+    // SERIAL_PRINT("\t MPU6000.data.gyro: ");
+    // PrintValueComma(indic);
+
+    // // // See PID in/out
+    // //SERIAL_PRINT("Error: ");
+    // // PrintValueComma(uk[0]);
+    // // PrintValueComma(uk[1]);
+    // // PrintValueComma(uk[2]);
+    // // PrintValueComma(uk[3]);	
+    // // SERIAL_PRINT( "\t" );
+    // // //SERIAL_PRINTLN();
+    // // //SERIAL_PRINT("Output: ");
+    // // PrintValueComma(yk[0]);
+    // // PrintValueComma(yk[1]);
+    // // PrintValueComma(yk[2]);
+    // // PrintValueComma(yk[3]);
+
+    // // See motor commands		
+    // // for (byte motor = 0; motor < LASTMOTOR; motor++) {
+    // //   PrintValueComma(motorCommand[motor]);
+    // // }
+    // // // PrintDummyValues(8 - LASTMOTOR); // max of 8 motor outputs supported
     SERIAL_PRINTLN('\n');
   break;
   

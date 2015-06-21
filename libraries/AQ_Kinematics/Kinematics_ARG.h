@@ -79,16 +79,16 @@ float Rk[16] = {0.1,0,0,0,
    0,0,0,0.1};
 
 //  4x4 error covariance matrix (arbitrarily large diagonal)
-float Qkmin[16] = {1000000000,0,0,0,
-   0,100000000,0,0,
-   0,0,100000000,0,
-   0,0,0,100000000};
+float Qkmin[16] = {1e6,0,0,0,
+   0,1e6,0,0,
+   0,0,1e6,0,
+   0,0,0,1e6};
 
 // 4x1 a priori estimate of quaternion.
 float qkmin[4] = {q0,q1,q2,q3};
 
 // 4x1 vector of quaternions
-float q[4] = {q0,q1,q2,q3};
+float q[4] = {1.0,0.0,0.0,0.0};
 
 // 4x1, arrange euler to measurement matrix
 float zk[4] = {0};
@@ -116,12 +116,15 @@ float qk[4] = {0};
 float A[16],B[16],C[16],D[16],E[16];
 
 // 4x1 holding vectors for multi-step KF calculations
-float a[4],b[4],c[4];
+float a[4],b[4],c[4],d[4],dd[4],ddd[4];
 
 //model noise, currently unused
-// int Wk = 0;
+float Wk[16] = {0.1,0,0,0,
+   0,0.1,0,0,
+   0,0,0.1,0,
+   0,0,0,0.1};
 
-
+  float mx,my,mz;
 
 ////////////////////////////////////////////////////////////////////////////////
 // argUpdate
@@ -129,8 +132,9 @@ float a[4],b[4],c[4];
 void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float G_Dt) {
   float norm,vnorm;
   float vx, vy, vz;
+
   float ox, oy, oz;
-  float mx,my,mz;
+
   // float q0i, q1i, q2i, q3i;
   float ex, ey, ez;
     
@@ -141,12 +145,11 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
   ax = ax / norm;
   ay = ay / norm;
   az = az / norm;
-     	
+
   // estimated direction of gravity and flux (v and w)
   vx = 2*(q1*q3 - q0*q2);
-  // vy = 2*(q0*q1 + q2*q3); //this was in the original code
-  vy = 2*(q0*q1 + q1*q3); //this was in Jonathan's code
-  vz = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+  vy = 2*(q0*q1 - q2*q3);
+  vz = q0*q0 - q1*q1 - q2*q2 - q3*q3;
     
   // error is sum of cross product between reference direction of fields and direction measured by sensors
   ex = (vy*az - vz*ay);
@@ -208,9 +211,32 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
     // q2 += q2i;
     // q3 += q3i;
 
+
+
+
+
+    // // d(k-2)
+    // ddd[0] = dd[0];
+    // ddd[1] = dd[1];
+    // ddd[2] = dd[2];
+    // ddd[3] = dd[3];
+
+    // // d(k-1)
+    // dd[0] = d[0];
+    // dd[1] = d[1];
+    // dd[2] = d[2];
+    // dd[3] = d[3];
+
+    // // d(k)
+    // d[0] = q[0];
+    // d[1] = q[1];
+    // d[2] = q[2];
+    // d[3] = q[3];
+
     //q = (idMat + halfT*M)*q
     matrixAdd(4,4,E,idMat,M);
-    matrixMultiply(4,4,1,c,E,q);
+    // matrixMultiply(4,4,1,c,E,q);
+    matrixMultiply_alt(4,4,1,c,E,q);
     q[0] = c[0];
     q[1] = c[1];
     q[2] = c[2];
@@ -286,6 +312,9 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
     matrixTranspose4x4(Tk_trans,Tk);
     matrixMultiply(4,4,4,Qkmin,D,Tk_trans);
 
+    //Qkmin = Qkmin + Wk
+    matrixAdd(4,4,Qkmin,Qkmin,Wk);
+
     // ... end KF computations
    
    // normalize quaternion estimates
@@ -334,7 +363,7 @@ void initializeKinematics()
   previousEz = 0;
 
   K_p = 0.2; // 2.0;
-  K_i = 0.0005; //0.005;
+  K_i = 0.0; //0.005;
 }
   
 ////////////////////////////////////////////////////////////////////////////////

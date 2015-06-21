@@ -29,10 +29,12 @@
 
 
 //Interrupt test variables and functions
- volatile boolean togglePin = true;
- volatile int myFlag = 0;
- volatile int dummyCommand[8] = {0,0,0,0,0,0,0,0};
- 
+   volatile boolean togglePin = true;
+   volatile int myFlag = 0;
+   volatile int dummyCommand[8] = {0,0,0,0,0,0,0,0};
+
+   float indic = 0.0;
+
  // void writeDumbCommand() {
  //   OCR3B = dummyCommand[2] * 2;
  //   OCR3C = dummyCommand[1] * 2;
@@ -136,7 +138,7 @@
 
   #undef BattMonitorAutoDescent
   #undef POWERED_BY_VIN
-        
+
 // #endif
 
 
@@ -147,29 +149,29 @@
   #undef UseGPSNavigator
 #endif
 
-  
+
   /**
    * Put ArduCopter specific initialization need here
    */
-  void initPlatform() {
+   void initPlatform() {
 
     pinMode(LED_Red, OUTPUT);
     pinMode(LED_Yellow, OUTPUT);
     pinMode(LED_Green, OUTPUT);
 
-    initializeADC();
+    // initializeADC();
 
-    initRC();
+    // initRC();
 
     Wire.begin();
 
     TWBR = 12;
 
-	initializeMPU6000Sensors();
+    initializeMPU6000Sensors();
 
-	initializeBaro();
+    // initializeBaro();
 
-	initializeMagnetometer();
+    // initializeMagnetometer();
 
   }
   
@@ -184,9 +186,9 @@
     runTimeAccelBias[ZAXIS] = 0.0;
 
     #ifdef HeadingMagHold
-      magBias[XAXIS]  = 0.0;
-      magBias[YAXIS]  = 0.0;
-      magBias[ZAXIS]  = 0.0;
+    magBias[XAXIS]  = 0.0;
+    magBias[YAXIS]  = 0.0;
+    magBias[ZAXIS]  = 0.0;
     #endif
 
   }
@@ -195,7 +197,7 @@
   /**
    * Measure critical sensors
    */
-  void measureCriticalSensors() {
+   void measureCriticalSensors() {
 
     evaluateADC();
 
@@ -401,41 +403,41 @@
  * initialize all system and sub system of the
  * Aeroquad
  ******************************************************************/
-void setup() {
+ void setup() {
 
-    cli(); //disable global interrupts for setup function
+    // cli(); //disable global interrupts for setup function
 
-    TCCR5A = 0; // initialize TCRR5A register to 0
-    TCCR5B = 0; // same for TCCR5B register
-    TCNT5 = 0; // initialize counter value to 0 (for Timer 5)
+    // TCCR5A = 0; // initialize TCRR5A register to 0
+    // TCCR5B = 0; // same for TCCR5B register
+    // TCNT5 = 0; // initialize counter value to 0 (for Timer 5)
     
-    // Pre-Scale values for OCR5A register:
-    // 624 --> 100Hz
-    // 1249 --> 50Hz
-    // 3124 --> 20Hz
-     
-    OCR5A = 624;
-    TCCR5B |= (1 << WGM12); // Enable CTC interrupt
-    TCCR5B |= (1 << CS12); // enable 256 pre-scaler
-    TIMSK5 |= (1 << OCIE1A);
+    // // Pre-Scale values for OCR5A register:
+    // // 624 --> 100Hz
+    // // 1249 --> 50Hz
+    // // 3124 --> 20Hz
+
+    // OCR5A = 624;
+    // TCCR5B |= (1 << WGM12); // Enable CTC interrupt
+    // TCCR5B |= (1 << CS12); // enable 256 pre-scaler
+    // TIMSK5 |= (1 << OCIE1A);
     
-    sei(); // re-enable global interrupts
+    // sei(); // re-enable global interrupts
 
-  SERIAL_BEGIN(BAUD);
-  pinMode(LED_Green, OUTPUT);
-  digitalWrite(LED_Green, LOW);
+    SERIAL_BEGIN(BAUD);
+    pinMode(LED_Green, OUTPUT);
+    digitalWrite(LED_Green, LOW);
 
-  initCommunication();
-  
+    initCommunication();
+
   readEEPROM(); // defined in DataStorage.h
   boolean firstTimeBoot = false;
   
   if (readFloat(SOFTWARE_VERSION_ADR) != SOFTWARE_VERSION) { // If we detect the wrong soft version, we init all parameters
-  
+
     initializeEEPROM();
     writeEEPROM();
     firstTimeBoot = true;
-	
+
   }
   
   initPlatform();
@@ -455,10 +457,10 @@ void setup() {
   initializeAccel(); // defined in Accel.h
   
   if (firstTimeBoot) {
-  
+
     computeAccelBias();
     writeEEPROM();
-	
+
   }
   
   setupFourthOrder();
@@ -475,9 +477,9 @@ void setup() {
   initializeKinematics();
 
   #ifdef HeadingMagHold
-    vehicleState |= HEADINGHOLD_ENABLED;
-    initializeMagnetometer();
-    initializeHeadingFusion();
+  vehicleState |= HEADINGHOLD_ENABLED;
+  initializeMagnetometer();
+  initializeHeadingFusion();
   #endif
   
   // // Optional Sensors
@@ -514,7 +516,7 @@ void setup() {
   // #endif
   
   #if defined(UseGPS)
-    initializeGps();
+  initializeGps();
   #endif 
 
   // #ifdef SlowTelemetry
@@ -539,13 +541,13 @@ void setup() {
   Runs at 100Hz
   Using DELTA_T = 10ms = 0.01s
 */
-const float DELTA_T = 0.01;
-ISR(TIMER5_COMPA_vect) {
-    uk[0] += (Kd[0]/DELTA_T + Kp[0] + Ki[0]*DELTA_T)*ekpo[0] - (Kp[0] + 2*Kd[0]/DELTA_T)*ek[0] + (Kd[0]/DELTA_T*ekmo[0]);
-    uk[1] += (Kd[1]/DELTA_T + Kp[1] + Ki[1]*DELTA_T)*ekpo[1] - (Kp[1] + 2*Kd[1]/DELTA_T)*ek[1] + (Kd[1]/DELTA_T*ekmo[1]);
-    uk[2] += (Kd[2]/DELTA_T + Kp[2] + Ki[2]*DELTA_T)*ekpo[2] - (Kp[2] + 2*Kd[2]/DELTA_T)*ek[2] + (Kd[2]/DELTA_T*ekmo[2]);
-    uk[3] += (Kd[3]/DELTA_T + Kp[3] + Ki[3]*DELTA_T)*ekpo[3] - (Kp[3] + 2*Kd[3]/DELTA_T)*ek[3] + (Kd[3]/DELTA_T*ekmo[3]);
-}
+  // const float DELTA_T = 0.01;
+  // ISR(TIMER5_COMPA_vect) {
+  //   uk[0] += (Kd[0]/DELTA_T + Kp[0] + Ki[0]*DELTA_T)*ekpo[0] - (Kp[0] + 2*Kd[0]/DELTA_T)*ek[0] + (Kd[0]/DELTA_T*ekmo[0]);
+  //   uk[1] += (Kd[1]/DELTA_T + Kp[1] + Ki[1]*DELTA_T)*ekpo[1] - (Kp[1] + 2*Kd[1]/DELTA_T)*ek[1] + (Kd[1]/DELTA_T*ekmo[1]);
+  //   uk[2] += (Kd[2]/DELTA_T + Kp[2] + Ki[2]*DELTA_T)*ekpo[2] - (Kp[2] + 2*Kd[2]/DELTA_T)*ek[2] + (Kd[2]/DELTA_T*ekmo[2]);
+  //   uk[3] += (Kd[3]/DELTA_T + Kp[3] + Ki[3]*DELTA_T)*ekpo[3] - (Kp[3] + 2*Kd[3]/DELTA_T)*ek[3] + (Kd[3]/DELTA_T*ekmo[3]);
+  // }
 
 
 
@@ -553,8 +555,8 @@ ISR(TIMER5_COMPA_vect) {
 /*******************************************************************
  * 100Hz task
  ******************************************************************/
-void process100HzTask() {
-  
+ void process100HzTask() {
+
   G_Dt = (currentTime - hundredHZpreviousTime) / 1000000.0;
   hundredHZpreviousTime = currentTime;
   
@@ -571,6 +573,8 @@ void process100HzTask() {
   // kinematicsAngle[] is updated here
   calculateKinematics(gyroRate[XAXIS], gyroRate[YAXIS], gyroRate[ZAXIS], filteredAccel[XAXIS], filteredAccel[YAXIS], filteredAccel[ZAXIS], G_Dt);
 
+  readSerialCommand();
+  sendSerialTelemetry();
 	// if (calibrateReadyTilt == true) {
 	// 	ENQueueSensorReading(kinematicsAngle[0] - rollBias, 1);
 	// 	ENQueueSensorReading(kinematicsAngle[1] - pitchBias, 2);
@@ -586,7 +590,7 @@ void process100HzTask() {
  //  #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
 
  //    zVelocity = (filteredAccel[ZAXIS] * (1 - accelOneG * invSqrt(isq(filteredAccel[XAXIS]) + isq(filteredAccel[YAXIS]) + isq(filteredAccel[ZAXIS])))) - runTimeAccelBias[ZAXIS] - runtimeZBias;
-    
+
 	// if (!runtimaZBiasInitialized) {
 
  //      runtimeZBias = (filteredAccel[ZAXIS] * (1 - accelOneG * invSqrt(isq(filteredAccel[XAXIS]) + isq(filteredAccel[YAXIS]) + isq(filteredAccel[ZAXIS])))) - runTimeAccelBias[ZAXIS];
@@ -606,14 +610,14 @@ void process100HzTask() {
  //  		measureBaroSum();
  //  	}
  //  }
-	
+
  //  #endif
 
   if (startBaroMeasure) {
     measureBaro();
   }
   
-  processFlightControl_alt();
+  // processFlightControl_alt();
   //processFlightControl();
   
   //
@@ -633,7 +637,7 @@ void process100HzTask() {
 
   // //
   #if defined(UseGPS)
-    updateGps();
+  updateGps();
   #endif      
   // //
 
@@ -651,29 +655,29 @@ void process100HzTask() {
 /*******************************************************************
  * 50Hz task
  ******************************************************************/
-void process50HzTask() {
-  
-	if (beginControl) {
-		
+ void process50HzTask() {
+
+   if (beginControl) {
+
 /* 		if (firstRead == true) {
 		
 			xbee.begin(BAUD);
 			firstRead = false;
 			
 		} */
-	
-		G_Dt = (currentTime - fiftyHZpreviousTime) / 1000000.0;
-		fiftyHZpreviousTime = currentTime;
+
+      G_Dt = (currentTime - fiftyHZpreviousTime) / 1000000.0;
+      fiftyHZpreviousTime = currentTime;
 
 		//PIDControl(userInput, sensorReadings, G_Dt);
-		
+
 		// for (int i=0; i<4; i++){
-		
+
 		// 	motorConfiguratorCommand[i] = constrain((int(yk[i] + 1000.5)), 1000, 1200);
-		
+
 		// }
-    
-	}
+
+    }
 /*   #if defined(UseAnalogRSSIReader) || defined(UseEzUHFRSSIReader) || defined(UseSBUSRSSIReader)
     readRSSI();
   #endif
@@ -687,53 +691,53 @@ void process50HzTask() {
       initHomeBase();
     }
   #endif   */
-      
-}
+
+  }
 
 /*******************************************************************
  * 10Hz task
  ******************************************************************/
-void process10HzTask1() {
-	
+ void process10HzTask1() {
+
   // #if defined(HeadingMagHold)
-  
+
   //   G_Dt = (currentTime - tenHZpreviousTime) / 1000000.0;
   //   tenHZpreviousTime = currentTime;
-     
+
   //   measureMagnetometer(kinematicsAngle[XAXIS], kinematicsAngle[YAXIS]);
 
   //   calculateHeading();
-    
+
   // #endif
-	
-	if (startBaroMeasure) {
-	
-  		evaluateBaroAltitude();
-		
-		if (calibrateReady) {
-		
-			ENQueueSensorReading(getBaroAltitude(), 0);
-		
-		}
-		
-		else {
-			
-			if (startCalibrate) {
-			
-				Addz(getBaroAltitude());
-				
-			}	
-		
-		}
-	
-	}
-	
+
+   if (startBaroMeasure) {
+
+    evaluateBaroAltitude();
+
+    if (calibrateReady) {
+
+     ENQueueSensorReading(getBaroAltitude(), 0);
+
+   }
+
+   else {
+
+     if (startCalibrate) {
+
+      Addz(getBaroAltitude());
+
+    }	
+
+  }
+
+}
+
 }
 
 /*******************************************************************
  * low priority 10Hz task 2
  ******************************************************************/
-void process10HzTask2() {
+ void process10HzTask2() {
 
   G_Dt = (currentTime - lowPriorityTenHZpreviousTime) / 1000000.0;
   lowPriorityTenHZpreviousTime = currentTime;
@@ -743,30 +747,30 @@ void process10HzTask2() {
   // #endif
 
   // Listen for configuration commands and reports telemetry
-  readSerialCommand();
-  sendSerialTelemetry();
+  // readSerialCommand();
+  // sendSerialTelemetry();
 
 }
 
 /*******************************************************************
  * low priority 10Hz task 3
  ******************************************************************/
-void process10HzTask3() {
+ void process10HzTask3() {
 
-    G_Dt = (currentTime - lowPriorityTenHZpreviousTime2) / 1000000.0;
-    lowPriorityTenHZpreviousTime2 = currentTime;
+  G_Dt = (currentTime - lowPriorityTenHZpreviousTime2) / 1000000.0;
+  lowPriorityTenHZpreviousTime2 = currentTime;
 
     #if defined(UseGPS) || defined(BattMonitor)
-      processLedStatus();
+  processLedStatus();
     #endif
-    
+
     #ifdef SlowTelemetry
-      updateSlowTelemetry10Hz();
+  updateSlowTelemetry10Hz();
     #endif
 }
 
 
-	
+
 void process2HzTask() {
 	
     /* xbee.readPacket();
@@ -798,30 +802,30 @@ void process2HzTask() {
 	} */
     // Serial heartbeat code
     if (beginControl) {
-        
-        if (resetEmergencyStop) {
-            
-            countStop = 0;
-            
-        } else {
-            
-            countStop++;
-            
-        }
-        
-        resetEmergencyStop = false;
-        
+
+      if (resetEmergencyStop) {
+
+        countStop = 0;
+
+      } else {
+
+        countStop++;
+
+      }
+
+      resetEmergencyStop = false;
+
     }
 
-}
+  }
 
 
 
 /*******************************************************************
  * 1Hz task 
  ******************************************************************/
-void process1HzTask() {
-  
+ void process1HzTask() {
+
   /*#ifdef MavLink
     G_Dt = (currentTime - oneHZpreviousTime) / 1000000.0;
     oneHZpreviousTime = currentTime;
@@ -829,29 +833,29 @@ void process1HzTask() {
     sendSerialHeartbeat();   
   #endif*/
 
-	if (beginControl) {
-		
-		if (msg == '>') {
-	
-			countStop = 0;
-		
-		} else {
-		
-			countStop++;
-			
-		}
-		
-		msg = ' ';
-		
-	}
-  
-}
+    if (beginControl) {
+
+      if (msg == '>') {
+
+       countStop = 0;
+
+     } else {
+
+       countStop++;
+
+     }
+
+     msg = ' ';
+
+   }
+
+ }
 
 
 /*******************************************************************
  * Emergency Stop triggered by manual stopping command
  ******************************************************************/
-void emergencyStop() {
+ void emergencyStop() {
 
   // kill the motors
   OCR3B = 0;
@@ -866,95 +870,143 @@ void emergencyStop() {
   stopAll = true;
 
   // change system state
-  STATE = EMGSTOP;
+  status = EMGSTOP;
   
 }
 
 
+void do100HZTask() {
 
 
-/*******************************************************************
- * Main loop funtions
- ******************************************************************/
+  G_Dt = (currentTime - hundredHZpreviousTime) / 1000000.0;
+  hundredHZpreviousTime = currentTime;
+  
+  evaluateGyroRate();
+
+  // evaluateMetersPerSec();
+  
+  readSerialCommand();
+  sendSerialTelemetry();
+
+}
+
+
+// temp loop function for debugging
 void loop () {
+  currentTime = micros();
+  deltaTime = currentTime - previousTime;
 
-  while (stopAll) {}; // don't allow anything to happen
+  // measureCriticalSensors();
+  if (deltaTime >= 4000) {
+    measureGyroSum();
+  }
 
-	currentTime = micros();
-	deltaTime = currentTime - previousTime;
+  if (deltaTime >= 10000) {
 
-	measureCriticalSensors();
-
-	if (countStop > 5) {
-	
-		beginControl = false;
-		calibrateESC = 2;
-	
-	}
-	//Need new emergency stop procedure.
-
-  // ================================================================
-  // 100Hz task loop
-  // ================================================================
-	if (deltaTime >= 10000) {
+    frameCounter++;
     
-		frameCounter++;
-    
-		process100HzTask();
+    do100HZTask();
 
-    // ================================================================
-    // 50Hz task loop
-    // ================================================================
-
-    if (frameCounter % TASK_50HZ == 0) {  //  50 Hz tasks
-
-      process50HzTask();
-
-    }
-
-    // ================================================================
-    // 10Hz task loop
-    // ================================================================
-    if (frameCounter % TASK_10HZ == 0) {  //   10 Hz tasks
- 
-      process10HzTask1();
-
-    }
-
-    else if ((currentTime - lowPriorityTenHZpreviousTime) > 100000) {
-
-      process10HzTask2();
-
-    }
-
-    else if ((currentTime - lowPriorityTenHZpreviousTime2) > 100000) {
-
-      process10HzTask3();
-
-    }
-    
-    // ================================================================
-    // 2Hz task loop
-    // ================================================================
-    if (frameCounter % TASK_2HZ == 0) {  //   2 Hz tasks
-  		if (beginControl) {
-  		
-  			process2HzTask();
-  		
-  		}
-		
-    }
-	
     previousTime = currentTime;
 
   }
   
-	if (frameCounter >= 100) {
+  if (frameCounter >= 100) {
 
-      frameCounter = 0;
+    frameCounter = 0;
 
-	}
+  }
+
+
 }
+
+
+
+
+// /*******************************************************************
+//  * Main loop funtions
+//  ******************************************************************/
+// void loop () {
+
+//   while (stopAll) {}; // don't allow anything to happen
+
+// 	currentTime = micros();
+// 	deltaTime = currentTime - previousTime;
+
+
+// 	measureCriticalSensors();
+
+
+// 	if (countStop > 5) {
+
+// 		beginControl = false;
+// 		calibrateESC = 2;
+
+// 	}
+// 	//Need new emergency stop procedure.
+
+//   // ================================================================
+//   // 100Hz task loop
+//   // ================================================================
+// 	if (deltaTime >= 10000) {
+
+// 		frameCounter++;
+
+// 		process100HzTask();
+
+//     // ================================================================
+//     // 50Hz task loop
+//     // ================================================================
+
+//     if (frameCounter % TASK_50HZ == 0) {  //  50 Hz tasks
+
+//       process50HzTask();
+
+//     }
+
+//     // ================================================================
+//     // 10Hz task loop
+//     // ================================================================
+//     if (frameCounter % TASK_10HZ == 0) {  //   10 Hz tasks
+
+//       process10HzTask1();
+
+//     }
+
+//     else if ((currentTime - lowPriorityTenHZpreviousTime) > 100000) {
+
+//       process10HzTask2();
+
+//     }
+
+//     else if ((currentTime - lowPriorityTenHZpreviousTime2) > 100000) {
+
+//       process10HzTask3();
+
+//     }
+
+//     // ================================================================
+//     // 2Hz task loop
+//     // ================================================================
+//     if (frameCounter % TASK_2HZ == 0) {  //   2 Hz tasks
+//   		if (beginControl) {
+
+//   			process2HzTask();
+
+//   		}
+
+//     }
+
+//     previousTime = currentTime;
+
+//   }
+
+// 	if (frameCounter >= 100) {
+
+//       frameCounter = 0;
+
+// 	}
+// }
 
 
 

@@ -26,7 +26,7 @@ float yk[4] = {0.0, 0.0, 0.0, 0.0}; // current controller output
 float yk_prev[4] = {0.0, 0.0, 0.0, 0.0}; // previous filtered controller output
 
 // The maximum allowable change in controller output (since the last iteration)
-const int FILTER_TOLERANCE = 100;
+const int FILTER_TOLERANCE = 50;
 
 //the PID gains (proportional, integral, derivative for qz, qtheta, qphi, qpsi) 
 float Kp[] = {40.0, 5.0, 5.0, 0.0};
@@ -70,7 +70,7 @@ void PIDControl(float w[4], float states[4]) {
     //define an intermediate ukpo signal (pre multiplying by the matrix)
     //form the PID output:
     //implementation formula: ukpo_int - uk = (Kd/delta + K + Ki*delta)ekpo - (K + 2Kd/delta)ek + Kd/delta*ekmo
-        	
+
     // Save old yk values
     yk_prev[0] = yk[0];
     yk_prev[1] = yk[1];
@@ -79,10 +79,10 @@ void PIDControl(float w[4], float states[4]) {
 
     //multiply ukpo_int by the matrix to get your final values for ukpo
     //I computed the multiplication on paper, and the solutions are as follows:
-    yk[0] = .25*uk[0] -.5*uk[2] + .25*uk[3];
-    yk[1] = .25*uk[0] +.5*uk[1] - .25*uk[3];
-    yk[2] = .25*uk[0] +.5*uk[2] + .25*uk[3];
-    yk[3] = .25*uk[0] -.5*uk[1] - .25*uk[3];
+    yk[0] = .25*uk[0] + .5*uk[1] + .5*uk[2] + .25*uk[3];
+    yk[1] = .25*uk[0] - .5*uk[1] + .5*uk[2] - .25*uk[3];
+    yk[2] = .25*uk[0] + .5*uk[1] - .5*uk[2] - .25*uk[3];
+    yk[3] = .25*uk[0] - .5*uk[1] - .5*uk[2] + .25*uk[3];
 
     // Limit change in controller output
     yk[0] = constrain(yk[0], yk_prev[0] - FILTER_TOLERANCE, yk_prev[0] + FILTER_TOLERANCE);

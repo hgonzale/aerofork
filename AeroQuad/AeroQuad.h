@@ -57,7 +57,7 @@ int testCommand = 1000;
  #define CALIBRATE 1
  #define FLIGHT 2
  #define EMGSTOP 3
- int STATE = BOOTUP; // default state
+ int status = BOOTUP; // default state
 
 
 /**

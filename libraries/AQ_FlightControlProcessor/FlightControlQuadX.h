@@ -57,10 +57,10 @@ void applyMotorCommand() {
   // motorCommand[REAR_RIGHT]  = throttle + motorAxisCommandPitch - motorAxisCommandRoll - (YAW_DIRECTION * motorAxisCommandYaw);
 
   // Modified code:
-   motorCommand[FRONT_LEFT] = yk[0];
-   motorCommand[FRONT_RIGHT] = yk[1];
-   motorCommand[REAR_LEFT] = yk[2];
-   motorCommand[REAR_RIGHT] = yk[3];
+   motorCommand[FRONT_LEFT] += yk[0];
+   motorCommand[FRONT_RIGHT] += yk[1];
+   motorCommand[REAR_LEFT] += yk[2];
+   motorCommand[REAR_RIGHT] += yk[3];
 
 }
 

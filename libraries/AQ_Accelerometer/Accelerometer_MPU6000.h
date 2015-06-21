@@ -257,7 +257,7 @@ void calibration() {
      
      while (Serial.available() && Serial.read()); // empty buffer
      
-     while (!Serial.available()){
+     while (!Serial.available()){ // is this part necessary?
        
        Serial.println(F("Send any character to continue.\n"));
        delay(1500);
@@ -278,7 +278,7 @@ void calibration() {
   
     measureAccel();
 	
-    Serial.println("\nFINISHED!");
+    Serial.println("\nFinished!");
     Serial.print("\nSensor readings with offsets:\t");
 	
 	for (byte axis = XAXIS; axis <= ZAXIS; axis++) {

@@ -168,7 +168,7 @@ void MPU6000_SpiHighSpeed() {
   #ifndef MPU6000_I2C
 
 	spiMPU6000.end();
-    spiMPU6000.begin(SPI_CLOCK_DIV16, MSBFIRST, SPI_MODE3);
+  spiMPU6000.begin(SPI_CLOCK_DIV16, MSBFIRST, SPI_MODE3);
 
   #endif
 
@@ -201,8 +201,7 @@ byte MPU6000_ReadReg(int addr) {
 	sendByteI2C(MPU6000_I2C_ADDRESS, addr);
 	byte data = readByteI2C(MPU6000_I2C_ADDRESS);
   
-  #else
-
+  #else 
 	byte data = spiMPU6000.Read(addr);
 
   #endif
@@ -315,7 +314,6 @@ void readMPU6000Sensors() {
     MPU6000SwapData(MPU6000.rawByte, sizeof(MPU6000));
 
   #endif
-
 }
 
 int readMPU6000Count=0;

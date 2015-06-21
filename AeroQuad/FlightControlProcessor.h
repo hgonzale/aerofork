@@ -281,14 +281,15 @@ void processMinMaxCommand()
 * Position vector is used as the 'state' in PID control
 */
 void updateState() {
-   positionReal[0] = getBaroAltitude();
+   positionReal[0] = 0;
    positionReal[1] = kinematicsAngle[0];
    positionReal[2] = kinematicsAngle[1];
-   positionReal[3] = kinematicsAngle[2];
+   positionReal[3] = 0;
 
    // This forces the controller to only care about the roll and pitch
-   positionRef[0] = positionReal[0]; // set altitude error to zero
-   positionRef[3] = positionReal[3]; // set heading (yaw) error to zero
+   positionRef[0] = 0; // set altitude error to zero
+   positionRef[3] = 0; // set heading (yaw) error to zero
+
 }
 
 /**

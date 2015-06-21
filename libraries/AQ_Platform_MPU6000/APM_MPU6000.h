@@ -144,7 +144,7 @@ void MPU6000_SpiLowSpeed() {
 void MPU6000_SpiHighSpeed() {
 
 	spiMPU6000.end();
-    spiMPU6000.begin(SPI_CLOCK_DIV16, MSBFIRST, SPI_MODE3);
+  spiMPU6000.begin(SPI_CLOCK_DIV16, MSBFIRST, SPI_MODE3);
 
 }
 
@@ -161,8 +161,10 @@ void MPU6000_WriteReg(int addr, byte data) {
 byte MPU6000_ReadReg(int addr) {
 
 	byte data = spiMPU6000.Read(addr);
-
 	delay(1);
+
+
+
 
 	return data;
 
