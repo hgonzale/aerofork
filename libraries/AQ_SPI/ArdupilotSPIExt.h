@@ -60,15 +60,14 @@ public:
 
 		digitalWrite(MPUCS, HIGH);
 		digitalWrite(BAROCS, HIGH);
-
 	}
 
+
 	byte spi_transfer(byte data) {
-
 	 SPDR = data; //transfer data with hardware via SPI
-	 while (!(SPSR & _BV(SPIF))) ;
-	 return SPDR;
+	 while (!(SPSR & _BV(SPIF)));
 
+	 return SPDR;
 	}
 
 	//SPI Read protocol for MPU6000 device

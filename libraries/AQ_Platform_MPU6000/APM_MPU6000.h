@@ -25,7 +25,7 @@
 
 #include "Arduino.h"
 #include <SensorsStatus.h>
-
+// #include <SPI.h>
 #include <ArdupilotSPIExt.h>
 ArdupilotSPIExt spiMPU6000;
 
@@ -130,10 +130,10 @@ union uMPU6000 {
 
   } data;
 
-} MPU6000;
+} MPU6000, snapshot;
 
 
-void MPU6000_SpiLowSpeed() {
+void MPU6000_SpiLowSpeed() { // 500kHz
 
 	spiMPU6000.begin(SPI_CLOCK_DIV32, MSBFIRST, SPI_MODE3);
 
@@ -141,11 +141,11 @@ void MPU6000_SpiLowSpeed() {
 
 
 
-void MPU6000_SpiHighSpeed() {
+void MPU6000_SpiHighSpeed() { // 500kHz
 
 	spiMPU6000.end();
-  spiMPU6000.begin(SPI_CLOCK_DIV16, MSBFIRST, SPI_MODE3);
-
+  // spiMPU6000.begin(SPI_CLOCK_DIV16, MSBFIRST, SPI_MODE3); // 1MHz
+  spiMPU6000.begin(SPI_CLOCK_DIV32, MSBFIRST, SPI_MODE3); // 500 kHz
 }
 
 
@@ -163,9 +163,6 @@ byte MPU6000_ReadReg(int addr) {
 	byte data = spiMPU6000.Read(addr);
 	delay(1);
 
-
-
-
 	return data;
 
 }
@@ -180,6 +177,7 @@ void initializeMPU6000Sensors() {
   #endif
 
     MPU6000_SpiLowSpeed();
+    delay(10);
 
     unsigned char val;
 
@@ -213,23 +211,28 @@ void initializeMPU6000Sensors() {
   delay(100);  
   // Startup time delay
 
-  // Disable I2C bus
-  MPU6000_WriteReg(MPUREG_USER_CTRL, BIT_I2C_IF_DIS);
-
   // Wake Up device and select GyroZ clock (better performance)
   MPU6000_WriteReg(MPUREG_PWR_MGMT_1, MPU_CLK_SEL_PLLGYROZ);
+  delay(1);//
   MPU6000_WriteReg(MPUREG_PWR_MGMT_2, 0);
+  delay(1);//
 
-  // SAMPLE RATE
-  MPU6000_WriteReg(MPUREG_SMPLRT_DIV, 0x04);     // Sample rate = 250 Hz.
+  // Disable I2C bus
+  MPU6000_WriteReg(MPUREG_USER_CTRL, BIT_I2C_IF_DIS);
+  delay(1);//
+
+  // SAMPLE RATE    Fsample = 1Khz/(<value> + 1)
+  MPU6000_WriteReg(MPUREG_SMPLRT_DIV, 0x4);     // Sample rate = 200 Hz.
+  delay(1);//
 
   // FS & DLPF   FS=1000º/s, DLPF = 42Hz (low pass filter)
   MPU6000_WriteReg(MPUREG_CONFIG, BITS_DLPF_CFG_42HZ);
+  delay(1);//
+
   MPU6000_WriteReg(MPUREG_GYRO_CONFIG,BITS_FS_1000DPS);  // Gyro scale 1000º/s
+  delay(1);//
   MPU6000_WriteReg(MPUREG_ACCEL_CONFIG,0x08);   // Accel scale +/-4g (4096LSB/g)
 
-  // switch to high clock rate
-  MPU6000_SpiHighSpeed();
 
 }
 
@@ -238,13 +241,12 @@ void MPU6000SwapData(unsigned char *data, int datalen) {
 
   datalen /= 2;
 
-  while(datalen--) {
+  while(datalen-- > 0) {
 
     unsigned char t = data[0];
     data[0] = data[1];
     data[1] = t;
     data += 2;
-
   }
 
 }
@@ -253,6 +255,12 @@ void readMPU6000Sensors() {
 
     spiMPU6000.Read(MPUREG_ACCEL_XOUT_H, MPU6000.rawByte, sizeof(MPU6000));
     MPU6000SwapData(MPU6000.rawByte, sizeof(MPU6000));
+
+    // if (MPU6000.data.temperature > 20000 || MPU6000.data.gyro.x > 20000 || MPU6000.data.gyro.y > 20000) {
+    //   snapshot = MPU6000;
+    //   printFlag = true;
+
+    // }
 
 }
 

@@ -724,6 +724,22 @@ void sendSerialTelemetry() {
       SERIAL_PRINT("\t MPU6000.data.gyro: ");
       PrintValueComma(indic);
     }
+    
+    // SERIAL_PRINT("\t short: ");
+    // SERIAL_PRINT(sizeof(short));
+
+    // SERIAL_PRINT("\t MPU6000: ");
+    // SERIAL_PRINT(sizeof(MPU6000));
+
+    // SERIAL_PRINT("\t tAxis: ");
+    // SERIAL_PRINT(sizeof(tAxis));
+
+    // SERIAL_PRINT("\t gyro: ");
+    // SERIAL_PRINT(sizeof(MPU6000.data.gyro));
+
+    // SERIAL_PRINT("\t data: ");
+    // SERIAL_PRINT(sizeof(MPU6000.data));
+
     // SERIAL_PRINT( "\t gyroRaw: ");
     // PrintValueComma(gyroRaw[XAXIS]);
     // PrintValueComma(gyroRaw[YAXIS]);

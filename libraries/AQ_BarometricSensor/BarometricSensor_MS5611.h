@@ -124,7 +124,8 @@ void initializeBaro() {
   baroGroundAltitude = 0.0;
   pressureFactor = 1/5.255;
   
-  spiMS5611.begin(SPI_CLOCK_DIV16, MSBFIRST, SPI_MODE3);
+  // spiMS5611.begin(SPI_CLOCK_DIV16, MSBFIRST, SPI_MODE3);
+  spiMS5611.begin(SPI_CLOCK_DIV32, MSBFIRST, SPI_MODE3);
 
   pinMode(MS5611_CS, OUTPUT);          // Chip select Pin
   digitalWrite(MS5611_CS, HIGH);
@@ -179,8 +180,8 @@ void initializeBaro() {
 //
 void measureBaro() {
 
-  // measureBaroSum();
-  // evaluateBaroAltitude();
+  measureBaroSum();
+  evaluateBaroAltitude();
 
 }
 //

@@ -159,9 +159,9 @@
     pinMode(LED_Yellow, OUTPUT);
     pinMode(LED_Green, OUTPUT);
 
-    // initializeADC();
+    initializeADC();
 
-    // initRC();
+    initRC();
 
     Wire.begin();
 
@@ -169,9 +169,9 @@
 
     initializeMPU6000Sensors();
 
-    // initializeBaro();
+    initializeBaro();
 
-    // initializeMagnetometer();
+    initializeMagnetometer();
 
   }
   
@@ -484,8 +484,8 @@
   
   // // Optional Sensors
   // #ifdef AltitudeHoldBaro
-  //   initializeBaro();
-  //   vehicleState |= ALTITUDEHOLD_ENABLED;
+    initializeBaro();
+    vehicleState |= ALTITUDEHOLD_ENABLED;
   // #endif
   // #ifdef AltitudeHoldRangeFinder
   //   inititalizeRangeFinders();
@@ -516,7 +516,7 @@
   // #endif
   
   #if defined(UseGPS)
-  initializeGps();
+    initializeGps();
   #endif 
 
   // #ifdef SlowTelemetry
@@ -541,13 +541,13 @@
   Runs at 100Hz
   Using DELTA_T = 10ms = 0.01s
 */
-  // const float DELTA_T = 0.01;
-  // ISR(TIMER5_COMPA_vect) {
-  //   uk[0] += (Kd[0]/DELTA_T + Kp[0] + Ki[0]*DELTA_T)*ekpo[0] - (Kp[0] + 2*Kd[0]/DELTA_T)*ek[0] + (Kd[0]/DELTA_T*ekmo[0]);
-  //   uk[1] += (Kd[1]/DELTA_T + Kp[1] + Ki[1]*DELTA_T)*ekpo[1] - (Kp[1] + 2*Kd[1]/DELTA_T)*ek[1] + (Kd[1]/DELTA_T*ekmo[1]);
-  //   uk[2] += (Kd[2]/DELTA_T + Kp[2] + Ki[2]*DELTA_T)*ekpo[2] - (Kp[2] + 2*Kd[2]/DELTA_T)*ek[2] + (Kd[2]/DELTA_T*ekmo[2]);
-  //   uk[3] += (Kd[3]/DELTA_T + Kp[3] + Ki[3]*DELTA_T)*ekpo[3] - (Kp[3] + 2*Kd[3]/DELTA_T)*ek[3] + (Kd[3]/DELTA_T*ekmo[3]);
-  // }
+  const float DELTA_T = 0.01;
+  ISR(TIMER5_COMPA_vect) {
+    uk[0] += (Kd[0]/DELTA_T + Kp[0] + Ki[0]*DELTA_T)*ekpo[0] - (Kp[0] + 2*Kd[0]/DELTA_T)*ek[0] + (Kd[0]/DELTA_T*ekmo[0]);
+    uk[1] += (Kd[1]/DELTA_T + Kp[1] + Ki[1]*DELTA_T)*ekpo[1] - (Kp[1] + 2*Kd[1]/DELTA_T)*ek[1] + (Kd[1]/DELTA_T*ekmo[1]);
+    uk[2] += (Kd[2]/DELTA_T + Kp[2] + Ki[2]*DELTA_T)*ekpo[2] - (Kp[2] + 2*Kd[2]/DELTA_T)*ek[2] + (Kd[2]/DELTA_T*ekmo[2]);
+    uk[3] += (Kd[3]/DELTA_T + Kp[3] + Ki[3]*DELTA_T)*ekpo[3] - (Kp[3] + 2*Kd[3]/DELTA_T)*ek[3] + (Kd[3]/DELTA_T*ekmo[3]);
+  }
 
 
 
@@ -575,16 +575,16 @@
 
   readSerialCommand();
   sendSerialTelemetry();
-	// if (calibrateReadyTilt == true) {
-	// 	ENQueueSensorReading(kinematicsAngle[0] - rollBias, 1);
-	// 	ENQueueSensorReading(kinematicsAngle[1] - pitchBias, 2);
-	// 	ENQueueSensorReading(kinematicsAngle[2] - yawBias, 3);
-	// }
-	// else {
- //    if (startCalibrate == true) {
-	// 		AddTilt(kinematicsAngle[0],kinematicsAngle[1],kinematicsAngle[2]);
-	// 	}
-	// }
+	if (calibrateReadyTilt == true) {
+		ENQueueSensorReading(kinematicsAngle[0] - rollBias, 1);
+		ENQueueSensorReading(kinematicsAngle[1] - pitchBias, 2);
+		ENQueueSensorReading(kinematicsAngle[2] - yawBias, 3);
+	}
+	else {
+    if (startCalibrate == true) {
+			AddTilt(kinematicsAngle[0],kinematicsAngle[1],kinematicsAngle[2]);
+		}
+	}
 
   
  //  #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
@@ -603,21 +603,21 @@
 
  //  #endif    
 
- //  #if defined(AltitudeHoldBaro)
+  #if defined(AltitudeHoldBaro)
 
- //  if (startBaroMeasure == true) {
- //  	if (frameCounter % THROTTLE_ADJUST_TASK_SPEED == 0) {
- //  		measureBaroSum();
- //  	}
- //  }
+  if (startBaroMeasure == true) {
+  	if (frameCounter % THROTTLE_ADJUST_TASK_SPEED == 0) {
+  		measureBaroSum();
+  	}
+  }
 
- //  #endif
+  #endif
 
   if (startBaroMeasure) {
     measureBaro();
   }
   
-  // processFlightControl_alt();
+  processFlightControl_alt();
   //processFlightControl();
   
   //
@@ -875,138 +875,144 @@ void process2HzTask() {
 }
 
 
-void do100HZTask() {
+// void do100HZTask() {
 
 
-  G_Dt = (currentTime - hundredHZpreviousTime) / 1000000.0;
-  hundredHZpreviousTime = currentTime;
+//   G_Dt = (currentTime - hundredHZpreviousTime) / 1000000.0;
+//   hundredHZpreviousTime = currentTime;
   
-  evaluateGyroRate();
+//   // evaluateGyroRate();
 
-  // evaluateMetersPerSec();
+//   // evaluateMetersPerSec();
   
-  readSerialCommand();
-  sendSerialTelemetry();
+//   readSerialCommand();
+//   sendSerialTelemetry();
 
-}
-
-
-// temp loop function for debugging
-void loop () {
-  currentTime = micros();
-  deltaTime = currentTime - previousTime;
-
-  // measureCriticalSensors();
-  if (deltaTime >= 4000) {
-    measureGyroSum();
-  }
-
-  if (deltaTime >= 10000) {
-
-    frameCounter++;
-    
-    do100HZTask();
-
-    previousTime = currentTime;
-
-  }
-  
-  if (frameCounter >= 100) {
-
-    frameCounter = 0;
-
-  }
+// }
 
 
-}
+// float lastGyro = 0.0;
 
+// // SERIAL_PRINTLN(sizeof(MPU6000));
 
-
-
-// /*******************************************************************
-//  * Main loop funtions
-//  ******************************************************************/
+// // temp loop function for debugging
 // void loop () {
+//   currentTime = micros();
+//   deltaTime = currentTime - previousTime;
 
-//   while (stopAll) {}; // don't allow anything to happen
+//   // measureCriticalSensors();
 
-// 	currentTime = micros();
-// 	deltaTime = currentTime - previousTime;
+//   if (currentTime - lastGyro > 4000) {
+//     measureCriticalSensors();
+//     lastGyro = currentTime;
+//   }
 
+//   if (deltaTime >= 10000) {
 
-// 	measureCriticalSensors();
-
-
-// 	if (countStop > 5) {
-
-// 		beginControl = false;
-// 		calibrateESC = 2;
-
-// 	}
-// 	//Need new emergency stop procedure.
-
-//   // ================================================================
-//   // 100Hz task loop
-//   // ================================================================
-// 	if (deltaTime >= 10000) {
-
-// 		frameCounter++;
-
-// 		process100HzTask();
-
-//     // ================================================================
-//     // 50Hz task loop
-//     // ================================================================
-
-//     if (frameCounter % TASK_50HZ == 0) {  //  50 Hz tasks
-
-//       process50HzTask();
-
-//     }
-
-//     // ================================================================
-//     // 10Hz task loop
-//     // ================================================================
-//     if (frameCounter % TASK_10HZ == 0) {  //   10 Hz tasks
-
-//       process10HzTask1();
-
-//     }
-
-//     else if ((currentTime - lowPriorityTenHZpreviousTime) > 100000) {
-
-//       process10HzTask2();
-
-//     }
-
-//     else if ((currentTime - lowPriorityTenHZpreviousTime2) > 100000) {
-
-//       process10HzTask3();
-
-//     }
-
-//     // ================================================================
-//     // 2Hz task loop
-//     // ================================================================
-//     if (frameCounter % TASK_2HZ == 0) {  //   2 Hz tasks
-//   		if (beginControl) {
-
-//   			process2HzTask();
-
-//   		}
-
-//     }
+//     frameCounter++;
+    
+//     do100HZTask();
 
 //     previousTime = currentTime;
 
 //   }
+  
+//   if (frameCounter >= 100) {
 
-// 	if (frameCounter >= 100) {
+//     frameCounter = 0;
 
-//       frameCounter = 0;
+//   }
 
-// 	}
+
 // }
+
+
+
+
+/*******************************************************************
+ * Main loop funtions
+ ******************************************************************/
+void loop () {
+
+  while (stopAll) {}; // don't allow anything to happen
+
+	currentTime = micros();
+	deltaTime = currentTime - previousTime;
+
+
+	measureCriticalSensors();
+
+
+	if (countStop > 5) {
+
+		beginControl = false;
+		calibrateESC = 2;
+
+	}
+	//Need new emergency stop procedure.
+
+  // ================================================================
+  // 100Hz task loop
+  // ================================================================
+	if (deltaTime >= 10000) {
+
+		frameCounter++;
+
+		process100HzTask();
+
+    // ================================================================
+    // 50Hz task loop
+    // ================================================================
+
+    if (frameCounter % TASK_50HZ == 0) {  //  50 Hz tasks
+
+      process50HzTask();
+
+    }
+
+    // ================================================================
+    // 10Hz task loop
+    // ================================================================
+    if (frameCounter % TASK_10HZ == 0) {  //   10 Hz tasks
+
+      process10HzTask1();
+
+    }
+
+    else if ((currentTime - lowPriorityTenHZpreviousTime) > 100000) {
+
+      process10HzTask2();
+
+    }
+
+    else if ((currentTime - lowPriorityTenHZpreviousTime2) > 100000) {
+
+      process10HzTask3();
+
+    }
+
+    // ================================================================
+    // 2Hz task loop
+    // ================================================================
+    if (frameCounter % TASK_2HZ == 0) {  //   2 Hz tasks
+  		if (beginControl) {
+
+  			process2HzTask();
+
+  		}
+
+    }
+
+    previousTime = currentTime;
+
+  }
+
+	if (frameCounter >= 100) {
+
+      frameCounter = 0;
+
+	}
+}
 
 
 
