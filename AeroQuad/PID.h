@@ -21,23 +21,26 @@
 #ifndef _AQ_PID_H_
 #define _AQ_PID_H_
 
+
+/*
+* Indices used to access PID for each controlled variable.
+*/
 enum {
-  RATE_XAXIS_PID_IDX = 0,
-  RATE_YAXIS_PID_IDX,
-  ZAXIS_PID_IDX,
-  ATTITUDE_XAXIS_PID_IDX,
-  ATTITUDE_YAXIS_PID_IDX,
-  HEADING_HOLD_PID_IDX,
-  ATTITUDE_GYRO_XAXIS_PID_IDX,
-  ATTITUDE_GYRO_YAXIS_PID_IDX,
-  #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
-    BARO_ALTITUDE_HOLD_PID_IDX,
-    ZDAMPENING_PID_IDX,
-  #endif
-  LAST_PID_IDX  // keep this definition at the end of this enum
+  ALTITUDE_PID_IDX = 0,
+  ROLL_PID_IDX,
+  PITCH_PID_IDX,
+  YAW_PID_IDX,
+  GYRO_X_PID_IDX,
+  GYRO_Y_PID_IDX,
+  GYRO_Z_PID_IDX,
+
+  LAST_PID_IDX // keep LAST_PID_IDX at the end of the enum definition
 };
 
-//// PID Variables
+
+/*
+* PID parameter declaration
+*/
 struct PIDdata {
   float P, I, D;
   float lastError; // error from previous iteration (@ k-1)
@@ -50,14 +53,39 @@ struct PIDdata {
   boolean integralSwitch;
 } PID[LAST_PID_IDX];
 
-// This struct above declares the variable PID[] to hold each of the PID values for various functions
-// The following constants are declared in AeroQuad.h
-// ROLL = 0, PITCH = 1, YAW = 2 (used for Arcobatic Mode, gyros only)
-// ROLLLEVEL = 3, PITCHLEVEL = 4, LEVELGYROROLL = 6, LEVELGYROPITCH = 7 (used for Stable Mode, accels + gyros)
-// HEADING = 5 (used for heading hold)
-// ALTITUDE = 8 (used for altitude hold)
-// ZDAMPENING = 9 (used in altitude hold to dampen vertical accelerations)
-float windupGuard; // Read in from EEPROM
+
+/*
+* Variable-specific PID parameters
+* Adjust the PID parameters for each variable here. 
+*
+* NOTE 1: The values are set during EEPROM initialization, 
+*         which can be found in DataStorage.h.
+*
+* NOTE 2: The PID parameters for gyro readings are overridden
+*         during Kinematics initialization, which can be found
+*         in Kinematics_ARG.h
+*/
+
+// Altitude {P, I, D, windup}
+float PIDVARS_altitude[] = {40.0, 2.0, 0.0, 100.0};
+
+// Roll {P, I, D, windup}
+float PIDVARS_roll[] = {5.0, 0.1, 0.0, 100.0};
+
+// Pitch {P, I, D, windup}
+float PIDVARS_pitch[] = {5.0, 0.1, 0.0, 100.0};
+
+// Yaw {P, I, D, windup}
+float PIDVARS_yaw[] = {0.0, 0.3, 0.0, 100.0};
+
+// Gyro X {P, I, D, windup}
+float PIDVARS_gyroX[] = {1.0, 1.0, 0.0, 100.0};
+
+// Gyro Y {P, I, D, windup}
+float PIDVARS_gyroY[] = {1.0, 1.0, 0.0, 100.0};
+
+// Gyro Z {P, I, D, windup}
+float PIDVARS_gyroZ[] = {1.0, 1.0, 0.0, 100.0};
 
 
 /************************************************************************************************************************************
@@ -74,20 +102,41 @@ boolean checkSwitch(float error, float errorDif) {
 }
 
 
-/**
+/***********************************************************************************************************************************
+* initPID
+*
+* Initialize all error terms to zero and begin time measurement.
+************************************************************************************************************************************/
+void initPID() {
+
+  for (byte idx; idx < LAST_PID_IDX; idx++) {
+    PID[idx].lastError = 0.0;
+    PID[idx].lastLastError = 0.0;
+    PID[idx].integratedError = 0.0;
+    PID[idx].satIntegratedError = 0.0;
+    PID[idx].previousPIDTime = currentTime;
+    PID[idx].integralSwitch = true;
+  }
+
+}
+
+
+/************************************************************************************************************************************
 * updatePID
 *
 * reference: the desired value of the variable being controlled
 * state: the current value of the variable being controlled
-* PIDparamters: the address of the PIDdata associated with the variable being controlled (e.g. &PIDdata[VAR_IDX])
+* PIDparamters: the address of the PIDdata associated with the variable being controlled (e.g. &PIDdata[VAR_PID_IDX])
+* int_flag: true when updatePID is called by an interrupt. In this case, we know exactly what the 'dT' term is ahead of time.
 *
 * Executes an iteration of PID control. Important features are the use of an integral windup guard and recursive discrete-time
-* output calculations. 
-*/
-float updatePID(float reference, float state, struct PIDdata *PIDparameters) {
+* output calculations. Additionally, the user may pass in just the error rather than the reference and state.
+************************************************************************************************************************************/
+float updatePID(float reference, float state, struct PIDdata *PIDparameters, boolean int_flag) {
 
-  // time update
-  const float deltaPIDTime = (currentTime - PIDparameters->previousPIDTime) / 1000000.0;
+  // time update -- use pre-computed values if updatePID has been called by an interrupt
+  const float deltaPIDTime = (int_flag) ? DELTA_T : (currentTime - PIDparameters->previousPIDTime) / 1000000.0;
+  const float inv_deltaPIDTime = (int_flag) ? INV_DELTA_T : 1 / deltaPIDTime;
   PIDparameters->previousPIDTime = currentTime;
 
   float error = reference - state;
@@ -102,8 +151,8 @@ float updatePID(float reference, float state, struct PIDdata *PIDparameters) {
 
   // Controller outputs the recursive discrete-time signal:
   // u(k) += (Kp + Kd/delta) * e(k) - (Kp - Ki*delta + 2*Kd/delta) * e(k-1) + (Kd/delta) * e(k-2)
-  PIDparameters->output += (PIDparameters->P + PIDparameters->D / deltaPIDTime) * error - (PIDparameters->P - PIDparameters->I * deltaPIDTime + 2 * PIDparameters->D / deltaPIDTime) * PIDparameters->lastError + (PIDparameters->D / deltaPIDTime) * PIDparameters->lastLastError; 
- 
+  PIDparameters->output += (PIDparameters->P + PIDparameters->D * inv_deltaPIDTime) * error - (PIDparameters->P - PIDparameters->integralSwitch * PIDparameters->I * deltaPIDTime + 2 * PIDparameters->D * inv_deltaPIDTime) * PIDparameters->lastError + (PIDparameters->D * inv_deltaPIDTime) * PIDparameters->lastLastError; 
+  
   // update errors
   PIDparameters->lastLastError = PIDparameters->lastError;
   PIDparameters->lastError = error;
@@ -111,11 +160,23 @@ float updatePID(float reference, float state, struct PIDdata *PIDparameters) {
   return PIDparameters->output;
 }
 
+/*
+* Call updatePID when the error is known ahead of time.
+*/
+float updatePID(float error, struct PIDdata *PIDparameters, boolean int_flag) {
+  return updatePID(error, 0, PIDparameters, int_flag);
+}
 
 
+/**
+* zeroIntegralError
+*
+* Sets the integratedError to zero for all PID controllers.
+* (Leftover from original AQ code)
+*/
 void zeroIntegralError() __attribute__ ((noinline));
 void zeroIntegralError() {
-  for (byte axis = 0; axis <= ATTITUDE_YAXIS_PID_IDX; axis++) {
+  for (byte axis = 0; axis < LAST_PID_IDX; axis++) {
     PID[axis].integratedError = 0;
     PID[axis].previousPIDTime = currentTime;
   }

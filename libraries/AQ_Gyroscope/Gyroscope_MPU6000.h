@@ -60,14 +60,6 @@ void measureGyro() {
   gyroADC[YAXIS] = gyroZero[YAXIS] - (gyroRaw[YAXIS]=MPU6000.data.gyro.y);
   gyroADC[ZAXIS] = gyroZero[ZAXIS] - (gyroRaw[ZAXIS]=MPU6000.data.gyro.z);
 
-  if (gyroRaw[XAXIS] > 20000) {
-    indic = MPU6000.data.gyro.x;
-  } else if (gyroRaw[YAXIS] > 20000) {
-    indic = MPU6000.data.gyro.y;
-  } else {
-    indic = 0;
-  }
-
   for (byte axis = 0; axis <= ZAXIS; axis++) {
 
     gyroRate[axis] = gyroADC[axis] * gyroScaleFactor;

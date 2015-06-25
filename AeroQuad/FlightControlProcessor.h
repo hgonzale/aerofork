@@ -36,25 +36,25 @@
  */
 void calculateFlightError()
 {
-  #if defined (UseGPSNavigator)
-    if (navigationState == ON || positionHoldState == ON) {
-      float rollAttitudeCmd  = updatePID((receiverCommand[XAXIS] - receiverZero[XAXIS] + gpsRollAxisCorrection) * ATTITUDE_SCALING, kinematicsAngle[XAXIS], &PID[ATTITUDE_XAXIS_PID_IDX]);
-      float pitchAttitudeCmd = updatePID((receiverCommand[YAXIS] - receiverZero[YAXIS] + gpsPitchAxisCorrection) * ATTITUDE_SCALING, -kinematicsAngle[YAXIS], &PID[ATTITUDE_YAXIS_PID_IDX]);
-      motorAxisCommandRoll   = updatePID(rollAttitudeCmd, gyroRate[XAXIS], &PID[ATTITUDE_GYRO_XAXIS_PID_IDX]);
-      motorAxisCommandPitch  = updatePID(pitchAttitudeCmd, -gyroRate[YAXIS], &PID[ATTITUDE_GYRO_YAXIS_PID_IDX]);
-    }
-    else
-  #endif
-  if (flightMode == ATTITUDE_FLIGHT_MODE) {
-    float rollAttitudeCmd  = updatePID((receiverCommand[XAXIS] - receiverZero[XAXIS]) * ATTITUDE_SCALING, kinematicsAngle[XAXIS], &PID[ATTITUDE_XAXIS_PID_IDX]);
-    float pitchAttitudeCmd = updatePID((receiverCommand[YAXIS] - receiverZero[YAXIS]) * ATTITUDE_SCALING, -kinematicsAngle[YAXIS], &PID[ATTITUDE_YAXIS_PID_IDX]);
-    motorAxisCommandRoll   = updatePID(rollAttitudeCmd, gyroRate[XAXIS], &PID[ATTITUDE_GYRO_XAXIS_PID_IDX]);
-    motorAxisCommandPitch  = updatePID(pitchAttitudeCmd, -gyroRate[YAXIS], &PID[ATTITUDE_GYRO_YAXIS_PID_IDX]);
-  }
-  else {
-    motorAxisCommandRoll = updatePID(getReceiverSIData(XAXIS), gyroRate[XAXIS]*rotationSpeedFactor, &PID[RATE_XAXIS_PID_IDX]);
-    motorAxisCommandPitch = updatePID(getReceiverSIData(YAXIS), -gyroRate[YAXIS]*rotationSpeedFactor, &PID[RATE_YAXIS_PID_IDX]);
-  }
+  // #if defined (UseGPSNavigator)
+  //   if (navigationState == ON || positionHoldState == ON) {
+  //     float rollAttitudeCmd  = updatePID((receiverCommand[XAXIS] - receiverZero[XAXIS] + gpsRollAxisCorrection) * ATTITUDE_SCALING, kinematicsAngle[XAXIS], &PID[ATTITUDE_XAXIS_PID_IDX]);
+  //     float pitchAttitudeCmd = updatePID((receiverCommand[YAXIS] - receiverZero[YAXIS] + gpsPitchAxisCorrection) * ATTITUDE_SCALING, -kinematicsAngle[YAXIS], &PID[ATTITUDE_YAXIS_PID_IDX]);
+  //     motorAxisCommandRoll   = updatePID(rollAttitudeCmd, gyroRate[XAXIS], &PID[ATTITUDE_GYRO_XAXIS_PID_IDX]);
+  //     motorAxisCommandPitch  = updatePID(pitchAttitudeCmd, -gyroRate[YAXIS], &PID[ATTITUDE_GYRO_YAXIS_PID_IDX]);
+  //   }
+  //   else
+  // #endif
+  // if (flightMode == ATTITUDE_FLIGHT_MODE) {
+  //   float rollAttitudeCmd  = updatePID((receiverCommand[XAXIS] - receiverZero[XAXIS]) * ATTITUDE_SCALING, kinematicsAngle[XAXIS], &PID[ATTITUDE_XAXIS_PID_IDX]);
+  //   float pitchAttitudeCmd = updatePID((receiverCommand[YAXIS] - receiverZero[YAXIS]) * ATTITUDE_SCALING, -kinematicsAngle[YAXIS], &PID[ATTITUDE_YAXIS_PID_IDX]);
+  //   motorAxisCommandRoll   = updatePID(rollAttitudeCmd, gyroRate[XAXIS], &PID[ATTITUDE_GYRO_XAXIS_PID_IDX]);
+  //   motorAxisCommandPitch  = updatePID(pitchAttitudeCmd, -gyroRate[YAXIS], &PID[ATTITUDE_GYRO_YAXIS_PID_IDX]);
+  // }
+  // else {
+  //   motorAxisCommandRoll = updatePID(getReceiverSIData(XAXIS), gyroRate[XAXIS]*rotationSpeedFactor, &PID[RATE_XAXIS_PID_IDX]);
+  //   motorAxisCommandPitch = updatePID(getReceiverSIData(YAXIS), -gyroRate[YAXIS]*rotationSpeedFactor, &PID[RATE_YAXIS_PID_IDX]);
+  // }
 }
 
 /**
@@ -280,31 +280,48 @@ void processMinMaxCommand()
 * Store the current altitude and Euler angle estimates in the position vector.
 * Position vector is used as the 'state' in PID control
 */
-void updateState() {
-   positionReal[0] = 0;
-   positionReal[1] = kinematicsAngle[0];
-   positionReal[2] = kinematicsAngle[1];
-   positionReal[3] = 0;
+// void updateState() {
+//    positionReal[0] = 0;
+//    positionReal[1] = kinematicsAngle[0];
+//    positionReal[2] = kinematicsAngle[1];
+//    positionReal[3] = 0;
 
-   // This forces the controller to only care about the roll and pitch
-   positionRef[0] = 0; // set altitude error to zero
-   positionRef[3] = 0; // set heading (yaw) error to zero
+//    // This forces the controller to only care about the roll and pitch
+//    positionRef[0] = 0; // set altitude error to zero
+//    positionRef[3] = 0; // set heading (yaw) error to zero
 
-}
+// }
+
 
 /**
 * processFlightControl_alt
-* 
-* Bare bones flight control that makes use of PID for stability control.
-* positionRef and positionReal are defined in controlLoop.h.
-* 
+*
+* Assumes the flight error PIDs are being updated by an interrupt.
+*
+* Uses the output from the flight error PIDs to generate motor commands.
+* Currently, we are only trying to stabilize the quadcopter.
+*
+* Once we know this flight control function is working, it will replace
+* the original flight control method.
 */
 void processFlightControl_alt() {
-  updateState();
-  updateError(positionRef,positionReal);
-  PIDControl(positionRef, positionReal);
-  applyMotorCommand();
+
+  // update state variables
+  altitude = getBaroAltitude();
+  roll = kinematicsAngle[0];
+  pitch = kinematicsAngle[1];
+  yaw = kinematicsAngle[2];
+
+  dataReady = 1;
+
+  // load motor commands if PID has updated
+  if (pidReady) {
+    applyMotorCommand();
+    pidReady = 0;
+  }
 }
+
+
 
 
 /**

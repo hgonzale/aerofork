@@ -48,6 +48,10 @@ int motorMaxCommand[4] = {0,0,0,0};
 int motorMinCommand[4] = {0,0,0,0};
 int motorConfiguratorCommand[4] = {0,0,0,0};
 
+// The maximum allowable change in controller output (since the last iteration)
+const int FILTER_TOLERANCE = 50;
+
+
 void applyMotorCommand() {
 
   // Original AeroQuad code:
@@ -56,12 +60,33 @@ void applyMotorCommand() {
   // motorCommand[REAR_LEFT]   = throttle + motorAxisCommandPitch + motorAxisCommandRoll + (YAW_DIRECTION * motorAxisCommandYaw);
   // motorCommand[REAR_RIGHT]  = throttle + motorAxisCommandPitch - motorAxisCommandRoll - (YAW_DIRECTION * motorAxisCommandYaw);
 
-  // Modified code:
-   motorCommand[FRONT_LEFT] += yk[0];
-   motorCommand[FRONT_RIGHT] += yk[1];
-   motorCommand[REAR_LEFT] += yk[2];
-   motorCommand[REAR_RIGHT] += yk[3];
 
+  // Save old yk values
+  yk_prev[0] = yk[0];
+  yk_prev[1] = yk[1];
+  yk_prev[2] = yk[2];
+  yk_prev[3] = yk[3];
+
+
+  // map the control signals to the appropriate motors
+  yk[0] = .25*u_alt + .5*u_roll + .5*u_pitch + .25*u_yaw;
+  yk[1] = .25*u_alt - .5*u_roll + .5*u_pitch - .25*u_yaw;
+  yk[2] = .25*u_alt + .5*u_roll - .5*u_pitch - .25*u_yaw;
+  yk[3] = .25*u_alt - .5*u_roll - .5*u_pitch + .25*u_yaw;
+
+
+  // Limit change in controller output
+  yk[0] = constrain(yk[0], yk_prev[0] - FILTER_TOLERANCE, yk_prev[0] + FILTER_TOLERANCE);
+  yk[1] = constrain(yk[1], yk_prev[1] - FILTER_TOLERANCE, yk_prev[1] + FILTER_TOLERANCE);
+  yk[2] = constrain(yk[2], yk_prev[2] - FILTER_TOLERANCE, yk_prev[2] + FILTER_TOLERANCE);
+  yk[3] = constrain(yk[3], yk_prev[3] - FILTER_TOLERANCE, yk_prev[3] + FILTER_TOLERANCE);
+
+
+  // update motor commands
+  motorCommand[FRONT_LEFT] += yk[0];
+  motorCommand[FRONT_RIGHT] += yk[1];
+  motorCommand[REAR_LEFT] += yk[2];
+  motorCommand[REAR_RIGHT] += yk[3];
 }
 
 #endif // #define _AQ_PROCESS_FLIGHT_CONTROL_X_MODE_H_

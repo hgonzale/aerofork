@@ -51,11 +51,11 @@
 
 #include <AQMath.h>
 
-float K_p = 0.0;                   					// proportional gain governs rate of convergence to accelerometer/magnetometer
-float K_i = 0.0;                   					// integral gain governs rate of convergence of gyroscope biases
+float K_p = 0.2;                   					// proportional gain governs rate of convergence to accelerometer/magnetometer
+float K_i = 0.005;                   					// integral gain governs rate of convergence of gyroscope biases
 float halfT = 0.0;                					// half the sample period
 float q0 = 1.0, q1 = 0.0, q2 = 0.0, q3 = 0.0;       // quaternion elements representing the estimated orientation
-float exInt = 0.0, eyInt = 0.0, ezInt = 0.0;  		// scaled integral error
+// float exInt = 0.0, eyInt = 0.0, ezInt = 0.0;  		// scaled integral error
   
 float previousEx = 0.0;
 float previousEy = 0.0;
@@ -137,6 +137,7 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
 
   // float q0i, q1i, q2i, q3i;
   float ex, ey, ez;
+  float exInt, eyInt, ezInt;
     
   halfT = G_Dt/2;
   
@@ -156,191 +157,135 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
   ey = (vz*ax - vx*az);
   ez = (vx*ay - vy*ax);
     
-  // integral error scaled integral gain
-  exInt = exInt + ex*K_i;
-  if (isSwitched(previousEx,ex)) {
-    exInt = 0.0;
-  }
-  previousEx = ex;
-	
-  eyInt = eyInt + ey*K_i;
-  if (isSwitched(previousEy,ey)) {
-    eyInt = 0.0;
-  }
-  previousEy = ey;
-
-  ezInt = ezInt + ez*K_i;
-  if (isSwitched(previousEz,ez)) {
-    ezInt = 0.0;
-  }
-  previousEz = ez;
-
-
   // adjusted gyroscope measurements
-  mx = gx;
-  my = gy;
-  mz = gz;
+  ox = gx + updatePID(ex,&PID[GYRO_X_PID_IDX], false);
+  oy = gy + updatePID(ey,&PID[GYRO_Y_PID_IDX], false);
+  oz = gz + updatePID(ez,&PID[GYRO_Z_PID_IDX], false);
 
-  ox = gx + K_p*ex + exInt;
-  oy = gy + K_p*ey + eyInt;
-  oz = gz + K_p*ez + ezInt;
-
+  mx = halfT * gx;
+  my = halfT * gy;
+  mz = halfT * gz;
 
   // initial roll rate matrix (w/out adjusted gyro measurements)
-    M[1] = -mx * halfT;
-    M[2] = -my * halfT;
-    M[3] = -mz * halfT;
-    M[4] = mx * halfT;
-    M[6] = mz * halfT;
-    M[7] = -my * halfT;
-    M[8] = my * halfT;
-    M[9] = -mz * halfT;
-    M[11] = mx * halfT;
-    M[12] = mz * halfT;
-    M[13] = my * halfT;
-    M[14] = -mx * halfT;
+  M[1] = -mx;
+  M[2] = -my;
+  M[3] = -mz;
+  M[4] = mx;
+  M[6] = mz;
+  M[7] = -my;
+  M[8] = my;
+  M[9] = -mz;
+  M[11] = mx;
+  M[12] = mz;
+  M[13] = my;
+  M[14] = -mx;
 
-    
-    // integrate quaternion rate and normalise (leftovers from original AQ code)
-    // q0i = (-q1*gx - q2*gy - q3*gz) * halfT;
-    // q1i = ( q0*gx + q2*gz - q3*gy) * halfT;
-    // q2i = ( q0*gy - q1*gz + q3*gx) * halfT;
-    // q3i = ( q0*gz + q1*gy - q2*gx) * halfT;
-    // q0 += q0i;
-    // q1 += q1i;
-    // q2 += q2i;
-    // q3 += q3i;
+  //q = (idMat + halfT*M)*q
+  matrixAdd(4,4,E,idMat,M);
+  matrixMultiply(4,4,1,c,E,q);
 
+  q[0] = c[0];
+  q[1] = c[1];
+  q[2] = c[2];
+  q[3] = c[3];
 
-
-
-
-    // // d(k-2)
-    // ddd[0] = dd[0];
-    // ddd[1] = dd[1];
-    // ddd[2] = dd[2];
-    // ddd[3] = dd[3];
-
-    // // d(k-1)
-    // dd[0] = d[0];
-    // dd[1] = d[1];
-    // dd[2] = d[2];
-    // dd[3] = d[3];
-
-    // // d(k)
-    // d[0] = q[0];
-    // d[1] = q[1];
-    // d[2] = q[2];
-    // d[3] = q[3];
-
-    //q = (idMat + halfT*M)*q
-    matrixAdd(4,4,E,idMat,M);
-    // matrixMultiply(4,4,1,c,E,q);
-    matrixMultiply_alt(4,4,1,c,E,q);
-    q[0] = c[0];
-    q[1] = c[1];
-    q[2] = c[2];
-    q[3] = c[3];
-
-    q0 = q[0];
-    q1 = q[1];
-    q2 = q[2];
-    q3 = q[3];
-    
-    // normalise quaternion
-    norm = sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3);
-    q0 = q0 / norm;
-    q1 = q1 / norm;
-    q2 = q2 / norm;
-    q3 = q3 / norm;
-    
-    // q[0] = q0;
-    // q[1] = q1;
-    // q[2] = q2;
-    // q[3] = q3;
+  q0 = q[0];
+  q1 = q[1];
+  q2 = q[2];
+  q3 = q[3];
+  
+  // normalize quaternion
+  norm = sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3);
+  q0 = q0 / norm;
+  q1 = q1 / norm;
+  q2 = q2 / norm;
+  q3 = q3 / norm;
+  
+  q[0] = q0;
+  q[1] = q1;
+  q[2] = q2;
+  q[3] = q3;
 
 
-    ///////////////////////////////////////
-    // Iteration of Kalman filter update //
-    ///////////////////////////////////////
-    
-    // measurement vector
-    zk[0] = q0;
-    zk[1] = q1;
-    zk[2] = q2;
-    zk[3] = q3;
-    
-    // roll rate matrix
-    Ok[1] = -ox;
-    Ok[2] = -oy;
-    Ok[3] = -oz;
-    Ok[4] = ox;
-    Ok[6] = oz;
-    Ok[7] = -oy;
-    Ok[8] = oy;
-    Ok[9] = -oz;
-    Ok[11] = ox;
-    Ok[12] = oz;
-    Ok[13] = oy;
-    Ok[14] = -ox;
+  ///////////////////////////////////////
+  // Iteration of Kalman filter update //
+  ///////////////////////////////////////
+  
+  // measurement vector
+  zk[0] = q0;
+  zk[1] = q1;
+  zk[2] = q2;
+  zk[3] = q3;
+  
+  // roll rate matrix
+  Ok[1] = -ox;
+  Ok[2] = -oy;
+  Ok[3] = -oz;
+  Ok[4] = ox;
+  Ok[6] = oz;
+  Ok[7] = -oy;
+  Ok[8] = oy;
+  Ok[9] = -oz;
+  Ok[11] = ox;
+  Ok[12] = oz;
+  Ok[13] = oy;
+  Ok[14] = -ox;
 
-    // Kalman filter computations ...
+  // Kalman filter computations ...
 
-    //Tk = idMat + halfT*Ok
-    matrixScale(4,4,Tk,halfT,Ok);
-    matrixAdd(4,4,Tk,idMat,Tk);
+  //Tk = idMat + halfT*Ok
+  matrixScale(4,4,Tk,halfT,Ok);
+  matrixAdd(4,4,Tk,idMat,Tk);
 
-    //Kk = Qkmin * (Qkmin + Rk)^-1
-    matrixAdd(4,4,A,Qkmin,Rk);
-    matrixInverse4x4(B,A);
-    matrixMultiply(4,4,4,Kk,Qkmin,B);
+  //Kk = Qkmin * (Qkmin + Rk)^-1
+  matrixAdd(4,4,A,Qkmin,Rk);
+  matrixInverse4x4(B,A);
+  matrixMultiply(4,4,4,Kk,Qkmin,B);
 
-    //qk = qkmin + Kk*(zk - idMat*qkmin)
-    vectorSubtract(4,a,zk,qkmin);
-    matrixMultiply(4,4,1,b,Kk,a);
-    vectorAdd(4,qk,qkmin,b);
+  //qk = qkmin + Kk*(zk - idMat*qkmin)
+  vectorSubtract(4,a,zk,qkmin);
+  matrixMultiply(4,4,1,b,Kk,a);
+  vectorAdd(4,qk,qkmin,b);
 
-    //Qk = (idMat - Kk) * Qkmin
-    matrixSubtract(4,4,C,idMat,Kk);
-    matrixMultiply(4,4,4,Qk,C,Qkmin);
+  //Qk = (idMat - Kk) * Qkmin
+  matrixSubtract(4,4,C,idMat,Kk);
+  matrixMultiply(4,4,4,Qk,C,Qkmin);
 
-    //qkmin = Tk*qk
-    matrixMultiply(4,4,1,qkmin,Tk,qk);
+  //qkmin = Tk*qk
+  matrixMultiply(4,4,1,qkmin,Tk,qk);
 
-    //Qkmin = Tk*Qk*Tk_trans
-    matrixMultiply(4,4,4,D,Tk,Qk);
-    matrixTranspose4x4(Tk_trans,Tk);
-    matrixMultiply(4,4,4,Qkmin,D,Tk_trans);
+  //Qkmin = Tk*Qk*Tk_trans
+  matrixMultiply(4,4,4,D,Tk,Qk);
+  matrixTranspose4x4(Tk_trans,Tk);
+  matrixMultiply(4,4,4,Qkmin,D,Tk_trans);
 
-    //Qkmin = Qkmin + Wk
-    matrixAdd(4,4,Qkmin,Qkmin,Wk);
+  //Qkmin = Qkmin + Wk
+  matrixAdd(4,4,Qkmin,Qkmin,Wk);
 
-    // ... end KF computations
-   
-   // normalize quaternion estimates
-    vnorm = sqrt(qkmin[0]*qkmin[0] + qkmin[1]*qkmin[1] + qkmin[2]*qkmin[2] + qkmin[3]*qkmin[3]);
-    qkmin[0] = qkmin[0] / vnorm;
-    qkmin[1] = qkmin[1] / vnorm;
-    qkmin[2] = qkmin[2] / vnorm;
-    qkmin[3] = qkmin[3] / vnorm;
+  // ... end KF computations
+ 
+ // normalize quaternion estimates
+  vnorm = sqrt(qkmin[0]*qkmin[0] + qkmin[1]*qkmin[1] + qkmin[2]*qkmin[2] + qkmin[3]*qkmin[3]);
+  qkmin[0] = qkmin[0] / vnorm;
+  qkmin[1] = qkmin[1] / vnorm;
+  qkmin[2] = qkmin[2] / vnorm;
+  qkmin[3] = qkmin[3] / vnorm;
 
-    // set quaternions for next iteration
-    q0 = qkmin[0];
-    q1 = qkmin[1];
-    q2 = qkmin[2];
-    q3 = qkmin[3];
+  // set quaternions for next iteration
+  q0 = qkmin[0];
+  q1 = qkmin[1];
+  q2 = qkmin[2];
+  q3 = qkmin[3];
  
 }
   
 void eulerAngles()
 {
-  // kinematicsAngle[XAXIS]  = atan2(2 * (q0*q1 + q2*q3), 1 - 2 *(q1*q1 + q2*q2));
-  // kinematicsAngle[YAXIS] = asin(2 * (q0*q2 - q1*q3));
-  // kinematicsAngle[ZAXIS]   = atan2(2 * (q0*q3 + q1*q2), 1 - 2 *(q2*q2 + q3*q3));
 
   kinematicsAngle[XAXIS]  = atan2(2 * (qkmin[0]*qkmin[1] + qkmin[2]*qkmin[3]), 1 - 2 *(qkmin[1]*qkmin[1] + qkmin[2]*qkmin[2]));
   kinematicsAngle[YAXIS] = asin(2 * (qkmin[0]*qkmin[2] - qkmin[1]*qkmin[3]));
   kinematicsAngle[ZAXIS]   = atan2(2 * (qkmin[0]*qkmin[3] + qkmin[1]*qkmin[2]), 1 - 2 *(qkmin[2]*qkmin[2] + qkmin[3]*qkmin[3]));
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -354,16 +299,25 @@ void initializeKinematics()
   q1 = 0.0;
   q2 = 0.0;
   q3 = 0.0;
-  exInt = 0.0;
-  eyInt = 0.0;
-  ezInt = 0.0;
+
+  // Using the Gyro PID instead of these
+  // exInt = 0.0;
+  // eyInt = 0.0;
+  // ezInt = 0.0;
 	
   previousEx = 0;
   previousEy = 0;
   previousEz = 0;
 
-  K_p = 0.2; // 2.0;
-  K_i = 0.0; //0.005;
+  // set PID parameters for gyro
+  PID[GYRO_X_PID_IDX].P = K_p;
+  PID[GYRO_Y_PID_IDX].P = K_p;
+  PID[GYRO_Z_PID_IDX].P = K_p;
+
+  PID[GYRO_X_PID_IDX].I = K_i;
+  PID[GYRO_Y_PID_IDX].I = K_i;
+  PID[GYRO_Z_PID_IDX].I = K_i;
+
 }
   
 ////////////////////////////////////////////////////////////////////////////////

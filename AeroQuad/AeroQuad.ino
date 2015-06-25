@@ -35,12 +35,7 @@
 
    float indic = 0.0;
 
- // void writeDumbCommand() {
- //   OCR3B = dummyCommand[2] * 2;
- //   OCR3C = dummyCommand[1] * 2;
- //   OCR3A = dummyCommand[0] * 2 + 1;
- //   OCR4A = dummyCommand[3] * 2;
- // }
+   int counterVar = 0;
 
 
 
@@ -405,23 +400,35 @@
  ******************************************************************/
  void setup() {
 
-    // cli(); //disable global interrupts for setup function
+    cli(); //disable global interrupts for setup function
 
-    // TCCR5A = 0; // initialize TCRR5A register to 0
-    // TCCR5B = 0; // same for TCCR5B register
-    // TCNT5 = 0; // initialize counter value to 0 (for Timer 5)
-    
-    // // Pre-Scale values for OCR5A register:
-    // // 624 --> 100Hz
-    // // 1249 --> 50Hz
-    // // 3124 --> 20Hz
+    /* Timer 1 interrupt setup */
+    TCCR1A = 0; // initialize TCRR1A register to 0
+    TCCR1B = 0; // same for TCCR1B register
+    TCNT1 = 0; // initialize counter value to 0 (for Timer 1)
 
-    // OCR5A = 624;
-    // TCCR5B |= (1 << WGM12); // Enable CTC interrupt
-    // TCCR5B |= (1 << CS12); // enable 256 pre-scaler
-    // TIMSK5 |= (1 << OCIE1A);
+    // Pre-Scale values for OCRXA register:
+    // 624 --> 100Hz
+    // 1249 --> 50Hz
+    // 3124 --> 20Hz
+
+    OCR1A = 645;
+    TCCR1B |= (1 << WGM12); // Enable CTC interrupt
+    TCCR1B |= (1 << CS12); // enable 256 pre-scaler
+    TIMSK1 |= (1 << OCIE1A);     
+
+
+    /* Timer 5 interrupt setup */
+    TCCR5A = 0; // initialize TCRR5A register to 0
+    TCCR5B = 0; // same for TCCR5B register
+    TCNT5 = 0; // initialize counter value to 0 (for Timer 5)
+
+    OCR5A = 624;
+    TCCR5B |= (1 << WGM12); // Enable CTC interrupt
+    TCCR5B |= (1 << CS12); // enable 256 pre-scaler
+    TIMSK5 |= (1 << OCIE1A);
     
-    // sei(); // re-enable global interrupts
+    sei(); // re-enable global interrupts
 
     SERIAL_BEGIN(BAUD);
     pinMode(LED_Green, OUTPUT);
@@ -476,24 +483,18 @@
   // Flight angle estimation
   initializeKinematics();
 
+  initPID();
+
   #ifdef HeadingMagHold
-  vehicleState |= HEADINGHOLD_ENABLED;
-  initializeMagnetometer();
-  initializeHeadingFusion();
+    vehicleState |= HEADINGHOLD_ENABLED;
+    initializeMagnetometer();
+    initializeHeadingFusion();
   #endif
   
   // // Optional Sensors
   // #ifdef AltitudeHoldBaro
     initializeBaro();
     vehicleState |= ALTITUDEHOLD_ENABLED;
-  // #endif
-  // #ifdef AltitudeHoldRangeFinder
-  //   inititalizeRangeFinders();
-  //   vehicleState |= RANGE_ENABLED;
-  //   PID[SONAR_ALTITUDE_HOLD_PID_IDX].P = PID[BARO_ALTITUDE_HOLD_PID_IDX].P*2;
-  //   PID[SONAR_ALTITUDE_HOLD_PID_IDX].I = PID[BARO_ALTITUDE_HOLD_PID_IDX].I;
-  //   PID[SONAR_ALTITUDE_HOLD_PID_IDX].D = PID[BARO_ALTITUDE_HOLD_PID_IDX].D;
-  //   PID[SONAR_ALTITUDE_HOLD_PID_IDX].windupGuard = PID[BARO_ALTITUDE_HOLD_PID_IDX].windupGuard;
   // #endif
   
   // #ifdef BattMonitor
@@ -528,27 +529,39 @@
   safetyCheck = 0;
 }
 
-// 50Hz interrupt task for Timer 5
-//ISR(TIMER5_COMPA_vect) {
-//    writeMotors();
-//
-////    Used for ISR debugging
-////    writeDumbCommand(); //send current "motor commands" to motors
-////    myFlag++;
-//}
+/*Interrupt for motor actuation
+  Runs at 100Hz
+*/
+ISR(TIMER1_COMPA_vect) {
+  //write directly to motor registers
+  OCR3B = motorCommand[MOTOR3] * 2;
+  OCR3C = motorCommand[MOTOR2] * 2;
+  OCR3A = motorCommand[MOTOR1] * 2;
+  OCR4A = motorCommand[MOTOR4] * 2;
+}
 
 /*Interrupt for PID computation
   Runs at 100Hz
   Using DELTA_T = 10ms = 0.01s
+  INV_DELTA_T = 1 / DELTA_T = 100 /s
 */
-  const float DELTA_T = 0.01;
-  ISR(TIMER5_COMPA_vect) {
-    uk[0] += (Kd[0]/DELTA_T + Kp[0] + Ki[0]*DELTA_T)*ekpo[0] - (Kp[0] + 2*Kd[0]/DELTA_T)*ek[0] + (Kd[0]/DELTA_T*ekmo[0]);
-    uk[1] += (Kd[1]/DELTA_T + Kp[1] + Ki[1]*DELTA_T)*ekpo[1] - (Kp[1] + 2*Kd[1]/DELTA_T)*ek[1] + (Kd[1]/DELTA_T*ekmo[1]);
-    uk[2] += (Kd[2]/DELTA_T + Kp[2] + Ki[2]*DELTA_T)*ekpo[2] - (Kp[2] + 2*Kd[2]/DELTA_T)*ek[2] + (Kd[2]/DELTA_T*ekmo[2]);
-    uk[3] += (Kd[3]/DELTA_T + Kp[3] + Ki[3]*DELTA_T)*ekpo[3] - (Kp[3] + 2*Kd[3]/DELTA_T)*ek[3] + (Kd[3]/DELTA_T*ekmo[3]);
+ISR(TIMER5_COMPA_vect) {
+
+  if (dataReady) { // if new data is available
+    // u_alt = updatePID(1.0, altitude, &PID[ALTITUDE_PID_IDX], true);
+    u_alt = updatePID(0, &PID[ALTITUDE_PID_IDX], true);
+    u_roll = updatePID(0, roll, &PID[ROLL_PID_IDX], true);
+    u_pitch = updatePID(0, pitch, &PID[PITCH_PID_IDX], true);
+    u_yaw = updatePID(0, &PID[YAW_PID_IDX], true);
+    //u_yaw = updatePID(0, yaw, &PID[YAW_PID_IDX], true);
+
+    dataReady = 0;
+    pidReady = 1;
+
+    counterVar++;
   }
 
+}
 
 
 
@@ -573,15 +586,13 @@
   // kinematicsAngle[] is updated here
   calculateKinematics(gyroRate[XAXIS], gyroRate[YAXIS], gyroRate[ZAXIS], filteredAccel[XAXIS], filteredAccel[YAXIS], filteredAccel[ZAXIS], G_Dt);
 
-  readSerialCommand();
-  sendSerialTelemetry();
-	if (calibrateReadyTilt == true) {
-		ENQueueSensorReading(kinematicsAngle[0] - rollBias, 1);
-		ENQueueSensorReading(kinematicsAngle[1] - pitchBias, 2);
-		ENQueueSensorReading(kinematicsAngle[2] - yawBias, 3);
+	if (calibrateReadyTilt) {
+		// ENQueueSensorReading(kinematicsAngle[0] - rollBias, 1);
+		// ENQueueSensorReading(kinematicsAngle[1] - pitchBias, 2);
+		// ENQueueSensorReading(kinematicsAngle[2] - yawBias, 3);
 	}
 	else {
-    if (startCalibrate == true) {
+    if (startCalibrate) {
 			AddTilt(kinematicsAngle[0],kinematicsAngle[1],kinematicsAngle[2]);
 		}
 	}
@@ -605,7 +616,7 @@
 
   #if defined(AltitudeHoldBaro)
 
-  if (startBaroMeasure == true) {
+  if (startBaroMeasure) {
   	if (frameCounter % THROTTLE_ADJUST_TASK_SPEED == 0) {
   		measureBaroSum();
   	}
@@ -637,17 +648,8 @@
 
   // //
   #if defined(UseGPS)
-  updateGps();
+    updateGps();
   #endif      
-  // //
-
-  // //
-  // #if defined(CameraControl)
-  //   moveCamera(kinematicsAngle[YAXIS],kinematicsAngle[XAXIS],kinematicsAngle[ZAXIS]);
-  //   #if defined CameraTXControl
-  //     processCameraTXControl();
-  //   #endif
-  // #endif       
   // //
 
 }
@@ -669,28 +671,7 @@
       G_Dt = (currentTime - fiftyHZpreviousTime) / 1000000.0;
       fiftyHZpreviousTime = currentTime;
 
-		//PIDControl(userInput, sensorReadings, G_Dt);
-
-		// for (int i=0; i<4; i++){
-
-		// 	motorConfiguratorCommand[i] = constrain((int(yk[i] + 1000.5)), 1000, 1200);
-
-		// }
-
     }
-/*   #if defined(UseAnalogRSSIReader) || defined(UseEzUHFRSSIReader) || defined(UseSBUSRSSIReader)
-    readRSSI();
-  #endif
-
-  #ifdef AltitudeHoldRangeFinder
-    updateRangeFinders();
-  #endif
-
-  #if defined(UseGPS)
-    if (haveAGpsLock() && !isHomeBaseInitialized()) {
-      initHomeBase();
-    }
-  #endif   */
 
   }
 
@@ -741,14 +722,11 @@
 
   G_Dt = (currentTime - lowPriorityTenHZpreviousTime) / 1000000.0;
   lowPriorityTenHZpreviousTime = currentTime;
-  
-  // #if defined(BattMonitor)
-  //   measureBatteryVoltage(G_Dt*1000.0);
-  // #endif
+
 
   // Listen for configuration commands and reports telemetry
-  // readSerialCommand();
-  // sendSerialTelemetry();
+  readSerialCommand();
+  sendSerialTelemetry();
 
 }
 
@@ -760,13 +738,13 @@
   G_Dt = (currentTime - lowPriorityTenHZpreviousTime2) / 1000000.0;
   lowPriorityTenHZpreviousTime2 = currentTime;
 
-    #if defined(UseGPS) || defined(BattMonitor)
-  processLedStatus();
-    #endif
+  #if defined(UseGPS) || defined(BattMonitor)
+    processLedStatus();
+  #endif
 
-    #ifdef SlowTelemetry
-  updateSlowTelemetry10Hz();
-    #endif
+  #ifdef SlowTelemetry
+    updateSlowTelemetry10Hz();
+  #endif
 }
 
 
@@ -875,60 +853,6 @@ void process2HzTask() {
 }
 
 
-// void do100HZTask() {
-
-
-//   G_Dt = (currentTime - hundredHZpreviousTime) / 1000000.0;
-//   hundredHZpreviousTime = currentTime;
-  
-//   // evaluateGyroRate();
-
-//   // evaluateMetersPerSec();
-  
-//   readSerialCommand();
-//   sendSerialTelemetry();
-
-// }
-
-
-// float lastGyro = 0.0;
-
-// // SERIAL_PRINTLN(sizeof(MPU6000));
-
-// // temp loop function for debugging
-// void loop () {
-//   currentTime = micros();
-//   deltaTime = currentTime - previousTime;
-
-//   // measureCriticalSensors();
-
-//   if (currentTime - lastGyro > 4000) {
-//     measureCriticalSensors();
-//     lastGyro = currentTime;
-//   }
-
-//   if (deltaTime >= 10000) {
-
-//     frameCounter++;
-    
-//     do100HZTask();
-
-//     previousTime = currentTime;
-
-//   }
-  
-//   if (frameCounter >= 100) {
-
-//     frameCounter = 0;
-
-//   }
-
-
-// }
-
-
-
-
 /*******************************************************************
  * Main loop funtions
  ******************************************************************/
@@ -949,7 +873,6 @@ void loop () {
 		calibrateESC = 2;
 
 	}
-	//Need new emergency stop procedure.
 
   // ================================================================
   // 100Hz task loop

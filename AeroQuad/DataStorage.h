@@ -122,75 +122,46 @@ void nvrWritePID(unsigned char IDPid, unsigned int IDEeprom) {
 
 // contains all default values when re-writing EEPROM
 void initializeEEPROM() {
-  PID[RATE_XAXIS_PID_IDX].P = 100.0;
-  PID[RATE_XAXIS_PID_IDX].I = 150.0;
-  PID[RATE_XAXIS_PID_IDX].D = -350.0;
-  PID[RATE_YAXIS_PID_IDX].P = 100.0;
-  PID[RATE_YAXIS_PID_IDX].I = 150.0;
-  PID[RATE_YAXIS_PID_IDX].D = -350.0;
-  PID[ATTITUDE_XAXIS_PID_IDX].P = 3.5;
-  PID[ATTITUDE_XAXIS_PID_IDX].I = 0.0;
-  PID[ATTITUDE_XAXIS_PID_IDX].D = 0.0;
-  PID[ATTITUDE_YAXIS_PID_IDX].P = 3.5;
-  PID[ATTITUDE_YAXIS_PID_IDX].I = 0.0;
-  PID[ATTITUDE_YAXIS_PID_IDX].D = 0.0;
-  PID[ZAXIS_PID_IDX].P = 200.0;
-  PID[ZAXIS_PID_IDX].I = 5.0;
-  PID[ZAXIS_PID_IDX].D = 0.0;
-  PID[HEADING_HOLD_PID_IDX].P = 3.0;
-  PID[HEADING_HOLD_PID_IDX].I = 0.1;
-  PID[HEADING_HOLD_PID_IDX].D = 0.0;
-  // AKA PID experiements
-  PID[ATTITUDE_GYRO_XAXIS_PID_IDX].P = 100.0;
-  PID[ATTITUDE_GYRO_XAXIS_PID_IDX].I = 0.0;
-  PID[ATTITUDE_GYRO_XAXIS_PID_IDX].D = -350.0;
-  PID[ATTITUDE_GYRO_YAXIS_PID_IDX].P = 100.0;
-  PID[ATTITUDE_GYRO_YAXIS_PID_IDX].I = 0.0;
-  PID[ATTITUDE_GYRO_YAXIS_PID_IDX].D = -350.0;
-  rotationSpeedFactor = 1.0;
 
-  #if defined (AltitudeHoldBaro)
-    PID[BARO_ALTITUDE_HOLD_PID_IDX].P = 25.0;
-    PID[BARO_ALTITUDE_HOLD_PID_IDX].I = 0.6;
-    PID[BARO_ALTITUDE_HOLD_PID_IDX].D = 0.0;
-    PID[BARO_ALTITUDE_HOLD_PID_IDX].windupGuard = 25.0; //this prevents the 0.1 I term to rise too far
-    PID[ZDAMPENING_PID_IDX].P = 0.0;
-    PID[ZDAMPENING_PID_IDX].I = 0.0;
-    PID[ZDAMPENING_PID_IDX].D = 0.0;
-  #endif
-  #if defined (AltitudeHoldRangeFinder)
-    PID[SONAR_ALTITUDE_HOLD_PID_IDX].P = 50.0;
-    PID[SONAR_ALTITUDE_HOLD_PID_IDX].I = 0.6;
-    PID[SONAR_ALTITUDE_HOLD_PID_IDX].D = 0.0;
-    PID[SONAR_ALTITUDE_HOLD_PID_IDX].windupGuard = 25.0; //this prevents the 0.1 I term to rise too far
-  #endif
+  // new initialization
+  PID[ALTITUDE_PID_IDX].P = PIDVARS_altitude[0];
+  PID[ALTITUDE_PID_IDX].I = PIDVARS_altitude[1];
+  PID[ALTITUDE_PID_IDX].D = PIDVARS_altitude[2];
+  PID[ALTITUDE_PID_IDX].windupGuard = PIDVARS_altitude[3];
 
-  
-  #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
-    minThrottleAdjust = -50.0;
-    maxThrottleAdjust = 50.0; //we don't want it to be able to take over totally
-    #if defined AltitudeHoldBaro
-      baroSmoothFactor = 0.2;
-    #endif
-    altitudeHoldBump = 90;
-    altitudeHoldPanicStickMovement = 250;
-  #endif
-  
+  PID[ROLL_PID_IDX].P = PIDVARS_roll[0];
+  PID[ROLL_PID_IDX].I = PIDVARS_roll[1];
+  PID[ROLL_PID_IDX].D = PIDVARS_roll[2];
+  PID[ROLL_PID_IDX].windupGuard = PIDVARS_roll[3];
+
+  PID[PITCH_PID_IDX].P = PIDVARS_pitch[0];
+  PID[PITCH_PID_IDX].I = PIDVARS_pitch[1];
+  PID[PITCH_PID_IDX].D = PIDVARS_pitch[2];
+  PID[PITCH_PID_IDX].windupGuard = PIDVARS_pitch[3];
+
+  PID[YAW_PID_IDX].P = PIDVARS_yaw[0];
+  PID[YAW_PID_IDX].I = PIDVARS_yaw[1];
+  PID[YAW_PID_IDX].D = PIDVARS_yaw[2];
+  PID[YAW_PID_IDX].windupGuard = PIDVARS_yaw[3];
+
+  PID[GYRO_X_PID_IDX].P = PIDVARS_gyroX[0];
+  PID[GYRO_X_PID_IDX].I = PIDVARS_gyroX[1];
+  PID[GYRO_X_PID_IDX].D = PIDVARS_gyroX[2];
+  PID[GYRO_X_PID_IDX].windupGuard = PIDVARS_gyroX[3];
+
+  PID[GYRO_Y_PID_IDX].P = PIDVARS_gyroY[0];
+  PID[GYRO_Y_PID_IDX].I = PIDVARS_gyroY[1];
+  PID[GYRO_Y_PID_IDX].D = PIDVARS_gyroY[2];
+  PID[GYRO_Y_PID_IDX].windupGuard = PIDVARS_gyroY[3];
+
+  PID[GYRO_Z_PID_IDX].P = PIDVARS_gyroZ[0];
+  PID[GYRO_Z_PID_IDX].I = PIDVARS_gyroZ[1];
+  PID[GYRO_Z_PID_IDX].D = PIDVARS_gyroZ[2];
+  PID[GYRO_Z_PID_IDX].windupGuard = PIDVARS_gyroZ[3];
+
   initializePlatformSpecificAccelCalibration();
-
-  windupGuard = 1000.0;
-
-  // AKA - added so that each PID has its own windupGuard, will need to be removed once each PID's range is established and put in the eeprom
-  for (byte i = XAXIS; i < LAST_PID_IDX; i++ ) {
-    #if defined AltitudeHoldBaro
-      if (i != BARO_ALTITUDE_HOLD_PID_IDX) {
-        PID[i].windupGuard = windupGuard;
-      }
-    #else
-      PID[i].windupGuard = windupGuard;
-    #endif
-  }
     
+
   receiverXmitFactor = 1.0;
   minArmedThrottle = 1150;
   // AKA - old setOneG not in SI - accel->setOneG(500);
@@ -213,78 +184,34 @@ void initializeEEPROM() {
     batteryMonitorGoingDownTime = 60000;
   #endif
 
-  // Range Finder
-  #if defined (AltitudeHoldRangeFinder)
-    maxRangeFinderRange = 4.5;
-    minRangeFinderRange = 0.0;
-  #endif
-  
-  #if defined (UseGPSNavigator)
-    missionNbPoint = 0;
-    PID[GPSROLL_PID_IDX].P = 0.8;
-    PID[GPSROLL_PID_IDX].I = 0.0;
-    PID[GPSROLL_PID_IDX].D = 0.0;
-    PID[GPSPITCH_PID_IDX].P = 0.8;
-    PID[GPSPITCH_PID_IDX].I = 0.0;
-    PID[GPSPITCH_PID_IDX].D = 0.0;
-    PID[GPSYAW_PID_IDX].P = 50.0;
-    PID[GPSYAW_PID_IDX].I = 0.0;
-    PID[GPSYAW_PID_IDX].D = 0.0;
-
-    for (byte location = 0; location < MAX_WAYPOINTS; location++) {
-      waypoint[location].longitude = GPS_INVALID_ANGLE;
-      waypoint[location].latitude = GPS_INVALID_ANGLE;
-      waypoint[location].altitude = GPS_INVALID_ALTITUDE;
-    }
-  #endif
-
-  // Camera Control
-  #ifdef CameraControl
-    cameraMode = 1;
-    mCameraPitch = 1273.2;    
-    mCameraRoll = 636.6;    
-    mCameraYaw = 318.3;
-    servoCenterPitch = 1500;
-    servoCenterRoll = 1500;
-    servoCenterYaw = 1500;
-    servoMinPitch = 1000;
-    servoMinRoll = 1000;
-    servoMinYaw = 1000;
-    servoMaxPitch = 2000;
-    servoMaxRoll = 2000;
-    servoMaxYaw = 2000;
-    #ifdef CameraTXControl
-      servoTXChannels = 1;
-    #endif
-  #endif
 }
 
 void readEEPROM() {
-  readPID(XAXIS, ROLL_PID_GAIN_ADR);
-  readPID(YAXIS, PITCH_PID_GAIN_ADR);
-  readPID(ZAXIS, YAW_PID_GAIN_ADR);
-  readPID(ATTITUDE_XAXIS_PID_IDX, LEVELROLL_PID_GAIN_ADR);
-  readPID(ATTITUDE_YAXIS_PID_IDX, LEVELPITCH_PID_GAIN_ADR);
-  readPID(HEADING_HOLD_PID_IDX, HEADING_PID_GAIN_ADR);
-  readPID(ATTITUDE_GYRO_XAXIS_PID_IDX, LEVEL_GYRO_ROLL_PID_GAIN_ADR);
-  readPID(ATTITUDE_GYRO_YAXIS_PID_IDX, LEVEL_GYRO_PITCH_PID_GAIN_ADR);
+
+  readPID(ALTITUDE_PID_IDX, ALTITUDE_PID_GAIN_ADR);
+  readPID(ROLL_PID_IDX, ROLL_PID_GAIN_ADR);
+  readPID(PITCH_PID_IDX, PITCH_PID_GAIN_ADR);
+  readPID(YAW_PID_IDX, YAW_PID_GAIN_ADR);
+  readPID(GYRO_X_PID_IDX, GYRO_X_PID_GAIN_ADR);
+  readPID(GYRO_Y_PID_IDX, GYRO_Y_PID_GAIN_ADR);
+  readPID(GYRO_Z_PID_IDX, GYRO_Z_PID_GAIN_ADR);
 
   rotationSpeedFactor = readFloat(ROTATION_SPEED_FACTOR_ARD);
   
   // Leaving separate PID reads as commented for now
   // Previously had issue where EEPROM was not reading right data
-  #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
-    readPID(BARO_ALTITUDE_HOLD_PID_IDX, ALTITUDE_PID_GAIN_ADR);
-    PID[BARO_ALTITUDE_HOLD_PID_IDX].windupGuard = readFloat(ALTITUDE_WINDUP_ADR);
-    #if defined AltitudeHoldBaro
-      baroSmoothFactor = readFloat(ALTITUDE_SMOOTH_ADR);
-    #endif  
-    altitudeHoldBump = readFloat(ALTITUDE_BUMP_ADR);
-    altitudeHoldPanicStickMovement = readFloat(ALTITUDE_PANIC_ADR);
-    minThrottleAdjust = readFloat(ALTITUDE_MIN_THROTTLE_ADR);
-    maxThrottleAdjust = readFloat(ALTITUDE_MAX_THROTTLE_ADR);
-    readPID(ZDAMPENING_PID_IDX, ZDAMP_PID_GAIN_ADR);
-  #endif
+  // #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
+  //   readPID(BARO_ALTITUDE_HOLD_PID_IDX, ALTITUDE_PID_GAIN_ADR);
+  //   PID[BARO_ALTITUDE_HOLD_PID_IDX].windupGuard = readFloat(ALTITUDE_WINDUP_ADR);
+  //   #if defined AltitudeHoldBaro
+  //     baroSmoothFactor = readFloat(ALTITUDE_SMOOTH_ADR);
+  //   #endif  
+  //   altitudeHoldBump = readFloat(ALTITUDE_BUMP_ADR);
+  //   altitudeHoldPanicStickMovement = readFloat(ALTITUDE_PANIC_ADR);
+  //   minThrottleAdjust = readFloat(ALTITUDE_MIN_THROTTLE_ADR);
+  //   maxThrottleAdjust = readFloat(ALTITUDE_MAX_THROTTLE_ADR);
+  //   readPID(ZDAMPENING_PID_IDX, ZDAMP_PID_GAIN_ADR);
+  // #endif
 
   // Mag calibration
   #ifdef HeadingMagHold
@@ -300,17 +227,17 @@ void readEEPROM() {
     batteryMonitorGoingDownTime = readFloat(BATT_DOWN_TIME_ADR);
   #endif
   
-  windupGuard = readFloat(WINDUPGUARD_ADR);
+  // windupGuard = readFloat(WINDUPGUARD_ADR);
   // AKA - added so that each PID has its own windupGuard, will need to be removed once each PID's range is established and put in the EEPROM
-  for (byte i = XAXIS; i < LAST_PID_IDX; i++ ) {
-    #if defined AltitudeHoldBaro
-      if (i != BARO_ALTITUDE_HOLD_PID_IDX) {
-        PID[i].windupGuard = windupGuard;
-      }
-    #else
-      PID[i].windupGuard = windupGuard;
-    #endif      
-  }
+  // for (byte i = XAXIS; i < LAST_PID_IDX; i++ ) {
+  //   #if defined AltitudeHoldBaro
+  //     if (i != BARO_ALTITUDE_HOLD_PID_IDX) {
+  //       PID[i].windupGuard = windupGuard;
+  //     }
+  //   #else
+  //     PID[i].windupGuard = windupGuard;
+  //   #endif      
+  // }
     
   minArmedThrottle = readFloat(MINARMEDTHROTTLE_ADR);
   aref = readFloat(AREF_ADR);
@@ -320,9 +247,9 @@ void readEEPROM() {
 
   #if defined (UseGPSNavigator)
     missionNbPoint = readFloat(GPS_MISSION_NB_POINT_ADR);
-    readPID(GPSROLL_PID_IDX, GPSROLL_PID_GAIN_ADR);
-    readPID(GPSPITCH_PID_IDX, GPSPITCH_PID_GAIN_ADR);
-    readPID(GPSYAW_PID_IDX, GPSYAW_PID_GAIN_ADR);
+    // readPID(GPSROLL_PID_IDX, GPSROLL_PID_GAIN_ADR);
+    // readPID(GPSPITCH_PID_IDX, GPSPITCH_PID_GAIN_ADR);
+    // readPID(GPSYAW_PID_IDX, GPSYAW_PID_GAIN_ADR);
     
     for (byte location = 0; location < MAX_WAYPOINTS; location++) {
       waypoint[location].longitude = readLong(WAYPOINT_ADR[location].longitude);
@@ -331,44 +258,24 @@ void readEEPROM() {
     }    
   #endif
 
-  // Camera Control
-  #ifdef CameraControl
-    cameraMode = readFloat(CAMERAMODE_ADR);
-    mCameraPitch = readFloat(MCAMERAPITCH_ADR);
-    mCameraRoll = readFloat(MCAMERAROLL_ADR);    
-    mCameraYaw = readFloat(MCAMERAYAW_ADR);
-    servoCenterPitch = readFloat(SERVOCENTERPITCH_ADR);
-    servoCenterRoll = readFloat(SERVOCENTERROLL_ADR);
-    servoCenterYaw = readFloat(SERVOCENTERYAW_ADR);
-    servoMinPitch = readFloat(SERVOMINPITCH_ADR);
-    servoMinRoll = readFloat(SERVOMINROLL_ADR);
-    servoMinYaw = readFloat(SERVOMINYAW_ADR);
-    servoMaxPitch = readFloat(SERVOMAXPITCH_ADR);
-    servoMaxRoll = readFloat(SERVOMAXROLL_ADR);
-    servoMaxYaw = readFloat(SERVOMAXYAW_ADR);
-    #ifdef CameraTXControl
-      servoTXChannels = readFloat(SERVOTXCHANNELS_ADR);
-      servoActualCenter = readFloat(SERVOCENTERPITCH_ADR);
-    #endif
-  #endif   
 }
 
 void writeEEPROM(){
   cli(); // Needed so that APM sensor data does not overflow
-  writePID(XAXIS, ROLL_PID_GAIN_ADR);
-  writePID(YAXIS, PITCH_PID_GAIN_ADR);
-  writePID(ATTITUDE_XAXIS_PID_IDX, LEVELROLL_PID_GAIN_ADR);
-  writePID(ATTITUDE_YAXIS_PID_IDX, LEVELPITCH_PID_GAIN_ADR);
-  writePID(ZAXIS, YAW_PID_GAIN_ADR);
-  writePID(HEADING_HOLD_PID_IDX, HEADING_PID_GAIN_ADR);
-  writePID(ATTITUDE_GYRO_XAXIS_PID_IDX, LEVEL_GYRO_ROLL_PID_GAIN_ADR);
-  writePID(ATTITUDE_GYRO_YAXIS_PID_IDX, LEVEL_GYRO_PITCH_PID_GAIN_ADR);
-  
+
+  writePID(ALTITUDE_PID_IDX, ALTITUDE_PID_GAIN_ADR);
+  writePID(ROLL_PID_IDX, ROLL_PID_GAIN_ADR);
+  writePID(PITCH_PID_IDX, PITCH_PID_GAIN_ADR);
+  writePID(YAW_PID_IDX, YAW_PID_GAIN_ADR);
+  writePID(GYRO_X_PID_IDX, GYRO_X_PID_GAIN_ADR);
+  writePID(GYRO_Y_PID_IDX, GYRO_Y_PID_GAIN_ADR);
+  writePID(GYRO_Z_PID_IDX, GYRO_Z_PID_GAIN_ADR);
+
   writeFloat(rotationSpeedFactor,ROTATION_SPEED_FACTOR_ARD);
   
   #if defined AltitudeHoldBaro
-    writePID(BARO_ALTITUDE_HOLD_PID_IDX, ALTITUDE_PID_GAIN_ADR);
-    writeFloat(PID[BARO_ALTITUDE_HOLD_PID_IDX].windupGuard, ALTITUDE_WINDUP_ADR);
+    // writePID(BARO_ALTITUDE_HOLD_PID_IDX, ALTITUDE_PID_GAIN_ADR);
+    // writeFloat(PID[BARO_ALTITUDE_HOLD_PID_IDX].windupGuard, ALTITUDE_WINDUP_ADR);
   #endif
 
   #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
@@ -381,7 +288,7 @@ void writeEEPROM(){
     writeFloat(altitudeHoldPanicStickMovement, ALTITUDE_PANIC_ADR);
     writeFloat(minThrottleAdjust, ALTITUDE_MIN_THROTTLE_ADR);
     writeFloat(maxThrottleAdjust, ALTITUDE_MAX_THROTTLE_ADR);
-    writePID(ZDAMPENING_PID_IDX, ZDAMP_PID_GAIN_ADR);
+    // writePID(ZDAMPENING_PID_IDX, ZDAMP_PID_GAIN_ADR);
   #else
     writeFloat(0.1, ALTITUDE_SMOOTH_ADR);
     writeFloat(90, ALTITUDE_BUMP_ADR);
@@ -396,7 +303,8 @@ void writeEEPROM(){
     writeFloat(magBias[YAXIS], YAXIS_MAG_BIAS_ADR);
     writeFloat(magBias[ZAXIS], ZAXIS_MAG_BIAS_ADR);
   #endif
-  writeFloat(windupGuard, WINDUPGUARD_ADR);
+
+  // writeFloat(windupGuard, WINDUPGUARD_ADR);
   writeFloat(receiverXmitFactor, XMITFACTOR_ADR);
 
   for(byte channel = XAXIS; channel < LASTCHANNEL; channel++) {
@@ -418,21 +326,12 @@ void writeEEPROM(){
     writeFloat(batteryMonitorThrottleTarget, BATT_THROTTLE_TARGET_ADR);
     writeFloat(batteryMonitorGoingDownTime, BATT_DOWN_TIME_ADR);
   #endif
-
-  // Range Finder
-  #if defined (AltitudeHoldRangeFinder)
-    writeFloat(maxRangeFinderRange, RANGE_FINDER_MAX_ADR);
-    writeFloat(minRangeFinderRange, RANGE_FINDER_MIN_ADR);
-  #else
-    writeFloat(0, RANGE_FINDER_MAX_ADR);
-    writeFloat(0, RANGE_FINDER_MIN_ADR);
-  #endif
   
   #if defined (UseGPSNavigator)
     writeFloat(missionNbPoint, GPS_MISSION_NB_POINT_ADR);
-    writePID(GPSROLL_PID_IDX, GPSROLL_PID_GAIN_ADR);
-    writePID(GPSPITCH_PID_IDX, GPSPITCH_PID_GAIN_ADR);
-    writePID(GPSYAW_PID_IDX, GPSYAW_PID_GAIN_ADR);
+    // writePID(GPSROLL_PID_IDX, GPSROLL_PID_GAIN_ADR);
+    // writePID(GPSPITCH_PID_IDX, GPSPITCH_PID_GAIN_ADR);
+    // writePID(GPSYAW_PID_IDX, GPSYAW_PID_GAIN_ADR);
     
     for (byte location = 0; location < MAX_WAYPOINTS; location++) {
       writeLong(waypoint[location].longitude, WAYPOINT_ADR[location].longitude);
@@ -441,25 +340,6 @@ void writeEEPROM(){
     }       
   #endif
 
-    // Camera Control
-  #ifdef CameraControl
-    writeFloat(cameraMode, CAMERAMODE_ADR);
-    writeFloat(mCameraPitch, MCAMERAPITCH_ADR);
-    writeFloat(mCameraRoll, MCAMERAROLL_ADR);    
-    writeFloat(mCameraYaw, MCAMERAYAW_ADR);
-    writeFloat(servoCenterPitch, SERVOCENTERPITCH_ADR);
-    writeFloat(servoCenterRoll, SERVOCENTERROLL_ADR);
-    writeFloat(servoCenterYaw, SERVOCENTERYAW_ADR);
-    writeFloat(servoMinPitch, SERVOMINPITCH_ADR);
-    writeFloat(servoMinRoll, SERVOMINROLL_ADR);
-    writeFloat(servoMinYaw, SERVOMINYAW_ADR);
-    writeFloat(servoMaxPitch, SERVOMAXPITCH_ADR);
-    writeFloat(servoMaxRoll, SERVOMAXROLL_ADR);
-    writeFloat(servoMaxYaw, SERVOMAXYAW_ADR);
-    #ifdef CameraTXControl
-      writeFloat(servoTXChannels, SERVOTXCHANNELS_ADR);
-    #endif
-  #endif 
   sei(); // Restart interrupts
 }
 

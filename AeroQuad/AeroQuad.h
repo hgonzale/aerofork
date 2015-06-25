@@ -59,7 +59,6 @@ int testCommand = 1000;
  #define EMGSTOP 3
  int status = BOOTUP; // default state
 
-
 /**
  * Flight control global declaration
  */
@@ -80,6 +79,24 @@ byte previousFlightMode = ATTITUDE_FLIGHT_MODE;
 #define KINEMATICSCOL 0
 #define MAGCOL 1
 #define BAROCOL 2
+
+
+/**
+ * Flags used for task scheduling in main loop
+ */
+ volatile int pidReady = 0;
+ volatile int dataReady = 0;
+
+/**
+ * Flight control variables
+ */
+ volatile float altitude, roll, pitch, yaw; // state variables
+ volatile float u_alt, u_roll, u_pitch, u_yaw; // control signals
+ float yk_prev[4] = {0.0, 0.0, 0.0, 0.0}; // previous motor control signal
+ float yk[4] = {0.0, 0.0, 0.0, 0.0}; // current motor control signal
+
+ const float DELTA_T = 0.01; // dT for PID
+ const int INV_DELTA_T = 100; // 1/dT for PID
 
 byte flightMode = RATE_FLIGHT_MODE;
 unsigned long frameCounter = 0; // main loop executive frame counter
@@ -157,17 +174,6 @@ void initsensorArray() {
 void ENQueueSensorReading(float k, int axis) {
 
 	sensorReadings[axis] = k;
-	
-	//if(axis > 0) {
-
-	//	userInput[axis] = k;
-
-	//}
-
-	//else {
-
-	//}
-
 
 }
 
@@ -376,16 +382,22 @@ typedef struct {
   float smooth_factor;
 } t_NVR_Receiver;
 
-typedef struct {    
+typedef struct {
+
+  t_NVR_PID ALTITUDE_PID_GAIN_ADR;
   t_NVR_PID ROLL_PID_GAIN_ADR;
-  t_NVR_PID LEVELROLL_PID_GAIN_ADR;
-  t_NVR_PID YAW_PID_GAIN_ADR;
   t_NVR_PID PITCH_PID_GAIN_ADR;
+  t_NVR_PID YAW_PID_GAIN_ADR;
+  t_NVR_PID GYRO_X_PID_GAIN_ADR;
+  t_NVR_PID GYRO_Y_PID_GAIN_ADR;
+  t_NVR_PID GYRO_Z_PID_GAIN_ADR;
+
+
+  t_NVR_PID LEVELROLL_PID_GAIN_ADR;
   t_NVR_PID LEVELPITCH_PID_GAIN_ADR;
   t_NVR_PID HEADING_PID_GAIN_ADR;
   t_NVR_PID LEVEL_GYRO_ROLL_PID_GAIN_ADR;
   t_NVR_PID LEVEL_GYRO_PITCH_PID_GAIN_ADR;
-  t_NVR_PID ALTITUDE_PID_GAIN_ADR;
   t_NVR_PID ZDAMP_PID_GAIN_ADR;
   t_NVR_PID GPSROLL_PID_GAIN_ADR;
   t_NVR_PID GPSPITCH_PID_GAIN_ADR;
@@ -456,8 +468,8 @@ float nvrReadFloat(int address); // defined in DataStorage.h
 void nvrWriteFloat(float value, int address); // defined in DataStorage.h
 long nvrReadLong(int address); // defined in DataStorage.h
 void nvrWriteLong(long value, int address); // defined in DataStorage.h
-void nvrReadPID(unsigned char IDPid, unsigned int IDEeprom);
-void nvrWritePID(unsigned char IDPid, unsigned int IDEeprom);
+void nvrReadPID(unsigned char IDPid, unsigned int IDEeprom); // defined in DataStorage.h
+void nvrWritePID(unsigned char IDPid, unsigned int IDEeprom); // defined in DataStorage.h
 
 #define GET_NVR_OFFSET(param) ((int)&(((t_NVR_Data*) 0)->param))
 #define readFloat(addr) nvrReadFloat(GET_NVR_OFFSET(addr))

@@ -25,7 +25,6 @@
 
 #include "Arduino.h"
 #include <SensorsStatus.h>
-// #include <SPI.h>
 #include <ArdupilotSPIExt.h>
 ArdupilotSPIExt spiMPU6000;
 
@@ -144,7 +143,6 @@ void MPU6000_SpiLowSpeed() { // 500kHz
 void MPU6000_SpiHighSpeed() { // 500kHz
 
 	spiMPU6000.end();
-  // spiMPU6000.begin(SPI_CLOCK_DIV16, MSBFIRST, SPI_MODE3); // 1MHz
   spiMPU6000.begin(SPI_CLOCK_DIV32, MSBFIRST, SPI_MODE3); // 500 kHz
 }
 
@@ -255,12 +253,6 @@ void readMPU6000Sensors() {
 
     spiMPU6000.Read(MPUREG_ACCEL_XOUT_H, MPU6000.rawByte, sizeof(MPU6000));
     MPU6000SwapData(MPU6000.rawByte, sizeof(MPU6000));
-
-    // if (MPU6000.data.temperature > 20000 || MPU6000.data.gyro.x > 20000 || MPU6000.data.gyro.y > 20000) {
-    //   snapshot = MPU6000;
-    //   printFlag = true;
-
-    // }
 
 }
 

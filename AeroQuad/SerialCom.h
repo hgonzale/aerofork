@@ -131,40 +131,40 @@ void readSerialCommand() {
 
 
     case 'A': // Receive roll and pitch rate mode PID
-      readSerialPID(RATE_XAXIS_PID_IDX);
-      readSerialPID(RATE_YAXIS_PID_IDX);
-      rotationSpeedFactor = readFloatSerial();
+      // readSerialPID(RATE_XAXIS_PID_IDX);
+      // readSerialPID(RATE_YAXIS_PID_IDX);
+      // rotationSpeedFactor = readFloatSerial();
       break;
 
     case 'B': // Receive roll/pitch attitude mode PID
-      readSerialPID(ATTITUDE_XAXIS_PID_IDX);
-      readSerialPID(ATTITUDE_YAXIS_PID_IDX);
-      readSerialPID(ATTITUDE_GYRO_XAXIS_PID_IDX);
-      readSerialPID(ATTITUDE_GYRO_YAXIS_PID_IDX);
-      windupGuard = readFloatSerial(); // defaults found in setup() of AeroQuad.pde
+      // readSerialPID(ATTITUDE_XAXIS_PID_IDX);
+      // readSerialPID(ATTITUDE_YAXIS_PID_IDX);
+      // readSerialPID(ATTITUDE_GYRO_XAXIS_PID_IDX);
+      // readSerialPID(ATTITUDE_GYRO_YAXIS_PID_IDX);
+      // windupGuard = readFloatSerial(); // defaults found in setup() of AeroQuad.pde
       break;
 
     case 'C': // Receive yaw PID
-      readSerialPID(ZAXIS_PID_IDX);
-      readSerialPID(HEADING_HOLD_PID_IDX);
-      headingHoldConfig = readFloatSerial();
+      // readSerialPID(ZAXIS_PID_IDX);
+      // readSerialPID(HEADING_HOLD_PID_IDX);
+      // headingHoldConfig = readFloatSerial();
       break;
 
     case 'D': // Altitude hold PID
-      #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
-        readSerialPID(BARO_ALTITUDE_HOLD_PID_IDX);
-        PID[BARO_ALTITUDE_HOLD_PID_IDX].windupGuard = readFloatSerial();
-        altitudeHoldBump = readFloatSerial();
-        altitudeHoldPanicStickMovement = readFloatSerial();
-        minThrottleAdjust = readFloatSerial();
-        maxThrottleAdjust = readFloatSerial();
-        #if defined AltitudeHoldBaro
-          baroSmoothFactor = readFloatSerial();
-        #else
-          readFloatSerial();
-        #endif
-        readSerialPID(ZDAMPENING_PID_IDX);
-      #endif
+      // #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
+      //   readSerialPID(BARO_ALTITUDE_HOLD_PID_IDX);
+      //   PID[BARO_ALTITUDE_HOLD_PID_IDX].windupGuard = readFloatSerial();
+      //   altitudeHoldBump = readFloatSerial();
+      //   altitudeHoldPanicStickMovement = readFloatSerial();
+      //   minThrottleAdjust = readFloatSerial();
+      //   maxThrottleAdjust = readFloatSerial();
+      //   #if defined AltitudeHoldBaro
+      //     baroSmoothFactor = readFloatSerial();
+      //   #else
+      //     readFloatSerial();
+      //   #endif
+      //   readSerialPID(ZDAMPENING_PID_IDX);
+      // #endif
       break;
 
     case 'E': // Receive sensor filtering values
@@ -298,14 +298,14 @@ void readSerialCommand() {
       break;
 
     case 'V': // GPS
-      #if defined (UseGPSNavigator)
-        readSerialPID(GPSROLL_PID_IDX);
-        readSerialPID(GPSPITCH_PID_IDX);
-        readSerialPID(GPSYAW_PID_IDX);
-        writeEEPROM();
-      #else
+      // #if defined (UseGPSNavigator)
+      //   readSerialPID(GPSROLL_PID_IDX);
+      //   readSerialPID(GPSPITCH_PID_IDX);
+      //   readSerialPID(GPSYAW_PID_IDX);
+      //   writeEEPROM();
+      // #else
         skipSerialValues(9);
-      #endif
+      // #endif
       break;
 
     case 'W': // Write all user configurable values to EEPROM
@@ -484,46 +484,46 @@ void sendSerialTelemetry() {
     break;
 
   case 'a': // Send roll and pitch rate mode PID values
-    PrintPID(RATE_XAXIS_PID_IDX);
-    PrintPID(RATE_YAXIS_PID_IDX);
-    PrintValueComma(rotationSpeedFactor);
+    // PrintPID(RATE_XAXIS_PID_IDX);
+    // PrintPID(RATE_YAXIS_PID_IDX);
+    // PrintValueComma(rotationSpeedFactor);
     SERIAL_PRINTLN();
     queryType = 'X';
     break;
 
   case 'b': // Send roll and pitch attitude mode PID values
-    PrintPID(ATTITUDE_XAXIS_PID_IDX);
-    PrintPID(ATTITUDE_YAXIS_PID_IDX);
-    PrintPID(ATTITUDE_GYRO_XAXIS_PID_IDX);
-    PrintPID(ATTITUDE_GYRO_YAXIS_PID_IDX);
-    SERIAL_PRINTLN(windupGuard);
+    // PrintPID(ATTITUDE_XAXIS_PID_IDX);
+    // PrintPID(ATTITUDE_YAXIS_PID_IDX);
+    // PrintPID(ATTITUDE_GYRO_XAXIS_PID_IDX);
+    // PrintPID(ATTITUDE_GYRO_YAXIS_PID_IDX);
+    // SERIAL_PRINTLN(windupGuard);
     queryType = 'X';
     break;
 
   case 'c': // Send yaw PID values
-    PrintPID(ZAXIS_PID_IDX);
-    PrintPID(HEADING_HOLD_PID_IDX);
-    SERIAL_PRINTLN((int)headingHoldConfig);
+    // PrintPID(ZAXIS_PID_IDX);
+    // PrintPID(HEADING_HOLD_PID_IDX);
+    // SERIAL_PRINTLN((int)headingHoldConfig);
     queryType = 'X';
     break;
 
   case 'd': // Altitude Hold
-    #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
-      PrintPID(BARO_ALTITUDE_HOLD_PID_IDX);
-      PrintValueComma(PID[BARO_ALTITUDE_HOLD_PID_IDX].windupGuard);
-      PrintValueComma(altitudeHoldBump);
-      PrintValueComma(altitudeHoldPanicStickMovement);
-      PrintValueComma(minThrottleAdjust);
-      PrintValueComma(maxThrottleAdjust);
-      #if defined AltitudeHoldBaro
-        PrintValueComma(baroSmoothFactor);
-      #else
-        PrintValueComma(0);
-      #endif
-      PrintPID(ZDAMPENING_PID_IDX);
-    #else
+    // #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
+    //   // PrintPID(BARO_ALTITUDE_HOLD_PID_IDX);
+    //   PrintValueComma(PID[BARO_ALTITUDE_HOLD_PID_IDX].windupGuard);
+    //   PrintValueComma(altitudeHoldBump);
+    //   PrintValueComma(altitudeHoldPanicStickMovement);
+    //   PrintValueComma(minThrottleAdjust);
+    //   PrintValueComma(maxThrottleAdjust);
+    //   #if defined AltitudeHoldBaro
+    //     PrintValueComma(baroSmoothFactor);
+    //   #else
+    //     PrintValueComma(0);
+    //   #endif
+      // PrintPID(ZDAMPENING_PID_IDX);
+    // #else
       PrintDummyValues(10);
-    #endif
+    // #endif
     SERIAL_PRINTLN();
     queryType = 'X';
     break;
@@ -706,67 +706,45 @@ void sendSerialTelemetry() {
   
   case '?': // Custom serial command -- Used in debugging
 
-    // SERIAL_PRINTLN(deltaTime);
-
     // // See calculated Euler angles
     PrintValueComma(getBaroAltitude());
     PrintValueComma(kinematicsAngle[XAXIS]);
     PrintValueComma(kinematicsAngle[YAXIS]);
     PrintValueComma(kinematicsAngle[ZAXIS]);
 
-    SERIAL_PRINT( "\t gyroRate:" );
+    SERIAL_PRINT("\t");
+    PrintValueComma(MPU6000.data.gyro.x);
+    PrintValueComma(MPU6000.data.gyro.y);
+    PrintValueComma(MPU6000.data.gyro.z);    
 
-    PrintValueComma(gyroRate[XAXIS]);
-    PrintValueComma(gyroRate[YAXIS]);
-    PrintValueComma(gyroRate[ZAXIS]);
+    // SERIAL_PRINT( "\t gyroRate:" );
 
-    if (indic > 0) {
-      SERIAL_PRINT("\t MPU6000.data.gyro: ");
-      PrintValueComma(indic);
-    }
-    
-    // SERIAL_PRINT("\t short: ");
-    // SERIAL_PRINT(sizeof(short));
+    // PrintValueComma(gyroRate[XAXIS]);
+    // PrintValueComma(gyroRate[YAXIS]);
+    // PrintValueComma(gyroRate[ZAXIS]);
 
-    // SERIAL_PRINT("\t MPU6000: ");
-    // SERIAL_PRINT(sizeof(MPU6000));
-
-    // SERIAL_PRINT("\t tAxis: ");
-    // SERIAL_PRINT(sizeof(tAxis));
-
-    // SERIAL_PRINT("\t gyro: ");
-    // SERIAL_PRINT(sizeof(MPU6000.data.gyro));
-
-    // SERIAL_PRINT("\t data: ");
-    // SERIAL_PRINT(sizeof(MPU6000.data));
-
-    // SERIAL_PRINT( "\t gyroRaw: ");
-    // PrintValueComma(gyroRaw[XAXIS]);
-    // PrintValueComma(gyroRaw[YAXIS]);
-    // PrintValueComma(gyroRaw[ZAXIS]);
-
-    // SERIAL_PRINT("\t MPU6000.data.gyro: ");
-    // PrintValueComma(indic);
+    // if (indic > 0) {
+    //   SERIAL_PRINT("\t MPU6000.data.gyro: ");
+    //   PrintValueComma(indic);
+    // }
 
     // // // See PID in/out
-    // //SERIAL_PRINT("Error: ");
-    // // PrintValueComma(uk[0]);
-    // // PrintValueComma(uk[1]);
-    // // PrintValueComma(uk[2]);
-    // // PrintValueComma(uk[3]);	
-    // // SERIAL_PRINT( "\t" );
-    // // //SERIAL_PRINTLN();
-    // // //SERIAL_PRINT("Output: ");
-    // // PrintValueComma(yk[0]);
-    // // PrintValueComma(yk[1]);
-    // // PrintValueComma(yk[2]);
-    // // PrintValueComma(yk[3]);
+    SERIAL_PRINT("\t");
+    PrintValueComma(u_alt);
+    PrintValueComma(u_roll);
+    PrintValueComma(u_pitch);
+    PrintValueComma(u_yaw);	
+    SERIAL_PRINT( "\t" );
 
-    // // See motor commands		
-    // // for (byte motor = 0; motor < LASTMOTOR; motor++) {
-    // //   PrintValueComma(motorCommand[motor]);
-    // // }
-    // // // PrintDummyValues(8 - LASTMOTOR); // max of 8 motor outputs supported
+    PrintValueComma(yk[0]);
+    PrintValueComma(yk[1]);
+    PrintValueComma(yk[2]);
+    PrintValueComma(yk[3]);
+
+    // See motor commands		
+    // for (byte motor = 0; motor < LASTMOTOR; motor++) {
+    //   PrintValueComma(motorCommand[motor]);
+    // }
     SERIAL_PRINTLN('\n');
   break;
   
@@ -838,14 +816,14 @@ void sendSerialTelemetry() {
     break;
 
   case 'v': // Send GPS PIDs
-    #if defined (UseGPSNavigator)
-      PrintPID(GPSROLL_PID_IDX);
-      PrintPID(GPSPITCH_PID_IDX);
-      PrintPID(GPSYAW_PID_IDX);
-      queryType = 'X';
-    #else
+    // #if defined (UseGPSNavigator)
+    //   PrintPID(GPSROLL_PID_IDX);
+    //   PrintPID(GPSPITCH_PID_IDX);
+    //   PrintPID(GPSYAW_PID_IDX);
+    //   queryType = 'X';
+    // #else
       PrintDummyValues(9);
-    #endif
+    // #endif
     SERIAL_PRINTLN();
     queryType = 'X';
     break;
