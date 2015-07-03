@@ -29,6 +29,34 @@
 
 
 /**
+* processStabilityControl
+*
+* Assumes the flight error PIDs are being updated by an interrupt.
+*
+* Uses the output from the flight error PIDs to generate motor commands.
+* Currently, we are only trying to stabilize the quadcopter.
+*
+* Once we know this flight control function is working, it will replace
+* the original flight control method.
+*/
+void processStabilityControl() {
+
+  // update state variables
+  altitude = getBaroAltitude();
+  roll = kinematicsAngle[1];
+  pitch = kinematicsAngle[0];
+  yaw = kinematicsAngle[2];
+
+  dataReady = 1;
+
+  // load motor commands if PID has updated
+  if (pidReady) {
+    applyMotorCommand();
+    pidReady = 0;
+  }
+}
+
+/**
  * calculateFlightError
  *
  * Calculate roll/pitch axis error with gyro/accel data to
@@ -60,7 +88,7 @@ void calculateFlightError()
 /**
  * processCalibrateESC
  * 
- * Proces esc calibration command with the help of the configurator
+ * Process esc calibration command with the help of the configurator
  */
 void processCalibrateESC()
 {
@@ -272,56 +300,6 @@ void processMinMaxCommand()
     }
   }
 }
-
-
-/**
-* updateState
-* 
-* Store the current altitude and Euler angle estimates in the position vector.
-* Position vector is used as the 'state' in PID control
-*/
-// void updateState() {
-//    positionReal[0] = 0;
-//    positionReal[1] = kinematicsAngle[0];
-//    positionReal[2] = kinematicsAngle[1];
-//    positionReal[3] = 0;
-
-//    // This forces the controller to only care about the roll and pitch
-//    positionRef[0] = 0; // set altitude error to zero
-//    positionRef[3] = 0; // set heading (yaw) error to zero
-
-// }
-
-
-/**
-* processFlightControl_alt
-*
-* Assumes the flight error PIDs are being updated by an interrupt.
-*
-* Uses the output from the flight error PIDs to generate motor commands.
-* Currently, we are only trying to stabilize the quadcopter.
-*
-* Once we know this flight control function is working, it will replace
-* the original flight control method.
-*/
-void processFlightControl_alt() {
-
-  // update state variables
-  altitude = getBaroAltitude();
-  roll = kinematicsAngle[0];
-  pitch = kinematicsAngle[1];
-  yaw = kinematicsAngle[2];
-
-  dataReady = 1;
-
-  // load motor commands if PID has updated
-  if (pidReady) {
-    applyMotorCommand();
-    pidReady = 0;
-  }
-}
-
-
 
 
 /**

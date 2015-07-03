@@ -27,13 +27,15 @@ String userInp = new String(); //User serial command to be sent to Arduino.
 String msgDisplay = new String();
 String localMsg = new String();
 boolean localMsgReady = false;
-int START_HERE = 185;
 boolean sendReady = false;
 boolean emergencyStop = false;
+boolean calibrationComplete = false;
+boolean flightDataIncoming = false;
+int START_HERE = 185;
 int HB_FREQ = 10; // heartbeat frequency in Hz
 int previousTime = 0;
 
-boolean calibrationComplete = false;
+
 
 
 /*************************************************
@@ -47,7 +49,7 @@ int status = BOOTUP; // default state
 
 
 /*************************************************
-* Constants, functions used for building buttons *
+* Constants & functions used for building buttons *
 **************************************************/
 // Calibrate Baro button
 int CALIBBARO_X = 491;
@@ -72,7 +74,7 @@ void drawButton_CALIBACCEL() {
   rect(CALIBACCEL_X,CALIBACCEL_Y,CALIBACCEL_WIDTH,CALIBACCEL_HEIGHT,5);
   fill(20);
   textSize(14);
-  text("Ready",CALIBACCEL_X +14,CALIBACCEL_Y +18);
+  text("Ready",CALIBACCEL_X +24,CALIBACCEL_Y +18);
 }
 
 // Clear button
@@ -100,6 +102,35 @@ void drawButton_FLY() {
    textSize(14);
    text("Fly",FLY_X +33,FLY_Y +18);
 }
+
+// Flight data button
+int FLIGHTDATA_X = 491;
+int FLIGHTDATA_Y = 270;
+int FLIGHTDATA_WIDTH = 85;
+int FLIGHTDATA_HEIGHT = 25;
+void drawButton_FLIGHTDATA() {
+  fill(250);
+  rect(FLIGHTDATA_X,FLIGHTDATA_Y,FLIGHTDATA_WIDTH,FLIGHTDATA_HEIGHT,5);
+  fill(20);
+  textSize(14);
+  text("Data", FLIGHTDATA_X +28, FLIGHTDATA_Y +18);
+}
+
+
+
+// Reset button
+int RESET_X = 491;
+int RESET_Y = 497;
+int RESET_WIDTH = 85;
+int RESET_HEIGHT = 25;
+void drawButton_RESET() {
+   fill(250);
+   rect(RESET_X,RESET_Y,RESET_WIDTH,RESET_HEIGHT,5);
+   fill(20);
+   textSize(14);
+   text("Reset", RESET_X +25, RESET_Y +18);
+}
+
 
 
 /*********************************************************************************
@@ -155,10 +186,17 @@ void processIncoming() {
   while (myPort.available() > 0) {
     String in = myPort.readString();
     msgDisplay += in;
+    
+    // check for emergency stop signal
+    if (match(in,"~") != null) {
+      emergencyStop = true;
+      status = EMGSTOP;
+    }
   }
   // finally, print all incoming messages to the window
   textSize(12);
   text(getLastLines(msgDisplay,15),8,START_HERE);
+
 }
 
 /*********************************************************************************
@@ -170,16 +208,21 @@ void processIncoming() {
 *********************************************************************************/
 void processOutgoing() {
   
-  if (sendReady) { // send the custom message and heartbeat signal
+  if (sendReady) { // send the custom message AND heartbeat signal
+    if (saved.charAt(0) != '?') {
+      flightDataIncoming = false;
+      defaultMsg = "X78.9";
+    }
     myPort.write(saved);
     println(saved);
     sendReady = false;
-  }  else { // or just send the heartbeat signal
+    
+  }  else { // or send just the heartbeat signal
     fill(250);
     textSize(26);
     text(userInp,75,82);
 
-      // Send heartbeat signal if enough time has passed, and quadcopter is in FLIGHT mode
+    // Send heartbeat signal if enough time has passed, and quadcopter is in FLIGHT mode
     if ((millis() - previousTime)/1000.0 > 1.0/HB_FREQ && status == FLIGHT) {
           previousTime = millis();
           myPort.write(defaultMsg);
@@ -198,7 +241,7 @@ void processOutgoing() {
 String getLastLines(String str, int n) {
   int counter = 0;
   int idx = str.length() -1;
-  if (idx > 0) {
+  if (idx > -1) {
     while (counter < n && idx > 0) {
        if (str.charAt(idx) == '\n') {
          counter++;
@@ -208,8 +251,8 @@ String getLastLines(String str, int n) {
     return str.substring(idx);
   }
   return "";
-  
 }
+
 
 /*********************************************************************************
 * drawBackground
@@ -218,24 +261,26 @@ String getLastLines(String str, int n) {
 *********************************************************************************/
 void drawBackground() {
   // Set background and permanent text
-  //background(51);
+  //background(51); // grey
   //background(0,43,54); // nice deep blue
   background(39,40,34); // sublime text2 charcoal background
   
   fill(50);
+  fill(0,43,54);
+  rect(0,height-35,width-1,34); //bottom rectangle
   rect(0,0,width -1,35); //top rectangle
   rect(0,125 + 4,width -1,35); //middle rectangle
-  rect(0,height-35,width-1,34); //bottom rectangle
   rect(width-101,0,100,height-1); //sidebar
-  
   
   stroke(220);
   line(0,120,width,120);
   fill(250);
   textSize(14);
   text("Type your message below, and hit 'Enter' to send: ",6,23);
-  text("Incoming messages...",8,150);
   text("Hit the 'END' key at any time to trigger an Emergency Stop",8,height-12);
+  
+  
+  displayLocalMessage();
   
   drawStatusIndicator();
   
@@ -243,6 +288,8 @@ void drawBackground() {
   drawButton_CALIBBARO();
   drawButton_CALIBACCEL();
   drawButton_FLY();
+  drawButton_RESET();
+  drawButton_FLIGHTDATA();
 }
 
 /*********************************************************************************
@@ -287,6 +334,27 @@ void drawStatusIndicator() {
       text("EmgStop",width-75,100);
       break;
   }
+}
+
+
+/*********************************************************************************
+* displayLocalMessage
+*
+* [Description]
+*********************************************************************************/
+void displayLocalMessage() {
+  
+  if (localMsgReady) {
+
+    fill(255,222,0); // yellow
+    triangle(11,157,21,137,31,157);
+    fill(39,40,34); // charcoal grey
+    textSize(14);
+    text("!",19,154);
+    fill(250);
+    text(localMsg,40,153);
+  }
+  
 }
 
 /*********************************************************************************
@@ -336,12 +404,15 @@ boolean mouseOverRect(int x, int y, int w, int h) {
 /*********************************************************************************
 * mouseClicked
 * 
-* Called whenever the mouse is clicked, executes when mouse is released.
+* Called whenever the mouse is clicked. Executes when mouse is released.
 *********************************************************************************/
 void mouseClicked() {
  if (mouseOverRect(CALIBBARO_X,CALIBBARO_Y,CALIBBARO_WIDTH,CALIBBARO_HEIGHT) && status == BOOTUP) { // calibrate button
-    // run calibration routine
+    
     status = CALIBRATE;
+    localMsg = "Calibrating...";
+    localMsgReady = true;
+    
 //    saved = "/"; // Serial command for baro calibration
 //    sendReady = true;
 //    
@@ -353,11 +424,11 @@ void mouseClicked() {
   
   } else if (mouseOverRect(CALIBACCEL_X,CALIBACCEL_Y,CALIBACCEL_WIDTH,CALIBACCEL_HEIGHT)) {
     calibrationComplete = true;
+    localMsg = "Calibration complete...Press 'Fly' when ready!";
 //    saved = "@";
 //    sendReady = true;
 //    
-//    localMsg = "Calibrating accelerometer...";
-//    localMsgReady = true;
+
 //   
 //   
   } else if (mouseOverRect(CLEAR_X,CLEAR_Y,CLEAR_WIDTH,CLEAR_HEIGHT)) { // clear button
@@ -369,6 +440,34 @@ void mouseClicked() {
     status = FLIGHT;
     saved = "]"; // Serial command for beginning control
     sendReady = true;
+    localMsg = "";
+    localMsgReady = false;
+    
+    
+  } else if (mouseOverRect(RESET_X,RESET_Y,RESET_WIDTH,RESET_HEIGHT)) {
+   
+    // shut down serial and restart -- NEEDS MORE HERE
+    myPort.stop();
+    msgDisplay = "";
+    localMsg = "Restarting...";
+    localMsgReady = true;
+    displayLocalMessage();
+    delay(500);
+    
+//    localMsg = "";
+//    localMsgReady = false;
+    
+    myPort.clear();
+    status = BOOTUP;
+    emergencyStop = false;
+    myPort = new Serial(this, Serial.list()[0], 115200);
+    
+  } else if (mouseOverRect(FLIGHTDATA_X,FLIGHTDATA_Y,FLIGHTDATA_WIDTH,FLIGHTDATA_HEIGHT)) {
+    saved = "?"; // send flight data request
+    sendReady = true;
+    defaultMsg = "?78.9";
+    flightDataIncoming = true; 
+    
   }
   
   

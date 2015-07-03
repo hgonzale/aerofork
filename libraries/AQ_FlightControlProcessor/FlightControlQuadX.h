@@ -83,10 +83,23 @@ void applyMotorCommand() {
 
 
   // update motor commands
-  motorCommand[FRONT_LEFT] += yk[0];
-  motorCommand[FRONT_RIGHT] += yk[1];
-  motorCommand[REAR_LEFT] += yk[2];
-  motorCommand[REAR_RIGHT] += yk[3];
+  // motorCommand[FRONT_LEFT] += yk[0];
+  // motorCommand[FRONT_RIGHT] += yk[1];
+  // motorCommand[REAR_LEFT] += yk[2];
+  // motorCommand[REAR_RIGHT] += yk[3];
+
+  // constrain motor commands
+  // motorCommand[FRONT_LEFT] = constrain(motorCommand[FRONT_LEFT], 1000, 2000);
+  // motorCommand[FRONT_RIGHT = constrain(motorCommand[FRONT_RIGHT], 1000, 2000);
+  // motorCommand[REAR_LEFT] = constrain(motorCommand[REAR_LEFT], 1000, 2000);
+  // motorCommand[REAR_RIGHT = constrain(motorCommand[REAR_RIGHT], 1000, 2000);
+
+  // constant value motor commands
+  int motorcmd = 1000;
+  motorCommand[FRONT_LEFT] = motorcmd;
+  motorCommand[FRONT_RIGHT] = motorcmd;
+  motorCommand[REAR_LEFT] = motorcmd;
+  motorCommand[REAR_RIGHT] = motorcmd;
 }
 
 #endif // #define _AQ_PROCESS_FLIGHT_CONTROL_X_MODE_H_

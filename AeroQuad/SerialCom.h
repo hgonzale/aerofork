@@ -390,10 +390,10 @@ void readSerialCommand() {
 	break;
 	
 	case '/': //Calibrate barometer.
-    SERIAL_PRINTLN('\n' + "Calibrating barometer...");
+    SERIAL_PRINTLN("Calibrating barometer...");
 		measureGroundBaro();
 		startBaroMeasure = true;
-		Serial.print("...finished!*");
+		SERIAL_PRINTLN("...finished!*");
 	break;
 	
   case 'Z': // fast telemetry transfer <--- get rid if this?
@@ -707,35 +707,18 @@ void sendSerialTelemetry() {
   case '?': // Custom serial command -- Used in debugging
 
     // // See calculated Euler angles
-    PrintValueComma(getBaroAltitude());
+    // PrintValueComma(getBaroAltitude());
     PrintValueComma(kinematicsAngle[XAXIS]);
     PrintValueComma(kinematicsAngle[YAXIS]);
-    PrintValueComma(kinematicsAngle[ZAXIS]);
+    SERIAL_PRINT(kinematicsAngle[ZAXIS]);
 
-    SERIAL_PRINT("\t");
-    PrintValueComma(MPU6000.data.gyro.x);
-    PrintValueComma(MPU6000.data.gyro.y);
-    PrintValueComma(MPU6000.data.gyro.z);    
-
-    // SERIAL_PRINT( "\t gyroRate:" );
-
-    // PrintValueComma(gyroRate[XAXIS]);
-    // PrintValueComma(gyroRate[YAXIS]);
-    // PrintValueComma(gyroRate[ZAXIS]);
-
-    // if (indic > 0) {
-    //   SERIAL_PRINT("\t MPU6000.data.gyro: ");
-    //   PrintValueComma(indic);
-    // }
-
-    // // // See PID in/out
-    SERIAL_PRINT("\t");
+    SERIAL_PRINT(" \t ");
     PrintValueComma(u_alt);
     PrintValueComma(u_roll);
     PrintValueComma(u_pitch);
     PrintValueComma(u_yaw);	
-    SERIAL_PRINT( "\t" );
 
+    SERIAL_PRINT(" \t ");
     PrintValueComma(yk[0]);
     PrintValueComma(yk[1]);
     PrintValueComma(yk[2]);
@@ -745,20 +728,15 @@ void sendSerialTelemetry() {
     // for (byte motor = 0; motor < LASTMOTOR; motor++) {
     //   PrintValueComma(motorCommand[motor]);
     // }
-    SERIAL_PRINTLN('\n');
+
+    SERIAL_PRINTLN();
   break;
   
   case '>':
-	countStop = 0;
-	//
-    PrintValueComma(motorConfiguratorCommand[0]);
-    PrintValueComma(motorConfiguratorCommand[1]);
-    PrintValueComma(motorConfiguratorCommand[2]);
-    PrintValueComma(motorConfiguratorCommand[3]);
-	PrintValueComma(sensorReadings[0]);
-    PrintValueComma(sensorReadings[1]);	
-    PrintValueComma(sensorReadings[2]);	
-    PrintValueComma(sensorReadings[3]);
+    SERIAL_PRINT("Begin control? ");
+    SERIAL_PRINT(beginControl);
+    SERIAL_PRINT(" \t ");
+
     SERIAL_PRINTLN();
   break;
 

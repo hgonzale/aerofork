@@ -55,7 +55,7 @@ float K_p = 0.2;                   					// proportional gain governs rate of con
 float K_i = 0.005;                   					// integral gain governs rate of convergence of gyroscope biases
 float halfT = 0.0;                					// half the sample period
 float q0 = 1.0, q1 = 0.0, q2 = 0.0, q3 = 0.0;       // quaternion elements representing the estimated orientation
-// float exInt = 0.0, eyInt = 0.0, ezInt = 0.0;  		// scaled integral error
+float exInt = 0.0, eyInt = 0.0, ezInt = 0.0;  		// scaled integral error
   
 float previousEx = 0.0;
 float previousEy = 0.0;
@@ -124,7 +124,8 @@ float Wk[16] = {0.1,0,0,0,
    0,0,0.1,0,
    0,0,0,0.1};
 
-  float mx,my,mz;
+float mx,my,mz;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // argUpdate
@@ -132,12 +133,8 @@ float Wk[16] = {0.1,0,0,0,
 void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float G_Dt) {
   float norm,vnorm;
   float vx, vy, vz;
-
   float ox, oy, oz;
-
-  // float q0i, q1i, q2i, q3i;
   float ex, ey, ez;
-  float exInt, eyInt, ezInt;
     
   halfT = G_Dt/2;
   
@@ -147,16 +144,16 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
   ay = ay / norm;
   az = az / norm;
 
-  // estimated direction of gravity and flux (v and w)
-  vx = 2*(q1*q3 - q0*q2);
-  vy = 2*(q0*q1 - q2*q3);
+  // estimated direction of gravity and flux (v and w) -- from paper
+  vx = 2 * (q1*q3 - q0*q2);
+  vy = 2 * (q0*q1 - q2*q3);
   vz = q0*q0 - q1*q1 - q2*q2 - q3*q3;
     
   // error is sum of cross product between reference direction of fields and direction measured by sensors
   ex = (vy*az - vz*ay);
   ey = (vz*ax - vx*az);
   ez = (vx*ay - vy*ax);
-    
+
   // adjusted gyroscope measurements
   ox = gx + updatePID(ex,&PID[GYRO_X_PID_IDX], false);
   oy = gy + updatePID(ey,&PID[GYRO_Y_PID_IDX], false);
@@ -301,9 +298,9 @@ void initializeKinematics()
   q3 = 0.0;
 
   // Using the Gyro PID instead of these
-  // exInt = 0.0;
-  // eyInt = 0.0;
-  // ezInt = 0.0;
+  exInt = 0.0;
+  eyInt = 0.0;
+  ezInt = 0.0;
 	
   previousEx = 0;
   previousEy = 0;
@@ -331,6 +328,7 @@ void calculateKinematics(float rollRate,          float pitchRate,    float yawR
             longitudinalAccel, lateralAccel, verticalAccel,  
 		    G_Dt);
   eulerAngles();
+
 }
   
 float getGyroUnbias(byte axis) {

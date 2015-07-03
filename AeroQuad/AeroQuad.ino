@@ -28,15 +28,8 @@
 *****************************************************************************/
 
 
-//Interrupt test variables and functions
-   volatile boolean togglePin = true;
-   volatile int myFlag = 0;
-   volatile int dummyCommand[8] = {0,0,0,0,0,0,0,0};
-
    float indic = 0.0;
-
    int counterVar = 0;
-
 
 
 
@@ -54,17 +47,9 @@
   #error "GpsNavigation NEED AltitudeHoldBaro defined"
 #endif
 
-// #if defined(AutoLanding) && (!defined(AltitudeHoldBaro) || !defined(AltitudeHoldRangeFinder))
-//   #error "AutoLanding NEED AltitudeHoldBaro and AltitudeHoldRangeFinder defined"
-// #endif
-
 // #if defined(ReceiverSBUS) && defined(SlowTelemetry)
 //   #error "Receiver SWBUS and SlowTelemetry are in conflict for Seria2, they can't be used together"
 // #endif
-
-// #if defined (CameraTXControl) && !defined (CameraControl)
-//   #error "CameraTXControl need to have CameraControl defined"
-// #endif 
 
 #include <EEPROM.h>
 #include <Wire.h>
@@ -75,9 +60,11 @@
 #include <AQMath.h>
 #include <FourtOrderFilter.h>
 
-// #ifdef BattMonitor
-//   #include <BatteryMonitorTypes.h>
-// #endif
+
+/* XBee setup */
+XBee xbee = XBee();
+XBeeResponse response = XBeeResponse():
+ZBRxResponse msr = ModemStatusResponse();
 
 //********************************************************
 //********************************************************
@@ -95,7 +82,6 @@
 #include <APM_RC.h>
 #include <ArdupilotSPIExt.h>
 #include <APM_MPU6000.h>
-#include <controlLoop.h>
 
 // Gyroscope declaration
 #include <Gyroscope_MPU6000.h>
@@ -115,92 +101,76 @@
 #define SPARKFUN_9DOF_5883L
 //
 
-// #ifdef AltitudeHoldRangeFinder
-//   #define XLMAXSONAR 
-// #endif
-
 
 // Altitude declaration
 #include <BarometricSensor_MS5611.h>
 //
 
-// Battery monitor declaration
-// #ifdef BattMonitor
 
-//   #define BattDefaultConfig DEFINE_BATTERY(0, 0, 13.35, 0.31, BM_NOPIN, 0, 0)
-
-// #else
-
-  #undef BattMonitorAutoDescent
-  #undef POWERED_BY_VIN
-
-// #endif
-
-
-// #undef CameraControl
-// #undef OSD
+#undef BattMonitorAutoDescent
+#undef POWERED_BY_VIN
 
 #ifndef UseGPS
   #undef UseGPSNavigator
 #endif
 
 
-  /**
-   * Put ArduCopter specific initialization need here
-   */
-   void initPlatform() {
+/**
+ * Put ArduCopter specific initialization need here
+ */
+ void initPlatform() {
 
-    pinMode(LED_Red, OUTPUT);
-    pinMode(LED_Yellow, OUTPUT);
-    pinMode(LED_Green, OUTPUT);
+  pinMode(LED_Red, OUTPUT);
+  pinMode(LED_Yellow, OUTPUT);
+  pinMode(LED_Green, OUTPUT);
 
-    initializeADC();
+  initializeADC();
 
-    initRC();
+  initRC();
 
-    Wire.begin();
+  Wire.begin();
 
-    TWBR = 12;
+  TWBR = 12;
 
-    initializeMPU6000Sensors();
+  initializeMPU6000Sensors();
 
-    initializeBaro();
+  initializeBaro();
 
-    initializeMagnetometer();
+  initializeMagnetometer();
 
-  }
-  
-  // called when eeprom is initialized
-  void initializePlatformSpecificAccelCalibration() {
+}
 
-    accelScaleFactor[XAXIS] = 1.0;
-    runTimeAccelBias[XAXIS] = 0.0;
-    accelScaleFactor[YAXIS] = 1.0;
-    runTimeAccelBias[YAXIS] = 0.0;
-    accelScaleFactor[ZAXIS] = 1.0;
-    runTimeAccelBias[ZAXIS] = 0.0;
+// called when eeprom is initialized
+void initializePlatformSpecificAccelCalibration() {
 
-    #ifdef HeadingMagHold
-    magBias[XAXIS]  = 0.0;
-    magBias[YAXIS]  = 0.0;
-    magBias[ZAXIS]  = 0.0;
-    #endif
+  accelScaleFactor[XAXIS] = 1.0;
+  runTimeAccelBias[XAXIS] = 0.0;
+  accelScaleFactor[YAXIS] = 1.0;
+  runTimeAccelBias[YAXIS] = 0.0;
+  accelScaleFactor[ZAXIS] = 1.0;
+  runTimeAccelBias[ZAXIS] = 0.0;
 
-  }
+  #ifdef HeadingMagHold
+  magBias[XAXIS]  = 0.0;
+  magBias[YAXIS]  = 0.0;
+  magBias[ZAXIS]  = 0.0;
+  #endif
+
+}
 
 
-  /**
-   * Measure critical sensors
-   */
-   void measureCriticalSensors() {
+/**
+ * Measure critical sensors
+ */
+ void measureCriticalSensors() {
 
-    evaluateADC();
+  evaluateADC();
 
-    measureGyroSum();
+  measureGyroSum();
 
-    measureAccelSum();
+  measureAccelSum();
 
-  }
+}
 
 
 
@@ -225,57 +195,15 @@
 //********************************************************
 //******************** RECEIVER DECLARATION **************
 //********************************************************
-
-
-// #if defined(ReceiverHWPPM)
-//   #include <Receiver_HWPPM.h>
-// #elif defined(ReceiverPPM)
-//   #include <Receiver_PPM.h>
-// #elif defined(AeroQuad_Mini) && (defined(hexPlusConfig) || defined(hexXConfig) || defined(hexY6Config))
-//   #include <Receiver_PPM.h>
-// #elif defined(RemotePCReceiver)
-//   #include <Receiver_RemotePC.h>
-// #elif defined(ReceiverSBUS)
-//   #include <Receiver_SBUS.h>
-// #elif defined(RECEIVER_328P)
-//   #include <Receiver_328p.h>
-// #elif defined(RECEIVER_MEGA)
-//   #include <Receiver_MEGA.h>
 #if defined(RECEIVER_APM)
   #include <Receiver_APM.h>
 #endif
-// #elif defined(RECEIVER_STM32PPM)
-//   #include <Receiver_STM32PPM.h>  
-// #elif defined(RECEIVER_STM32)
-//   #include <Receiver_STM32.h>  
-// #endif
-
-// #if defined(UseAnalogRSSIReader) 
-//   #include <AnalogRSSIReader.h>
-// #elif defined(UseEzUHFRSSIReader)
-//   #include <EzUHFRSSIReader.h>
-// #elif defined(UseSBUSRSSIReader)
-//   #include <SBUSRSSIReader.h>
-// #endif
-
 
 
 //********************************************************
 //********************** MOTORS DECLARATION **************
 //********************************************************
   #include <Motors_PWM_Timer.h>
-
-// #if defined(MOTOR_PWM)
-//   #include <Motors_PWM.h>
-// #elif defined(MOTOR_PWM_Timer)
-//   #include <Motors_PWM_Timer.h>
-// #elif defined(MOTOR_APM)
-//   #include <Motors_APM.h>
-// #elif defined(MOTOR_I2C)
-//   #include <Motors_I2C.h>
-// #elif defined(MOTOR_STM32)
-//   #include <Motors_STM32.h>    
-// #endif
 
 //********************************************************
 //******* HEADING HOLD MAGNETOMETER DECLARATION **********
@@ -298,32 +226,7 @@
 #elif defined(MS5611)
  #include <BarometricSensor_MS5611.h>
 #endif
-// #if defined(XLMAXSONAR)
-//   #include <MaxSonarRangeFinder.h>
-// #endif 
-//********************************************************
-//*************** BATTERY MONITOR DECLARATION ************
-//********************************************************
-// #ifdef BattMonitor
-//   #include <BatteryMonitor.h>
-//   #ifndef BattCustomConfig
-//     #define BattCustomConfig BattDefaultConfig
-//   #endif
-//   struct BatteryData batteryData[] = {BattCustomConfig};
-// #endif
-//********************************************************
-//************** CAMERA CONTROL DECLARATION **************
-//********************************************************
-// used only on mega for now
-//#if defined(CameraControl_STM32)
-//  #include <CameraStabilizer_STM32.h>
-//#elif defined(CameraControl)
-//  #include <CameraStabilizer_Aeroquad.h>
-//#endif
-//
-//#if defined (CameraTXControl)
-//  #include <CameraStabilizer_TXControl.h>
-//#endif
+
 
 //********************************************************
 //******** FLIGHT CONFIGURATION DECLARATION **************
@@ -400,41 +303,44 @@
  ******************************************************************/
  void setup() {
 
-    cli(); //disable global interrupts for setup function
 
-    /* Timer 1 interrupt setup */
-    TCCR1A = 0; // initialize TCRR1A register to 0
-    TCCR1B = 0; // same for TCCR1B register
-    TCNT1 = 0; // initialize counter value to 0 (for Timer 1)
+  cli(); //disable global interrupts for setup function
+  // Pre-Scale values for OCRXA register (16-bit):
+  // 624 --> 100Hz
+  // 1249 --> 50Hz
+  // 3124 --> 20Hz
 
-    // Pre-Scale values for OCRXA register:
-    // 624 --> 100Hz
-    // 1249 --> 50Hz
-    // 3124 --> 20Hz
+  /* Timer 1 interrupt setup */
+  TCCR1A = 0; // initialize TCRR1A register to 0
+  TCCR1B = 0; // same for TCCR1B register
+  TCNT1 = 0; // initialize counter value to 0 (for Timer 1)
 
-    OCR1A = 645;
-    TCCR1B |= (1 << WGM12); // Enable CTC interrupt
-    TCCR1B |= (1 << CS12); // enable 256 pre-scaler
-    TIMSK1 |= (1 << OCIE1A);     
+  OCR1A = 1249; // 50Hz
+  TCCR1B |= (1 << WGM12); // Enable CTC interrupt
+  TCCR1B |= (1 << CS12); // enable 256 pre-scaler
+  TIMSK1 |= (1 << OCIE1A);     
+
+  /* Timer 5 interrupt setup */
+  TCCR5A = 0; // initialize TCRR5A register to 0
+  TCCR5B = 0; // same for TCCR5B register
+  TCNT5 = 0; // initialize counter value to 0 (for Timer 5)
+
+  OCR5A = 624;
+  TCCR5B |= (1 << WGM52); // Enable CTC interrupt
+  TCCR5B |= (1 << CS52); // enable 256 pre-scaler
+  TIMSK5 |= (1 << OCIE5A);
+
+  sei(); // re-enable global interrupts
 
 
-    /* Timer 5 interrupt setup */
-    TCCR5A = 0; // initialize TCRR5A register to 0
-    TCCR5B = 0; // same for TCCR5B register
-    TCNT5 = 0; // initialize counter value to 0 (for Timer 5)
+  SERIAL_BEGIN(BAUD);
+  #if defined WirelessTelemetry
+  xbee.begin(BAUD);
+  #endif
 
-    OCR5A = 624;
-    TCCR5B |= (1 << WGM12); // Enable CTC interrupt
-    TCCR5B |= (1 << CS12); // enable 256 pre-scaler
-    TIMSK5 |= (1 << OCIE1A);
-    
-    sei(); // re-enable global interrupts
-
-    SERIAL_BEGIN(BAUD);
-    pinMode(LED_Green, OUTPUT);
-    digitalWrite(LED_Green, LOW);
-
-    initCommunication();
+  pinMode(LED_Green, OUTPUT);
+  digitalWrite(LED_Green, LOW);
+  initCommunication();
 
   readEEPROM(); // defined in DataStorage.h
   boolean firstTimeBoot = false;
@@ -454,14 +360,7 @@
   initializeReceiver(LASTCHANNEL);
   initReceiverFromEEPROM();
   
-  // Initialize sensors
-  // If sensors have a common initialization routine
-  // insert it into the gyro class because it executes first
-  initializeGyro(); // defined in Gyro.h
-  
   while (!calibrateGyro()); // this make sure the craft is still befor to continue init process
-  
-  initializeAccel(); // defined in Accel.h
   
   if (firstTimeBoot) {
 
@@ -473,38 +372,15 @@
   setupFourthOrder();
   initSensorsZeroFromEEPROM();
   
-  // Integral Limit for attitude mode
-  // This overrides default set in readEEPROM()
-  // Set for 1/2 max attitude command (+/-0.75 radians)
-  // Rate integral not used for now
-  // PID[ATTITUDE_XAXIS_PID_IDX].windupGuard = 0.375;
-  // PID[ATTITUDE_YAXIS_PID_IDX].windupGuard = 0.375;
-  
-  // Flight angle estimation
   initializeKinematics();
 
   initPID();
 
   #ifdef HeadingMagHold
-    vehicleState |= HEADINGHOLD_ENABLED;
-    initializeMagnetometer();
-    initializeHeadingFusion();
+  vehicleState |= HEADINGHOLD_ENABLED;
+  initializeMagnetometer();
+  initializeHeadingFusion();
   #endif
-  
-  // // Optional Sensors
-  // #ifdef AltitudeHoldBaro
-    initializeBaro();
-    vehicleState |= ALTITUDEHOLD_ENABLED;
-  // #endif
-  
-  // #ifdef BattMonitor
-  //   initializeBatteryMonitor(sizeof(batteryData) / sizeof(struct BatteryData), batteryMonitorAlarmVoltage);
-  //   vehicleState |= BATTMONITOR_ENABLED;
-  // #endif
-
-  // #if defined(SERIAL_LCD)
-  //   InitSerialLCD();
-  // #endif
 
   // #if defined(BinaryWrite) || defined(BinaryWritePID)
   //   #ifdef OpenlogBinaryWrite
@@ -517,7 +393,7 @@
   // #endif
   
   #if defined(UseGPS)
-    initializeGps();
+  initializeGps();
   #endif 
 
   // #ifdef SlowTelemetry
@@ -530,35 +406,33 @@
 }
 
 /*Interrupt for motor actuation
-  Runs at 100Hz
+  Runs at 50Hz
 */
-ISR(TIMER1_COMPA_vect) {
+  ISR(TIMER1_COMPA_vect) {
   //write directly to motor registers
-  OCR3B = motorCommand[MOTOR3] * 2;
-  OCR3C = motorCommand[MOTOR2] * 2;
-  OCR3A = motorCommand[MOTOR1] * 2;
-  OCR4A = motorCommand[MOTOR4] * 2;
-}
+    OCR3B = motorCommand[MOTOR3] * 2;
+    OCR3C = motorCommand[MOTOR2] * 2;
+    OCR3A = motorCommand[MOTOR1] * 2;
+    OCR4A = motorCommand[MOTOR4] * 2;
+  }
+
 
 /*Interrupt for PID computation
   Runs at 100Hz
   Using DELTA_T = 10ms = 0.01s
   INV_DELTA_T = 1 / DELTA_T = 100 /s
 */
-ISR(TIMER5_COMPA_vect) {
+  ISR(TIMER5_COMPA_vect) {
 
   if (dataReady) { // if new data is available
-    // u_alt = updatePID(1.0, altitude, &PID[ALTITUDE_PID_IDX], true);
+
     u_alt = updatePID(0, &PID[ALTITUDE_PID_IDX], true);
     u_roll = updatePID(0, roll, &PID[ROLL_PID_IDX], true);
     u_pitch = updatePID(0, pitch, &PID[PITCH_PID_IDX], true);
     u_yaw = updatePID(0, &PID[YAW_PID_IDX], true);
-    //u_yaw = updatePID(0, yaw, &PID[YAW_PID_IDX], true);
 
     dataReady = 0;
     pidReady = 1;
-
-    counterVar++;
   }
 
 }
@@ -586,71 +460,15 @@ ISR(TIMER5_COMPA_vect) {
   // kinematicsAngle[] is updated here
   calculateKinematics(gyroRate[XAXIS], gyroRate[YAXIS], gyroRate[ZAXIS], filteredAccel[XAXIS], filteredAccel[YAXIS], filteredAccel[ZAXIS], G_Dt);
 
-	if (calibrateReadyTilt) {
-		// ENQueueSensorReading(kinematicsAngle[0] - rollBias, 1);
-		// ENQueueSensorReading(kinematicsAngle[1] - pitchBias, 2);
-		// ENQueueSensorReading(kinematicsAngle[2] - yawBias, 3);
-	}
-	else {
-    if (startCalibrate) {
-			AddTilt(kinematicsAngle[0],kinematicsAngle[1],kinematicsAngle[2]);
-		}
-	}
+  if (startBaroMeasure && frameCounter % THROTTLE_ADJUST_TASK_SPEED == 0) {
 
-  
- //  #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
+    measureBaroSum();
 
- //    zVelocity = (filteredAccel[ZAXIS] * (1 - accelOneG * invSqrt(isq(filteredAccel[XAXIS]) + isq(filteredAccel[YAXIS]) + isq(filteredAccel[ZAXIS])))) - runTimeAccelBias[ZAXIS] - runtimeZBias;
-
-	// if (!runtimaZBiasInitialized) {
-
- //      runtimeZBias = (filteredAccel[ZAXIS] * (1 - accelOneG * invSqrt(isq(filteredAccel[XAXIS]) + isq(filteredAccel[YAXIS]) + isq(filteredAccel[ZAXIS])))) - runTimeAccelBias[ZAXIS];
- //      runtimaZBiasInitialized = true;
-
- //    }
-
- //    estimatedZVelocity += zVelocity;
- //    estimatedZVelocity = (velocityCompFilter1 * zVelocity) + (velocityCompFilter2 * estimatedZVelocity);
-
- //  #endif    
-
-  #if defined(AltitudeHoldBaro)
-
-  if (startBaroMeasure) {
-  	if (frameCounter % THROTTLE_ADJUST_TASK_SPEED == 0) {
-  		measureBaroSum();
-  	}
-  }
-
-  #endif
-
-  if (startBaroMeasure) {
-    measureBaro();
   }
   
-  processFlightControl_alt();
-  //processFlightControl();
-  
-  //
-  // #if defined(BinaryWrite)
-  //   if (fastTransfer == ON) {
-  //     // write out fastTelemetry to Configurator or openLog
-  //     fastTelemetry();
-  //   }
-  // #endif      
-  // //
-
-  // //
-  // #ifdef SlowTelemetry
-  //   updateSlowTelemetry100Hz();
-  // #endif
-  // //
-
-  // //
-  #if defined(UseGPS)
-    updateGps();
-  #endif      
-  // //
+  if (beginControl) {
+    processStabilityControl();
+  }
 
 }
 
@@ -659,59 +477,44 @@ ISR(TIMER5_COMPA_vect) {
  ******************************************************************/
  void process50HzTask() {
 
-   if (beginControl) {
+  G_Dt = (currentTime - fiftyHZpreviousTime) / 1000000.0;
+  fiftyHZpreviousTime = currentTime;
 
-/* 		if (firstRead == true) {
+/* 		if (firstRead) {
 		
-			xbee.begin(BAUD);
-			firstRead = false;
+  			xbee.begin(BAUD);
+  			firstRead = false;
 			
 		} */
 
-      G_Dt = (currentTime - fiftyHZpreviousTime) / 1000000.0;
-      fiftyHZpreviousTime = currentTime;
-
-    }
-
-  }
+      }
 
 /*******************************************************************
  * 10Hz task
  ******************************************************************/
  void process10HzTask1() {
 
-  // #if defined(HeadingMagHold)
-
-  //   G_Dt = (currentTime - tenHZpreviousTime) / 1000000.0;
-  //   tenHZpreviousTime = currentTime;
-
-  //   measureMagnetometer(kinematicsAngle[XAXIS], kinematicsAngle[YAXIS]);
-
-  //   calculateHeading();
-
-  // #endif
-
-   if (startBaroMeasure) {
+  if (startBaroMeasure) {
 
     evaluateBaroAltitude();
 
     if (calibrateReady) {
 
-     ENQueueSensorReading(getBaroAltitude(), 0);
+      ENQueueSensorReading(getBaroAltitude(), 0);
 
-   }
+    }
 
-   else {
+    else {
 
-     if (startCalibrate) {
+      if (startCalibrate) {
 
-      Addz(getBaroAltitude());
+        Addz(getBaroAltitude());
 
-    }	
+      }	
+
+    }
 
   }
-
-}
 
 }
 
@@ -722,7 +525,6 @@ ISR(TIMER5_COMPA_vect) {
 
   G_Dt = (currentTime - lowPriorityTenHZpreviousTime) / 1000000.0;
   lowPriorityTenHZpreviousTime = currentTime;
-
 
   // Listen for configuration commands and reports telemetry
   readSerialCommand();
@@ -739,63 +541,64 @@ ISR(TIMER5_COMPA_vect) {
   lowPriorityTenHZpreviousTime2 = currentTime;
 
   #if defined(UseGPS) || defined(BattMonitor)
-    processLedStatus();
+  processLedStatus();
   #endif
 
   #ifdef SlowTelemetry
-    updateSlowTelemetry10Hz();
+  updateSlowTelemetry10Hz();
   #endif
 }
 
 
 
 void process2HzTask() {
-	
-    /* xbee.readPacket();
-    
-    if (xbee.getResponse().isAvailable()) {
-	
-		if (xbee.getResponse().getApiId() == MODEM_STATUS_RESPONSE) {
-	  
-			xbee.getResponse().getModemStatusResponse(msr);
-			// the local XBee sends this response on certain events, like association/dissociation
-        
-			if (msr.getStatus() == ASSOCIATED) {
 
-			} 
-		
-			else if (msr.getStatus() == DISASSOCIATED) {
-				
-				beginControl = false;
-				calibrateESC = 2;
-				
-			} 
-		
-			else {
+ xbee.readPacket();
 
-			}
-		
-		}
-		
-	} */
-    // Serial heartbeat code
-    if (beginControl) {
+ if (xbee.getResponse().isAvailable()) {
 
-      if (resetEmergencyStop) {
+  if (xbee.getResponse().getApiId() == MODEM_STATUS_RESPONSE) {
 
-        countStop = 0;
+   xbee.getResponse().getModemStatusResponse(msr);
+	// the local XBee sends this response on certain events, like association/dissociation
 
-      } else {
+   if (msr.getStatus() == ASSOCIATED) {
 
-        countStop++;
+   } 
 
-      }
+   else if (msr.getStatus() == DISASSOCIATED) {
 
-      resetEmergencyStop = false;
+    beginControl = false;
+    calibrateESC = 2;
 
-    }
+  } 
+
+  else {
 
   }
+
+}
+
+} 
+
+// Serial heartbeat code
+if (beginControl) {
+
+  if (resetEmergencyStop) {
+
+    countStop = 0;
+
+  } else {
+
+    countStop++;
+
+  }
+
+  resetEmergencyStop = false;
+
+}
+
+}
 
 
 
@@ -811,23 +614,23 @@ void process2HzTask() {
     sendSerialHeartbeat();   
   #endif*/
 
-    if (beginControl) {
+   //  if (beginControl) {
 
-      if (msg == '>') {
+   //    if (msg == '>') {
 
-       countStop = 0;
+   //     countStop = 0;
 
-     } else {
+   //   } else {
 
-       countStop++;
+   //     countStop++;
 
-     }
+   //   }
 
-     msg = ' ';
+   //   msg = ' ';
 
-   }
+   // }
 
- }
+  }
 
 
 /*******************************************************************
@@ -844,11 +647,23 @@ void process2HzTask() {
   // disable control processes
   beginControl = false;
 
-  // keep QR from doing anything else
-  stopAll = true;
-
-  // change system state
+  // change system state (doesn't do anything yet)
   status = EMGSTOP;
+
+  // set motor commands to 0
+  motorCommand[MOTOR3] = 0;
+  motorCommand[MOTOR2] = 0;
+  motorCommand[MOTOR1] = 0;
+  motorCommand[MOTOR4] = 0;
+
+  // disable all global interrupts
+  // cli();
+
+  // signal to base station that emergency stop occurred
+  Serial.print('~');
+
+  // do nothing forever
+  while(1);
   
 }
 
@@ -856,32 +671,30 @@ void process2HzTask() {
 /*******************************************************************
  * Main loop funtions
  ******************************************************************/
-void loop () {
+ void loop () {
 
-  while (stopAll) {}; // don't allow anything to happen
+   currentTime = micros();
+   deltaTime = currentTime - previousTime;
 
-	currentTime = micros();
-	deltaTime = currentTime - previousTime;
+   measureCriticalSensors();
 
+  // emergency stop check
+   if (countStop > 5) {
 
-	measureCriticalSensors();
+    emergencyStop();
 
+    calibrateESC = 2;
 
-	if (countStop > 5) {
-
-		beginControl = false;
-		calibrateESC = 2;
-
-	}
+  }
 
   // ================================================================
   // 100Hz task loop
   // ================================================================
-	if (deltaTime >= 10000) {
+  if (deltaTime >= 10000) {
 
-		frameCounter++;
+    frameCounter++;
 
-		process100HzTask();
+    process100HzTask();
 
     // ================================================================
     // 50Hz task loop
@@ -918,23 +731,24 @@ void loop () {
     // 2Hz task loop
     // ================================================================
     if (frameCounter % TASK_2HZ == 0) {  //   2 Hz tasks
-  		if (beginControl) {
 
-  			process2HzTask();
+      if (beginControl) {
 
-  		}
+       process2HzTask();
 
-    }
+     }
 
-    previousTime = currentTime;
+   }
 
-  }
+   previousTime = currentTime;
 
-	if (frameCounter >= 100) {
+ }
 
-      frameCounter = 0;
+ if (frameCounter >= 100) {
 
-	}
+  frameCounter = 0;
+
+}
 }
 
 

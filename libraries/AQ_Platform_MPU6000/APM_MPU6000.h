@@ -231,6 +231,8 @@ void initializeMPU6000Sensors() {
   delay(1);//
   MPU6000_WriteReg(MPUREG_ACCEL_CONFIG,0x08);   // Accel scale +/-4g (4096LSB/g)
 
+  MPU6000_WriteReg(MPUREG_INT_ENABLE,BIT_RAW_RDY_EN); //INT: raw data ready
+  MPU6000_WriteReg(MPUREG_INT_PIN_CFG,BIT_INT_ANYRD_2CLEAR); //INT: clear on any read
 
 }
 

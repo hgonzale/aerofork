@@ -124,8 +124,8 @@ void initializeBaro() {
   baroGroundAltitude = 0.0;
   pressureFactor = 1/5.255;
   
-  // spiMS5611.begin(SPI_CLOCK_DIV16, MSBFIRST, SPI_MODE3);
-  spiMS5611.begin(SPI_CLOCK_DIV32, MSBFIRST, SPI_MODE3);
+
+  spiMS5611.begin(SPI_CLOCK_DIV32, MSBFIRST, SPI_MODE3); // 500kHz 
 
   pinMode(MS5611_CS, OUTPUT);          // Chip select Pin
   digitalWrite(MS5611_CS, HIGH);
@@ -256,7 +256,7 @@ void evaluateBaroAltitude() {
 
   else {
 
-	baroAltitude = filterSmoothWithTime(baroRawAltitude, baroAltitude, baroSmoothFactor, ((startRead - endRead)/100000.0)); //100 ms per altitude read
+	 baroAltitude = filterSmoothWithTime(baroRawAltitude, baroAltitude, baroSmoothFactor, ((startRead - endRead)/100000.0)); //100 ms per altitude read
 	
   }
 	

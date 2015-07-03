@@ -31,7 +31,7 @@
 
 // This class is responsible for calculating vehicle attitude
 byte kinematicsType = 0;
-float kinematicsAngle[3] = {0.0,0.0,0.0};
+float kinematicsAngle[3] = {0.0,0.0,0.0}; // euler angles about the x, y, and z axis
 float gyroAngle[2] = {0.0,0.0};
 float correctedRateVector[3] = {0.0,0.0,0.0};
 float earthAccel[3] = {0.0,0.0,0.0};
