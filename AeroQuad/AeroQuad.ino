@@ -59,12 +59,7 @@
 #include "PID.h"
 #include <AQMath.h>
 #include <FourtOrderFilter.h>
-
-
-/* XBee setup */
-XBee xbee = XBee();
-XBeeResponse response = XBeeResponse():
-ZBRxResponse msr = ModemStatusResponse();
+#include <XBee.h>
 
 //********************************************************
 //********************************************************
@@ -293,6 +288,12 @@ void initializePlatformSpecificAccelCalibration() {
 #else
   #include "SerialCom.h"
 #endif
+
+#include "XBeeCom.h"
+
+// #if defined WirelessTelemetry
+//   #include "XBeeCom.h"
+// #endif
 
 
 
@@ -553,33 +554,35 @@ void initializePlatformSpecificAccelCalibration() {
 
 void process2HzTask() {
 
- xbee.readPacket();
+//  xbee.readPacket();
 
- if (xbee.getResponse().isAvailable()) {
+//  if (xbee.getResponse().isAvailable()) {
 
-  if (xbee.getResponse().getApiId() == MODEM_STATUS_RESPONSE) {
+//   if (xbee.getResponse().getApiId() == MODEM_STATUS_RESPONSE) {
 
-   xbee.getResponse().getModemStatusResponse(msr);
-	// the local XBee sends this response on certain events, like association/dissociation
+//    xbee.getResponse().getModemStatusResponse(msr);
+// 	// the local XBee sends this response on certain events, like association/dissociation
 
-   if (msr.getStatus() == ASSOCIATED) {
+//    if (msr.getStatus() == ASSOCIATED) {
 
-   } 
+//    } 
 
-   else if (msr.getStatus() == DISASSOCIATED) {
+//    else if (msr.getStatus() == DISASSOCIATED) {
 
-    beginControl = false;
-    calibrateESC = 2;
+//     beginControl = false;
+//     calibrateESC = 2;
 
-  } 
+//   } 
 
-  else {
+//   else {
 
-  }
+//   }
 
-}
+// }
 
-} 
+// } 
+  XbeeRx();
+  XbeeTx();
 
 // Serial heartbeat code
 if (beginControl) {

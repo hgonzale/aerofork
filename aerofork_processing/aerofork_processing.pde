@@ -1,6 +1,7 @@
 import processing.serial.*;
 
 
+
 /*******************************************************************************************
 aerofork_processing.pde
 Processing sketch for communicating with an AeroQuad quadcopter.
@@ -162,13 +163,18 @@ void cycleState() {
 * Main loop of the Processing sketch.
 *********************************************************************************/
 void draw() {
+  
   drawBackground();
+
   processOutgoing();  
+
   processIncoming();
+
   if (sendReady) {
     println(saved);
     sendReady = false;
   }
+
   if (emergencyStop) {
     drawEmgStopWarning();
   }
@@ -340,7 +346,7 @@ void drawStatusIndicator() {
 /*********************************************************************************
 * displayLocalMessage
 *
-* [Description]
+* Display a message locally on the GUI
 *********************************************************************************/
 void displayLocalMessage() {
   
@@ -480,36 +486,77 @@ void mouseClicked() {
 * interprets the key as a message or direct command.
 *********************************************************************************/
 void keyPressed() {
-  
-  if (keyCode == 35) { // check for emergency stop key (35 is the keyCode for END)
-    saved = "~";
-    sendReady = true;
-    emergencyStop = true;
-    status = EMGSTOP;
-  } else if (keyCode != SHIFT) { // we don't care if the SHIFT key is pressed
-    
-    // If the return key is pressed, save the String and clear user input.
-    if (key == '\n' ) {
-      
+
+  switch (keyCode) {
+
+    case 35:
+      // 'END' (emergency stop)
+      saved = "~";
+      sendReady = true;
+      emergencyStop = true;
+      status = EMGSTOP;
+      break;
+
+    case 16:
+      // 'SHIFT'
+      break;
+
+    case 13:
+      // 'ENTER'
       saved = userInp;      
       if (status == FLIGHT) { // heartbeat signal sent only during FLIGHT state
          saved += heartBeat; 
       }     
       userInp = ""; 
-      sendReady = true;     
-      
-    } else if (key == BACKSPACE && userInp.length() > 0) {
-      
-      userInp = userInp.substring(0, userInp.length() - 1);
+      sendReady = true;
+      break;
+
+    case 8:
+      // 'BACKSPACE'     
+      if (userInp.length() > 0) {
+        userInp = userInp.substring(0, userInp.length() - 1);
+        sendReady = false;        
+      }
+      break;
+
+    default:
+      userInp += key;
       sendReady = false;
-      
-    } else {
-      // Otherwise, concatenate the String
-      // Each character typed by the user is added to the end of the String variable.
-      userInp = userInp + key; 
-      sendReady = false;
-    }
+      break;
   }
+
+
+
+
+  // if (keyCode == 35) { // check for emergency stop key (35 is the keyCode for END)
+  //   saved = "~";
+  //   sendReady = true;
+  //   emergencyStop = true;
+  //   status = EMGSTOP;
+  // } else if (keyCode != SHIFT) { // we don't care if the SHIFT key is pressed
+    
+  //   // If the return key is pressed, save the String and clear user input.
+  //   if (key == '\n' ) {
+      
+  //     saved = userInp;      
+  //     if (status == FLIGHT) { // heartbeat signal sent only during FLIGHT state
+  //        saved += heartBeat; 
+  //     }     
+  //     userInp = ""; 
+  //     sendReady = true;     
+      
+  //   } else if (key == BACKSPACE && userInp.length() > 0) {
+      
+  //     userInp = userInp.substring(0, userInp.length() - 1);
+  //     sendReady = false;
+      
+  //   } else {
+  //     // Otherwise, concatenate the String
+  //     // Each character typed by the user is added to the end of the String variable.
+  //     userInp = userInp + key; 
+  //     sendReady = false;
+  //   }
+  // }
 }
 
 

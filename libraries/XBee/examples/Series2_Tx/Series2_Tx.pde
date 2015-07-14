@@ -30,7 +30,7 @@ XBee xbee = XBee();
 uint8_t payload[] = { 0, 0 };
 
 // SH + SL Address of receiving XBee
-XBeeAddress64 addr64 = XBeeAddress64(0x0013a200, 0x403e0f30);
+XBeeAddress64 addr64 = XBeeAddress64(0x0013a200, 0x4098d9cb);
 ZBTxRequest zbTx = ZBTxRequest(addr64, payload, sizeof(payload));
 ZBTxStatusResponse txStatus = ZBTxStatusResponse();
 
@@ -84,6 +84,7 @@ void loop() {
       if (txStatus.getDeliveryStatus() == SUCCESS) {
         // success.  time to celebrate
         flashLed(statusLed, 5, 50);
+        Serial.println("success");
       } else {
         // the remote XBee did not receive our packet. is it powered on?
         flashLed(errorLed, 3, 500);
