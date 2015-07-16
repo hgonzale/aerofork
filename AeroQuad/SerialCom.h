@@ -64,44 +64,6 @@ bool validateSerialStatus() {
     
 }
 
-/* bool validateUserInput() {
-
-  if (readFloatSerial() == 1) {// use a specific float value to validate full throttle call is being sent
-	
-	stateIndex = 0;
-    return true;
-
-  }
-
-  else if (readFloatSerial() == 2) {// use a specific float value to validate full throttle call is being sent
-	
-	stateIndex = 1;
-    return true;
-
-  }
-  
-  else if (readFloatSerial() == 3) {// use a specific float value to validate full throttle call is being sent
-	
-	stateIndex = 2;
-    return true;
-
-  }
-  
-  else if (readFloatSerial() == 4) {// use a specific float value to validate full throttle call is being sent
-	
-	stateIndex = 3;
-    return true;
-
-  }
-  
-  else {
-
-    return false;
-
-  }
-
-} */
-
 void readSerialPID(unsigned char PIDid) {
 
   struct PIDdata* pid = &PID[PIDid];
@@ -125,10 +87,9 @@ void readSerialCommand() {
     queryType = SERIAL_READ();
     switch (queryType) {
 
-    case '~': // Manual emergency stop
+    case '^': // Manual emergency stop
       emergencyStop();
       break;
-
 
     case 'A': // Receive roll and pitch rate mode PID
       // readSerialPID(RATE_XAXIS_PID_IDX);

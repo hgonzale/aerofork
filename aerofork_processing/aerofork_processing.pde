@@ -1,10 +1,11 @@
+import processing.core.*;
 import processing.serial.*;
-
 
 
 /*******************************************************************************************
 aerofork_processing.pde
 Processing sketch for communicating with an AeroQuad quadcopter.
+Written by Kjartan Brownell
 
 
 DESCRIPTION: Handles communcation between the user and the quadcopter, and provides a window
@@ -16,27 +17,43 @@ quadcopter. This signal prevents the quadcopter's emergency stop procedure from 
 triggered. 
 
 IMPORTANT: If at any time the user wishes to stop the quadcopter mid-flight (i.e. trigger
-an emergency stop), simply hit the 'END' button on the keyboard. Pressing the 'END' button
-will automatically send a message to the quadcopter triggering an emergency stop.
+an emergency stop), hit the 'END' button on the keyboard. Pressing the 'END' button will 
+automatically send a message to the quadcopter triggering an emergency stop.
+
 ********************************************************************************************/
 
 Serial myPort;
+String portName = "/dev/ttyUSB0";
+
+/* XBee variables */
+XBeeInterpreter xbee;
+int ad64H = 0x0013a200;
+int ad64L = 0x4098d9cb;
+int BAUD = 9600;
+String xbeeMessage = "";
+boolean USE_XBEE = true;
+
+const byte INT_FLAG = 0xB0;
+const byte FLOAT_FLAG = 0xB1;
+
+byte[] int_buf = new byte[2];
+byte[] float_buf = new byte[4];
+
 String heartBeat = "78.9"; //Serial heartbeat for emergency stop.
-String defaultMsg = "X78.9";
+String defaultMsg = "x78.9";
 String saved = new String();
 String userInp = new String(); //User serial command to be sent to Arduino.
-String msgDisplay = new String();
-String localMsg = new String();
+String msgDisplay = new String(); //message from quadrotor
+String localMsg = new String(); //message to display locally
 boolean localMsgReady = false;
 boolean sendReady = false;
+
 boolean emergencyStop = false;
 boolean calibrationComplete = false;
 boolean flightDataIncoming = false;
-int START_HERE = 185;
-int HB_FREQ = 10; // heartbeat frequency in Hz
+int START_HERE = 185; // useful for keeping track of window sizing
+int HB_FREQ = 1; // heartbeat frequency in Hz
 int previousTime = 0;
-
-
 
 
 /*************************************************
@@ -49,9 +66,9 @@ int EMGSTOP = 3;
 int status = BOOTUP; // default state
 
 
-/*************************************************
+/**************************************************
 * Constants & functions used for building buttons *
-**************************************************/
+***************************************************/
 // Calibrate Baro button
 int CALIBBARO_X = 491;
 int CALIBBARO_Y = 135;
@@ -117,8 +134,6 @@ void drawButton_FLIGHTDATA() {
   text("Data", FLIGHTDATA_X +28, FLIGHTDATA_Y +18);
 }
 
-
-
 // Reset button
 int RESET_X = 491;
 int RESET_Y = 497;
@@ -140,9 +155,17 @@ void drawButton_RESET() {
 * Setup function of the Processing sketch.
 *********************************************************************************/
 void setup() {
+
   size(585,530);
-  String portName = Serial.list()[0]; //port 8 on serial port.
-  myPort = new Serial(this, portName, 115200);
+
+  if (!USE_XBEE) portName = Serial.list()[0]; //port 8 on serial port.
+
+  myPort = new Serial(this, portName, BAUD);
+
+  xbee = new XBeeInterpreter(this, myPort);
+
+  xbee.setTargetAddr(ad64H, ad64L);
+
 }
 
 
@@ -171,12 +194,16 @@ void draw() {
   processIncoming();
 
   if (sendReady) {
+
     println(saved);
     sendReady = false;
+
   }
 
   if (emergencyStop) {
+
     drawEmgStopWarning();
+
   }
 
 }
@@ -185,24 +212,50 @@ void draw() {
 * processIncoming
 *
 * Pulls incoming messages from the Serial stream and displays them in the window.
-*********************************************************************************/
+**********************************************************************************/
 void processIncoming() {
 
-  // append incoming messages to the message string
-  while (myPort.available() > 0) {
-    String in = myPort.readString();
-    msgDisplay += in;
-    
-    // check for emergency stop signal
-    if (match(in,"~") != null) {
-      emergencyStop = true;
-      status = EMGSTOP;
-    }
-  }
-  // finally, print all incoming messages to the window
-  textSize(12);
-  text(getLastLines(msgDisplay,15),8,START_HERE);
+  if (USE_XBEE) {
 
+    String thisMsg = xbee.readIncoming();
+
+    msgDisplay += thisMsg;
+
+    // check for emergency stop
+    if (match(thisMsg,"^") != null) {
+
+      emergencyStop = true;
+      status = EMGSTOP
+
+    }
+
+    // write messages to window
+    textSize(12);
+    text(getLastLines(msgDisplay,15),8,START_HERE);
+
+
+  } else {
+
+    // append incoming messages to the message string
+    while (myPort.available() > 0) {
+
+      String in = myPort.readString();
+      msgDisplay += in;
+
+      // check for emergency stop signal
+      if (match(in,"^") != null) {
+
+        emergencyStop = true;
+        status = EMGSTOP;
+        
+      }
+
+    }
+
+    // finally, print all incoming messages to the window
+    textSize(12);
+    text(getLastLines(msgDisplay,15),8,START_HERE);
+  }
 }
 
 /*********************************************************************************
@@ -214,27 +267,53 @@ void processIncoming() {
 *********************************************************************************/
 void processOutgoing() {
   
-  if (sendReady) { // send the custom message AND heartbeat signal
+  if (sendReady && saved.length() > 0) { // send the custom message AND heartbeat signal
+
     if (saved.charAt(0) != '?') {
+
       flightDataIncoming = false;
-      defaultMsg = "X78.9";
+      defaultMsg = "x78.9";
+
     }
-    myPort.write(saved);
+
+    if (USE_XBEE) {
+
+      xbee.sendData(saved);
+
+    } else {
+
+      myPort.write(saved);
+
+    }
+
     println(saved);
     sendReady = false;
     
   }  else { // or send just the heartbeat signal
+
     fill(250);
     textSize(26);
     text(userInp,75,82);
 
     // Send heartbeat signal if enough time has passed, and quadcopter is in FLIGHT mode
     if ((millis() - previousTime)/1000.0 > 1.0/HB_FREQ && status == FLIGHT) {
-          previousTime = millis();
+
+        previousTime = millis();
+
+        if (USE_XBEE) {
+
+          xbee.sendData(defaultMsg);
+
+        } else {
+
           myPort.write(defaultMsg);
+
+        }
+
     }
   }
 }
+
 
 /*********************************************************************************
 * getLastLines
@@ -261,14 +340,41 @@ String getLastLines(String str, int n) {
 
 
 /*********************************************************************************
+* parseXBeeMessage
+* 
+*********************************************************************************/
+// void parseXBeeMessage(String msg) {
+
+//   int token = (msg.charAt(0) == 0x7E) ? 1 : 0;
+//   int lengthMSB = int(msg.charAt(token++));
+//   int lengthLSB = int(msg.charAt(token++));
+//   int packetLength = (lengthLSB + (lengthMSB << 8));
+//   byte[] payload = new byte[packetLength - 14];
+//   token += 14;
+
+//   for (int i = 0; i < payload.length; i++) {
+//     payload[i] = byte(msg.charAt(token++));
+//   }
+
+//   msgDisplay += new String(payload);
+// }
+
+
+/*********************************************************************************
+* xBeeEvent
+* 
+* Required by XBee API. We don't use it here.
+*********************************************************************************/
+void xBeeEvent(XBeeReader xbee) {}
+
+
+/*********************************************************************************
 * drawBackground
 * 
 * Draws the background text, shading, and boxes in the window.
 *********************************************************************************/
 void drawBackground() {
-  // Set background and permanent text
-  //background(51); // grey
-  //background(0,43,54); // nice deep blue
+
   background(39,40,34); // sublime text2 charcoal background
   
   fill(50);
@@ -298,6 +404,7 @@ void drawBackground() {
   drawButton_FLIGHTDATA();
 }
 
+
 /*********************************************************************************
 * drawStatusIndicator
 *
@@ -316,6 +423,7 @@ void drawStatusIndicator() {
   text("EmgStop",width-75,100);
   
   switch (status) { //illuminate current status
+
     case 0: //bootup
       fill(54,226,83); //neonish green
       text("Bootup",width-75,25);
@@ -339,6 +447,7 @@ void drawStatusIndicator() {
       fill(250,0,50); //scarlet red
       text("EmgStop",width-75,100);
       break;
+
   }
 }
 
@@ -346,7 +455,7 @@ void drawStatusIndicator() {
 /*********************************************************************************
 * displayLocalMessage
 *
-* Display a message locally on the GUI
+* Display a message locally on the GUI.
 *********************************************************************************/
 void displayLocalMessage() {
   
@@ -359,6 +468,7 @@ void displayLocalMessage() {
     text("!",19,154);
     fill(250);
     text(localMsg,40,153);
+
   }
   
 }
@@ -411,6 +521,7 @@ boolean mouseOverRect(int x, int y, int w, int h) {
 * mouseClicked
 * 
 * Called whenever the mouse is clicked. Executes when mouse is released.
+* Provides functionality to the buttons.
 *********************************************************************************/
 void mouseClicked() {
  if (mouseOverRect(CALIBBARO_X,CALIBBARO_Y,CALIBBARO_WIDTH,CALIBBARO_HEIGHT) && status == BOOTUP) { // calibrate button
@@ -433,10 +544,8 @@ void mouseClicked() {
     localMsg = "Calibration complete...Press 'Fly' when ready!";
 //    saved = "@";
 //    sendReady = true;
-//    
+    
 
-//   
-//   
   } else if (mouseOverRect(CLEAR_X,CLEAR_Y,CLEAR_WIDTH,CLEAR_HEIGHT)) { // clear button
     // clear all messages
     msgDisplay = "";
@@ -491,7 +600,7 @@ void keyPressed() {
 
     case 35:
       // 'END' (emergency stop)
-      saved = "~";
+      saved = "^";
       sendReady = true;
       emergencyStop = true;
       status = EMGSTOP;
@@ -501,7 +610,7 @@ void keyPressed() {
       // 'SHIFT'
       break;
 
-    case 13:
+    case ENTER:
       // 'ENTER'
       saved = userInp;      
       if (status == FLIGHT) { // heartbeat signal sent only during FLIGHT state
@@ -524,39 +633,6 @@ void keyPressed() {
       sendReady = false;
       break;
   }
-
-
-
-
-  // if (keyCode == 35) { // check for emergency stop key (35 is the keyCode for END)
-  //   saved = "~";
-  //   sendReady = true;
-  //   emergencyStop = true;
-  //   status = EMGSTOP;
-  // } else if (keyCode != SHIFT) { // we don't care if the SHIFT key is pressed
-    
-  //   // If the return key is pressed, save the String and clear user input.
-  //   if (key == '\n' ) {
-      
-  //     saved = userInp;      
-  //     if (status == FLIGHT) { // heartbeat signal sent only during FLIGHT state
-  //        saved += heartBeat; 
-  //     }     
-  //     userInp = ""; 
-  //     sendReady = true;     
-      
-  //   } else if (key == BACKSPACE && userInp.length() > 0) {
-      
-  //     userInp = userInp.substring(0, userInp.length() - 1);
-  //     sendReady = false;
-      
-  //   } else {
-  //     // Otherwise, concatenate the String
-  //     // Each character typed by the user is added to the end of the String variable.
-  //     userInp = userInp + key; 
-  //     sendReady = false;
-  //   }
-  // }
 }
 
 

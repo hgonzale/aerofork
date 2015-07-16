@@ -28,8 +28,8 @@
 *****************************************************************************/
 
 
-   float indic = 0.0;
-   int counterVar = 0;
+ float indic = 0.0;
+ int counterVar = 0;
 
 
 
@@ -47,10 +47,6 @@
   #error "GpsNavigation NEED AltitudeHoldBaro defined"
 #endif
 
-// #if defined(ReceiverSBUS) && defined(SlowTelemetry)
-//   #error "Receiver SWBUS and SlowTelemetry are in conflict for Seria2, they can't be used together"
-// #endif
-
 #include <EEPROM.h>
 #include <Wire.h>
 #include <Device_I2C.h>
@@ -60,6 +56,7 @@
 #include <AQMath.h>
 #include <FourtOrderFilter.h>
 #include <XBee.h>
+
 
 //********************************************************
 //********************************************************
@@ -95,7 +92,6 @@
 #include <Magnetometer_HMC5883L.h>
 #define SPARKFUN_9DOF_5883L
 //
-
 
 // Altitude declaration
 #include <BarometricSensor_MS5611.h>
@@ -226,11 +222,7 @@ void initializePlatformSpecificAccelCalibration() {
 //********************************************************
 //******** FLIGHT CONFIGURATION DECLARATION **************
 //********************************************************
-// #if defined(quadXConfig)
-  #include "FlightControlQuadX.h"
-// #elif defined(quadPlusConfig)
-//   #include "FlightControlQuadPlus.h"
-// #endif
+#include "FlightControlQuadX.h"
 
 //********************************************************
 //****************** GPS DECLARATION *********************
@@ -247,29 +239,7 @@ void initializePlatformSpecificAccelCalibration() {
 //********************************************************
 //****************** SERIAL PORT DECLARATION *************
 //********************************************************
-#if defined(WirelessTelemetry) 
-  #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
-    #define SERIAL_PORT Serial3
-  #else    // force 328p to use the normal port
-    #define SERIAL_PORT Serial
-  #endif
-#else  
-  #if defined(SERIAL_USES_USB)   // STM32 Maple
-    #define SERIAL_PORT SerialUSB
-    #undef BAUD
-    #define BAUD
-  #else
-    #define SERIAL_PORT Serial
-  #endif
-#endif  
-
-// #ifdef SlowTelemetry
-//   #include <AQ_RSCode.h>
-// #endif
-
-// #ifdef SoftModem
-//   #include <AQ_SoftModem.h>
-// #endif
+#define SERIAL_PORT Serial
 
 
 // Include this last as it contains objects from above declarations
@@ -289,11 +259,9 @@ void initializePlatformSpecificAccelCalibration() {
   #include "SerialCom.h"
 #endif
 
-#include "XBeeCom.h"
-
-// #if defined WirelessTelemetry
-//   #include "XBeeCom.h"
-// #endif
+#if defined WirelessTelemetry
+  #include <XBeeCom.h>
+#endif
 
 
 
@@ -336,8 +304,9 @@ void initializePlatformSpecificAccelCalibration() {
 
   SERIAL_BEGIN(BAUD);
   #if defined WirelessTelemetry
-  xbee.begin(BAUD);
+    xbee.begin(SERIAL_PORT);
   #endif
+  Serial.flush();
 
   pinMode(LED_Green, OUTPUT);
   digitalWrite(LED_Green, LOW);
@@ -417,8 +386,8 @@ void initializePlatformSpecificAccelCalibration() {
     OCR4A = motorCommand[MOTOR4] * 2;
   }
 
-
-/*Interrupt for PID computation
+/*
+Interrupt for PID computation
   Runs at 100Hz
   Using DELTA_T = 10ms = 0.01s
   INV_DELTA_T = 1 / DELTA_T = 100 /s
@@ -481,14 +450,7 @@ void initializePlatformSpecificAccelCalibration() {
   G_Dt = (currentTime - fiftyHZpreviousTime) / 1000000.0;
   fiftyHZpreviousTime = currentTime;
 
-/* 		if (firstRead) {
-		
-  			xbee.begin(BAUD);
-  			firstRead = false;
-			
-		} */
-
-      }
+ }
 
 /*******************************************************************
  * 10Hz task
@@ -527,10 +489,14 @@ void initializePlatformSpecificAccelCalibration() {
   G_Dt = (currentTime - lowPriorityTenHZpreviousTime) / 1000000.0;
   lowPriorityTenHZpreviousTime = currentTime;
 
-  // Listen for configuration commands and reports telemetry
-  readSerialCommand();
-  sendSerialTelemetry();
-
+  #if defined(WirelessTelemetry)
+    // XbeeRx();
+    // XbeeTx();
+  #else
+    // Listen for configuration commands and reports telemetry
+    // readSerialCommand();
+    // sendSerialTelemetry();
+  #endif
 }
 
 /*******************************************************************
@@ -551,55 +517,30 @@ void initializePlatformSpecificAccelCalibration() {
 }
 
 
-
+/*******************************************************************
+ * 2Hz task 
+ ******************************************************************/
 void process2HzTask() {
 
-//  xbee.readPacket();
-
-//  if (xbee.getResponse().isAvailable()) {
-
-//   if (xbee.getResponse().getApiId() == MODEM_STATUS_RESPONSE) {
-
-//    xbee.getResponse().getModemStatusResponse(msr);
-// 	// the local XBee sends this response on certain events, like association/dissociation
-
-//    if (msr.getStatus() == ASSOCIATED) {
-
-//    } 
-
-//    else if (msr.getStatus() == DISASSOCIATED) {
-
-//     beginControl = false;
-//     calibrateESC = 2;
-
-//   } 
-
-//   else {
-
-//   }
-
-// }
-
-// } 
   XbeeRx();
-  XbeeTx();
+  // XbeeTx();
 
-// Serial heartbeat code
-if (beginControl) {
+  // Serial heartbeat code
+  if (beginControl) {
 
-  if (resetEmergencyStop) {
+    if (resetEmergencyStop) {
 
-    countStop = 0;
+      countStop = 0;
 
-  } else {
+    } else {
 
-    countStop++;
+      countStop++;
+
+    }
+
+    resetEmergencyStop = false;
 
   }
-
-  resetEmergencyStop = false;
-
-}
 
 }
 
@@ -610,28 +551,8 @@ if (beginControl) {
  ******************************************************************/
  void process1HzTask() {
 
-  /*#ifdef MavLink
     G_Dt = (currentTime - oneHZpreviousTime) / 1000000.0;
     oneHZpreviousTime = currentTime;
-    
-    sendSerialHeartbeat();   
-  #endif*/
-
-   //  if (beginControl) {
-
-   //    if (msg == '>') {
-
-   //     countStop = 0;
-
-   //   } else {
-
-   //     countStop++;
-
-   //   }
-
-   //   msg = ' ';
-
-   // }
 
   }
 
@@ -663,7 +584,7 @@ if (beginControl) {
   // cli();
 
   // signal to base station that emergency stop occurred
-  Serial.print('~');
+  Serial.print('^');
 
   // do nothing forever
   while(1);
@@ -681,7 +602,7 @@ if (beginControl) {
 
    measureCriticalSensors();
 
-  // emergency stop check
+  //emergency stop check
    if (countStop > 5) {
 
     emergencyStop();
@@ -733,15 +654,13 @@ if (beginControl) {
     // ================================================================
     // 2Hz task loop
     // ================================================================
-    if (frameCounter % TASK_2HZ == 0) {  //   2 Hz tasks
+    if (frameCounter % TASK_2HZ == 0) {
 
-      if (beginControl) {
+      process2HzTask();
+    }
 
-       process2HzTask();
+    
 
-     }
-
-   }
 
    previousTime = currentTime;
 
@@ -751,7 +670,7 @@ if (beginControl) {
 
   frameCounter = 0;
 
-}
+ }
 }
 
 

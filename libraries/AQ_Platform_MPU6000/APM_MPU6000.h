@@ -170,7 +170,7 @@ void initializeMPU6000Sensors() {
 
   #ifdef DEBUG_INIT
 
-    Serial.println("initializeMPU6000Sensors");
+    // Serial.println("initializeMPU6000Sensors");
 
   #endif
 
@@ -188,7 +188,7 @@ void initializeMPU6000Sensors() {
 
 		#ifdef DEBUG_INIT
 
-		Serial.println("MPU6000 found");
+		// Serial.println("MPU6000 found");
 
 		#endif
 
@@ -198,7 +198,7 @@ void initializeMPU6000Sensors() {
 
 		#ifdef DEBUG_INIT
 
-        Serial.println("MPU6000 not found");
+        // Serial.println("MPU6000 not found");
 
 		#endif
 

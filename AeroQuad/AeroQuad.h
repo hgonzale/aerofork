@@ -33,15 +33,23 @@
 // Flight Software Version
 #define SOFTWARE_VERSION 3.2
 
-#if defined CONFIG_BAUDRATE
-  #define BAUD CONFIG_BAUDRATE
-#else
-  #if defined WirelessTelemetry && !defined MavLink
-    #define BAUD 111111 // use this to be compatible with USB and XBee connections
-  #else
-    #define BAUD 115200
-  #endif
-#endif  
+// #if defined CONFIG_BAUDRATE
+//   #define BAUD CONFIG_BAUDRATE
+// #else
+//   #if defined WirelessTelemetry && !defined MavLink
+//     // #define BAUD 111111 // use this to be compatible with USB and XBee connections
+//       #define BAUD 115200
+//   #else
+//     #define BAUD 115200
+//   #endif
+// #endif 
+
+#define BAUD 9600
+// #if defined WirelessTelemetry
+//   #define BAUD 9600
+// #else
+//   #define BAUD 115200
+// #endif
 
 /**
  * ESC calibration process global declaration
@@ -113,7 +121,6 @@ boolean inFlight = false; // true when motor are armed and that the user pass on
 boolean beginControl = false;
 boolean stopAll = false;
 boolean startBaroMeasure = false;
-boolean firstRead = true;
 
 boolean startCalibrate = false;
 boolean calibrateReady = false;

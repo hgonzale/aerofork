@@ -3,8 +3,6 @@
 
 #include <XBeeCom.h>
 
-#define serial_write HardwareSerial::write
-
 void setup() {
   messageRx.query = '*';
   Serial.begin(9600);
@@ -19,8 +17,6 @@ void loop() {
   XbeeRx();
 
   if (newDataReady) {
-
-    parseData(payload);
 
     for (int i = 0; i < payloadLength; i++) {
      // Serial.serial_write(payload[i]);
