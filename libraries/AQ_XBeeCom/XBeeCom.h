@@ -3,12 +3,8 @@
 #ifndef _AEROQUAD_XBEE_COM_H_
 #define _AEROQUAD_XBEE_COM_H_
 
-
-// #define String WString::String
 #include <XBee.h>
-#include <string.h>
 
-#define SIZEOF_ARRAY(x) (sizeof (x) / sizeof (x[0]))
 // XBee and ZigBee communication setup
 XBee xbee = XBee();
 XBeeResponse response = XBeeResponse();
@@ -18,75 +14,12 @@ uint8_t* payload;
 int payloadLength = -1;
 
 bool newDataReady = false;
-bool doit = false;
-
-char* xbeeTxMessage;
-char charcat[1];
-
-byte* float_buf;
-
-const uint8_t INT_FLAG = 0xB0;
-const uint8_t FLOAT_FLAG = 0xB1;
-
-// union floatAsBytes_t {
-// 	float n;
-	
-// } val_f;
-
+bool continuousCommand = false;
 
 union messageData {
 	char query;
 	float heartbeat;
 } messageRx; // 5 bytes
-
-
-/* XBee print functions */
-
-void xbee_println() {
-
-	Serial.write('\n');
-}
-
-void xbee_printStr(String str) {
-	int len = str.length();
-	char buf[len];
-	str.toCharArray(buf,len);
-
-	for (byte i = 0; i < len; i++) {
-		Serial.write(buf[i]);
-	}
-
-	// strcat(xbeeTxMessage,buf);
-}
-
-void xbee_printInt(int n) {
-
-	Serial.write(INT_FLAG);
-	Serial.write(highByte(n));
-	Serial.write(lowByte(n));
-
-	// char cArr[2] = {highByte(n), lowByte(n)};
-	// strcat(xbeeTxMessage,cArr);
-}
-
-void xbee_printFloat(float f) {
-
-	Serial.write(FLOAT_FLAG);
-	float_buf = (byte*) &f;
-
-	Serial.write(float_buf[3]);
-	Serial.write(float_buf[2]);
-	Serial.write(float_buf[1]);
-	Serial.write(float_buf[0]);
-
-	// char fArr[4] = {float_buf[3], float_buf[2], float_buf[1], float_buf[0]};
-	// strcat(xbeeTxMessage,fArr);
-}
-
-void xbee_printChar(char c) {
-
-	Serial.write(c);
-}
 
 
 /*****************************************************************************************
@@ -98,7 +31,7 @@ void processXbeeCommand() {
 
 	switch (messageRx.query) {
 
-		case '^':// emergency stop
+		case '~':// emergency stop
 			emergencyStop();
 			break;
 
@@ -125,25 +58,57 @@ void processXbeeCommand() {
 			break;
 
 		case '/': // calibrate barometer
-			xbee_printStr("calibrating barometer");
+			Serial.println("calibrating barometer");
 			measureGroundBaro();
 			startBaroMeasure = true;
-			xbee_printStr("finished");
+			Serial.println("finished");
 			break;
 
 		case '?': //custom command
-			xbee_printChar('e');
-			// xbee_printFloat(kinematicsAngle[XAXIS]);
-			// xbee_printFloat(kinematicsAngle[YAXIS]);
-			// xbee_printFloat(kinematicsAngle[ZAXIS]);
-			// xbee_println();
+			
+			Serial.print(kinematicsAngle[XAXIS]);
+			Serial.print(" \t");
+			Serial.print(kinematicsAngle[YAXIS]);
+			Serial.print(" \t");
+			Serial.println(kinematicsAngle[ZAXIS]);
+			continuousCommand = true;
+			break;
+
+		case 'a': //see motor commands
+			Serial.print(motorCommand[FRONT_LEFT]);
+			Serial.print(", ");
+			Serial.print(motorCommand[FRONT_RIGHT]);
+			Serial.print(", ");
+			Serial.print(motorCommand[REAR_LEFT]);
+			Serial.print(", ");
+			Serial.print(motorCommand[REAR_RIGHT]);
+			Serial.println(" ");
 			messageRx.query = 'x';
 			break;
 
-		case 'q':
-			xbee_printStr("a string");
+		case 'b': // add roll
+			roll -= 0.1;
 			messageRx.query = 'x';
 			break;
+
+		case 'c': // add pitch
+			pitch -= 0.1;
+			messageRx.query = 'x';
+			break;
+
+		case 'd': // zero roll/pitch
+			roll = 0;
+			pitch = 0;
+			setMotorCommand(1000);
+			messageRx.query = 'x';
+			break;
+
+		case 'e': // stop motors
+			setMotorCommand(1000);
+			messageRx.query = 'x';
+			break;
+
+
 
 		default:
 			break;
@@ -168,14 +133,6 @@ bool checkHeartBeat() {
 void parseData() {
 
 	messageRx.query = payload[2];
-	
-	Serial.write(messageRx.query);
-
-	for (int i = 0; i < payloadLength; i++) {
-
-		Serial.write(payload[i]);
-	}
-	
 
 	if (payloadLength > 6) {
 
@@ -183,31 +140,6 @@ void parseData() {
 	}
 
 	newDataReady = false;
-	doit = true;
-}
-
-
-
-/*****************************************************************************************
-* XbeeTx
-*
-******************************************************************************************/
-void XbeeTx() {
-
-	if (newDataReady) {
-
-		for (byte i = 0; i < SIZEOF_ARRAY(xbeeTxMessage); i++) {
-
-			Serial.write(xbeeTxMessage[i]);
-
-		}
-
-		charcat[0] = (char) 0x00;
-		xbeeTxMessage = charcat;
-	
-		newDataReady = false;
-		
-	}
 }
 
 
@@ -219,31 +151,42 @@ void XbeeTx() {
 ********************************************************************************************/
 void XbeeRx() {
 
-	xbee.readPacket();
+	if (Serial.available()) {
 
-	if (xbee.getResponse().isAvailable()) {
-		// got something
+		messageRx.query = Serial.read();
 
-		if (xbee.getResponse().getApiId() == ZB_RX_RESPONSE) {
-			// got a zb rx packet
+		processXbeeCommand();
 
-			// now fill our zb rx class
-			xbee.getResponse().getZBRxResponse(rx);
+		resetEmergencyStop = validateSerialStatus();
 
-			//get the data
-			payload = rx.getData();
-			payloadLength = rx.getDataLength();
-
-			newDataReady = true;
-		}
 	}
 
-	if (newDataReady) parseData();
 
-	processXbeeCommand();
+	// xbee.readPacket();
 
-	resetEmergencyStop = checkHeartBeat();
-	messageRx.heartbeat = 0.0;
+	// if (xbee.getResponse().isAvailable()) {
+	// 	// got something
+
+	// 	if (xbee.getResponse().getApiId() == ZB_RX_RESPONSE) {
+	// 		// got a zb rx packet
+
+	// 		// now fill our zb rx class
+	// 		xbee.getResponse().getZBRxResponse(rx);
+
+	// 		//get the data
+	// 		payload = rx.getData();
+	// 		payloadLength = rx.getDataLength();
+
+	// 		newDataReady = true;
+	// 	}
+	// }
+
+	// if (newDataReady) parseData();
+
+	// processXbeeCommand();
+
+	// resetEmergencyStop = checkHeartBeat();
+	// messageRx.heartbeat = 0.0;
 }
 
 
@@ -288,7 +231,6 @@ void XbeeEcho() {
 	}
 
 }
-
 
 
 #endif

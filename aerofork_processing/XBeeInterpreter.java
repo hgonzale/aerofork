@@ -15,20 +15,15 @@ Parts of this code are based off of "XBee API Library for Processing" by
 Rob Faludi and Dan Shiffman:
 https://www.faludi.com/examples/xbee-api-library-for-processing/
 
-In particular, the sendData(), sendPacket(), and checkSum() methods are 
-nearly identical to methods found in Faludi and Shiffman's library.
-
 */
 
 
 public class XBeeInterpreter {
 
-	private int DEBUG = true;
+	private boolean DEBUG = true;
 
-	public static final int ZIGBEE_RX_PACKET = 0x90;
-	public static final byte INT_FLAG = 0xB0;
-	public static final byte FLOAT_FLAG = 0xB1;
-	public static final byte START_BYTE = 0x7E;
+	public static final byte ZIGBEE_RX_PACKET = (byte) 0x90;
+	public static final byte START_BYTE = (byte) 0x7E;
 
 	private ByteBuffer buf;
 	private int addr64H, addr64L;
@@ -53,7 +48,7 @@ public class XBeeInterpreter {
 		port = thisPort;
 		parent = p;
 
-		buf = ByteBuffer.allocate(4);
+		buf = ByteBuffer.allocate(100);
 
 	}
 
@@ -66,31 +61,26 @@ public class XBeeInterpreter {
 	public String readIncoming() {
 
 		String out = new String();
-		byte b;
+		int b;
 
-		while (port.available > 0) {
+		while (port.available() > 0) {
 
 			b = port.read();
 
-			switch (b) {
+			out += (char) (byte) b;
 
-				case INT_FLAG:
-					out += "" + readInt();
-					break;
+			// if (DEBUG) System.out.print(" " + b);
 
-				case FLOAT_FLAG:
-					out += "" + readFloat();
-					break;
+			// switch (b) {
 
-				case '^':
-					return "^";
-					break;
+			// 	case '^':
+			// 		return "^";
 
-				default:
-					out += (char) b;
-					break;
+			// 	default:
+			// 		out += (char) (byte) b;
+			// 		break;
 
-			}
+			// }
 		}
 
 		return out;
@@ -103,18 +93,22 @@ public class XBeeInterpreter {
 	******************************************************************************/
 	public float readFloat() {
 
+		byte b;
+
 		if (port.available() > 3) {
 
 			for (int i = 0; i < 4; i++) { 
 
-				buf.put(port.read()); 
+				b = (byte) port.read();
+
+				buf.put(b); 
 
 			}
-			return bug.getFloat();
+			return buf.getFloat();
 		}
 
 		buf.clear();
-		return 0.0;
+		return (float) 0.0;
 	}
 
 	/******************************************************************************
@@ -124,11 +118,15 @@ public class XBeeInterpreter {
 	******************************************************************************/
 	public int readInt() {
 
+		byte b;
+
 		if (port.available() > 1) {
 
 			for (int i = 0; i < 2; i++) { 
 
-				buf.put(port.read()); 
+				b = (byte) port.read();
+
+				buf.put(b); 
 				
 			}
 			return (int)(buf.getShort());
@@ -148,19 +146,19 @@ public class XBeeInterpreter {
 	******************************************************************************/
 	private void sendPacket(byte[] frame) {
 
-		short packetLength = frame.length + 4;
+		int packetLength = frame.length + 4;
 
 		byte[] packet = new byte[packetLength];
 		packet[0] = START_BYTE;
-		packet[1] = frame.length / 256;
-		packet[2] = frame.length % 256;
+		packet[1] = (byte) (frame.length / 256);
+		packet[2] = (byte) (frame.length % 256);
 
 		for (int b = 0; b < frame.length; b++) {
 
 			packet[b+3] = frame[b];
 		}
 
-		packet[packetLength - 1] = checkSum(frame);
+		packet[packetLength - 1] = (byte) checkSum(frame);
 
 		if (DEBUG) System.out.print("< ");
 
@@ -202,8 +200,8 @@ public class XBeeInterpreter {
 	******************************************************************************/
 	public void sendData(String data) {
 
-		short payloadLength = data.getLength() + 2;
-		short packetLength = payloadLength + 12;
+		int payloadLength = data.length() + 2;
+		int packetLength = payloadLength + 12;
 
 		byte[] packet = new byte[packetLength];
 
@@ -220,11 +218,13 @@ public class XBeeInterpreter {
 			idx++;
 		}
 
-		packet[idx++] = 0xFF; // 16-bit address hi
-		packet[idx++] = 0xFE; // 16-bit address lo
+		idx += 4;
 
-		packet[idx++] = 0x00; // broadcast radius
-		packet[idx++] = 0x00; // options
+		packet[idx++] = (byte) 0xFF; // 16-bit address hi
+		packet[idx++] = (byte) 0xFE; // 16-bit address lo
+
+		packet[idx++] = (byte) 0x00; // broadcast radius
+		packet[idx++] = (byte) 0x00; // options
 
 		// write the payload
 		for (int i = 0; i < data.length(); i++) {

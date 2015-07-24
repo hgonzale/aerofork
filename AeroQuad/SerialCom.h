@@ -87,7 +87,7 @@ void readSerialCommand() {
     queryType = SERIAL_READ();
     switch (queryType) {
 
-    case '^': // Manual emergency stop
+    case '~': // Manual emergency stop
       emergencyStop();
       break;
 
@@ -354,7 +354,7 @@ void readSerialCommand() {
     SERIAL_PRINTLN("Calibrating barometer...");
 		measureGroundBaro();
 		startBaroMeasure = true;
-		SERIAL_PRINTLN("...finished!*");
+		SERIAL_PRINTLN("...finished!");
 	break;
 	
   case 'Z': // fast telemetry transfer <--- get rid if this?
@@ -444,110 +444,57 @@ void sendSerialTelemetry() {
   case '=': // Reserved debug command to view any variable from Serial Monitor
     break;
 
-  case 'a': // Send roll and pitch rate mode PID values
-    // PrintPID(RATE_XAXIS_PID_IDX);
-    // PrintPID(RATE_YAXIS_PID_IDX);
-    // PrintValueComma(rotationSpeedFactor);
+  case 'a': 
+    
+    PrintValueComma(motorCommand[FRONT_LEFT]);
+    PrintValueComma(motorCommand[FRONT_RIGHT]);
+    PrintValueComma(motorCommand[REAR_LEFT]);
+    PrintValueComma(motorCommand[REAR_RIGHT]);
     SERIAL_PRINTLN();
     queryType = 'X';
     break;
 
-  case 'b': // Send roll and pitch attitude mode PID values
-    // PrintPID(ATTITUDE_XAXIS_PID_IDX);
-    // PrintPID(ATTITUDE_YAXIS_PID_IDX);
-    // PrintPID(ATTITUDE_GYRO_XAXIS_PID_IDX);
-    // PrintPID(ATTITUDE_GYRO_YAXIS_PID_IDX);
-    // SERIAL_PRINTLN(windupGuard);
+  case 'b': // add roll (for debugging)
+    roll += -0.1;
     queryType = 'X';
     break;
 
-  case 'c': // Send yaw PID values
-    // PrintPID(ZAXIS_PID_IDX);
-    // PrintPID(HEADING_HOLD_PID_IDX);
-    // SERIAL_PRINTLN((int)headingHoldConfig);
+  case 'c': // add pitch (for debugging)
+    pitch += -0.1;
     queryType = 'X';
     break;
 
-  case 'd': // Altitude Hold
-    // #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
-    //   // PrintPID(BARO_ALTITUDE_HOLD_PID_IDX);
-    //   PrintValueComma(PID[BARO_ALTITUDE_HOLD_PID_IDX].windupGuard);
-    //   PrintValueComma(altitudeHoldBump);
-    //   PrintValueComma(altitudeHoldPanicStickMovement);
-    //   PrintValueComma(minThrottleAdjust);
-    //   PrintValueComma(maxThrottleAdjust);
-    //   #if defined AltitudeHoldBaro
-    //     PrintValueComma(baroSmoothFactor);
-    //   #else
-    //     PrintValueComma(0);
-    //   #endif
-      // PrintPID(ZDAMPENING_PID_IDX);
-    // #else
-      PrintDummyValues(10);
-    // #endif
-    SERIAL_PRINTLN();
+  case 'd': // zero roll/pitch (for debugging)
+    roll = 0;
+    pitch = 0;
+    setMotorCommand(1000);
     queryType = 'X';
     break;
 
-  case 'e': // miscellaneous config values
-    PrintValueComma(aref);
-    SERIAL_PRINTLN(minArmedThrottle);
+  case 'e': // stop motors
+    setMotorCommand(1000);
     queryType = 'X';
     break;
 
-  case 'f': // Send transmitter smoothing values
-    PrintValueComma(receiverXmitFactor);
-    for (byte axis = XAXIS; axis < LASTCHANNEL; axis++) {
-      PrintValueComma(receiverSmoothFactor[axis]);
-    }
-    PrintDummyValues(10 - LASTCHANNEL);
-    SERIAL_PRINTLN();
+  case 'f': 
+    motorCommand[FRONT_LEFT] = 1150;
     queryType = 'X';
     break;
 
-  case 'g': // Send transmitter calibration data
-    for (byte axis = XAXIS; axis < LASTCHANNEL; axis++) {
-      Serial.print(receiverSlope[axis], 6);
-      Serial.print(',');
-    }
-    SERIAL_PRINTLN();
+  case 'g':
+    motorCommand[FRONT_RIGHT] = 1150;
     queryType = 'X';
     break;
 
-  case 'h': // Send transmitter calibration data
-    for (byte axis = XAXIS; axis < LASTCHANNEL; axis++) {
-      Serial.print(receiverOffset[axis], 6);
-      Serial.print(',');
-    }
-    SERIAL_PRINTLN();
+  case 'h':
+    motorCommand[REAR_LEFT] = 1150;
     queryType = 'X';
     break;
 
-  case 'i': // Send sensor data
-
-    for (byte axis = XAXIS; axis <= ZAXIS; axis++) {
-
-      PrintValueComma(gyroRate[axis]);
-
-    }
-
-    for (byte axis = XAXIS; axis <= ZAXIS; axis++) {
-
-      PrintValueComma(filteredAccel[axis]);
-
-    }
-
-    for (byte axis = XAXIS; axis <= ZAXIS; axis++) {
-
-      #if defined(HeadingMagHold)
-        PrintValueComma(getMagnetometerData(axis));
-      #else
-        PrintValueComma(0);
-      #endif
-
-    }
-
-    SERIAL_PRINTLN();
+  case 'i':
+    // motorCommand[REAR_RIGHT] = 1150;
+    SERIAL_PRINTLN(OCR4A);
+    queryType = 'X';
     break;
 
   case 'j': // Send raw mag values
@@ -673,22 +620,17 @@ void sendSerialTelemetry() {
     PrintValueComma(kinematicsAngle[YAXIS]);
     SERIAL_PRINT(kinematicsAngle[ZAXIS]);
 
-    SERIAL_PRINT(" \t ");
-    PrintValueComma(u_alt);
-    PrintValueComma(u_roll);
-    PrintValueComma(u_pitch);
-    PrintValueComma(u_yaw);	
+    // SERIAL_PRINT(" \t ");
+    // PrintValueComma(u_alt);
+    // PrintValueComma(u_roll);
+    // PrintValueComma(u_pitch);
+    // PrintValueComma(u_yaw);	
 
-    SERIAL_PRINT(" \t ");
-    PrintValueComma(yk[0]);
-    PrintValueComma(yk[1]);
-    PrintValueComma(yk[2]);
-    PrintValueComma(yk[3]);
-
-    // See motor commands		
-    // for (byte motor = 0; motor < LASTMOTOR; motor++) {
-    //   PrintValueComma(motorCommand[motor]);
-    // }
+    // SERIAL_PRINT(" \t ");
+    // PrintValueComma(yk[0]);
+    // PrintValueComma(yk[1]);
+    // PrintValueComma(yk[2]);
+    // PrintValueComma(yk[3]);
 
     SERIAL_PRINTLN();
   break;

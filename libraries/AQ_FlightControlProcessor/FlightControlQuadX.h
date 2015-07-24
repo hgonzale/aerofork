@@ -44,22 +44,16 @@
 #endif
 #define LASTMOTOR   (MOTOR4+1)
 
+int maxMotorValue = 1300;
 int motorMaxCommand[4] = {0,0,0,0};
 int motorMinCommand[4] = {0,0,0,0};
 int motorConfiguratorCommand[4] = {0,0,0,0};
 
 // The maximum allowable change in controller output (since the last iteration)
-const int FILTER_TOLERANCE = 50;
+const int FILTER_TOLERANCE = 30;
 
 
 void applyMotorCommand() {
-
-  // Original AeroQuad code:
-  // motorCommand[FRONT_LEFT]  = throttle - motorAxisCommandPitch + motorAxisCommandRoll - (YAW_DIRECTION * motorAxisCommandYaw);
-  // motorCommand[FRONT_RIGHT] = throttle - motorAxisCommandPitch - motorAxisCommandRoll + (YAW_DIRECTION * motorAxisCommandYaw);
-  // motorCommand[REAR_LEFT]   = throttle + motorAxisCommandPitch + motorAxisCommandRoll + (YAW_DIRECTION * motorAxisCommandYaw);
-  // motorCommand[REAR_RIGHT]  = throttle + motorAxisCommandPitch - motorAxisCommandRoll - (YAW_DIRECTION * motorAxisCommandYaw);
-
 
   // Save old yk values
   yk_prev[0] = yk[0];
@@ -69,10 +63,15 @@ void applyMotorCommand() {
 
 
   // map the control signals to the appropriate motors
-  yk[0] = .25*u_alt + .5*u_roll + .5*u_pitch + .25*u_yaw;
-  yk[1] = .25*u_alt - .5*u_roll + .5*u_pitch - .25*u_yaw;
-  yk[2] = .25*u_alt + .5*u_roll - .5*u_pitch - .25*u_yaw;
-  yk[3] = .25*u_alt - .5*u_roll - .5*u_pitch + .25*u_yaw;
+  // yk[0] = .25*u_alt + .50*u_roll + .50*u_pitch + .25*u_yaw;
+  // yk[1] = .25*u_alt - .50*u_roll + .50*u_pitch - .25*u_yaw;
+  // yk[2] = .25*u_alt - .50*u_roll - .50*u_pitch + .25*u_yaw;
+  // yk[3] = .25*u_alt + .50*u_roll - .50*u_pitch - .25*u_yaw;
+
+  yk[0] = 5*u_alt + 10*u_roll + 10*u_pitch + 5*u_yaw;
+  yk[1] = 5*u_alt - 10*u_roll + 10*u_pitch - 5*u_yaw;
+  yk[2] = 5*u_alt - 10*u_roll - 10*u_pitch + 5*u_yaw;
+  yk[3] = 5*u_alt + 10*u_roll - 10*u_pitch - 5*u_yaw;
 
 
   // Limit change in controller output
@@ -82,24 +81,51 @@ void applyMotorCommand() {
   yk[3] = constrain(yk[3], yk_prev[3] - FILTER_TOLERANCE, yk_prev[3] + FILTER_TOLERANCE);
 
 
-  // update motor commands
-  // motorCommand[FRONT_LEFT] += yk[0];
-  // motorCommand[FRONT_RIGHT] += yk[1];
-  // motorCommand[REAR_LEFT] += yk[2];
-  // motorCommand[REAR_RIGHT] += yk[3];
+  // update motor commands -- NOTE: yk values (float) are truncated to nearest int
+  motorCommand[FRONT_LEFT] += yk[0];
+  motorCommand[FRONT_RIGHT] += yk[1];
+  motorCommand[REAR_RIGHT] += yk[2];
+  motorCommand[REAR_LEFT] += yk[3];
+
 
   // constrain motor commands
-  // motorCommand[FRONT_LEFT] = constrain(motorCommand[FRONT_LEFT], 1000, 2000);
-  // motorCommand[FRONT_RIGHT = constrain(motorCommand[FRONT_RIGHT], 1000, 2000);
-  // motorCommand[REAR_LEFT] = constrain(motorCommand[REAR_LEFT], 1000, 2000);
-  // motorCommand[REAR_RIGHT = constrain(motorCommand[REAR_RIGHT], 1000, 2000);
+  motorCommand[FRONT_LEFT] = constrain(motorCommand[FRONT_LEFT], 1000, maxMotorValue);
+  motorCommand[FRONT_RIGHT] = constrain(motorCommand[FRONT_RIGHT], 1000, maxMotorValue);
+  motorCommand[REAR_RIGHT] = constrain(motorCommand[REAR_RIGHT], 1000, maxMotorValue);
+  motorCommand[REAR_LEFT] = constrain(motorCommand[REAR_LEFT], 1000, maxMotorValue);
 
-  // constant value motor commands
-  int motorcmd = 1000;
-  motorCommand[FRONT_LEFT] = motorcmd;
-  motorCommand[FRONT_RIGHT] = motorcmd;
-  motorCommand[REAR_LEFT] = motorcmd;
-  motorCommand[REAR_RIGHT] = motorcmd;
+}
+
+
+void setMotorCommand(int cmd) {
+
+  motorCommand[FRONT_LEFT] = cmd;
+  motorCommand[FRONT_RIGHT] = cmd;
+  motorCommand[REAR_RIGHT] = cmd;
+  motorCommand[REAR_LEFT] = cmd;
+
+  // constrain motor commands
+  motorCommand[FRONT_LEFT] = constrain(motorCommand[FRONT_LEFT], 1000, maxMotorValue);
+  motorCommand[FRONT_RIGHT] = constrain(motorCommand[FRONT_RIGHT], 1000, maxMotorValue);
+  motorCommand[REAR_RIGHT] = constrain(motorCommand[REAR_RIGHT], 1000, maxMotorValue);
+  motorCommand[REAR_LEFT] = constrain(motorCommand[REAR_LEFT], 1000, maxMotorValue);
+
+}
+
+
+void incrementMotorCommand(int inc) {
+
+  motorCommand[FRONT_LEFT] += inc;
+  motorCommand[FRONT_RIGHT] += inc;
+  motorCommand[REAR_RIGHT] += inc;
+  motorCommand[REAR_LEFT] += inc;
+
+  // constrain motor commands
+  motorCommand[FRONT_LEFT] = constrain(motorCommand[FRONT_LEFT], 1000, maxMotorValue);
+  motorCommand[FRONT_RIGHT] = constrain(motorCommand[FRONT_RIGHT], 1000, maxMotorValue);
+  motorCommand[REAR_RIGHT] = constrain(motorCommand[REAR_RIGHT], 1000, maxMotorValue);
+  motorCommand[REAR_LEFT] = constrain(motorCommand[REAR_LEFT], 1000, maxMotorValue);
+
 }
 
 #endif // #define _AQ_PROCESS_FLIGHT_CONTROL_X_MODE_H_

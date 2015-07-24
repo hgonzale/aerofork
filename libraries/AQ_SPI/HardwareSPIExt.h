@@ -6,7 +6,7 @@
 // helper class to extend the maple HardwareSPI class
 // used by the MPU6000 library
 
-#include <AQ_SPI\SPI.h>
+#include <SPI.h>
 
 #define SPI_READ_FLAG  0x80
 #define SPI_MULTI_FLAG 0x40

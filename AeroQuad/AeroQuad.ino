@@ -294,7 +294,7 @@ void initializePlatformSpecificAccelCalibration() {
   TCCR5B = 0; // same for TCCR5B register
   TCNT5 = 0; // initialize counter value to 0 (for Timer 5)
 
-  OCR5A = 624;
+  OCR5A = 1249;
   TCCR5B |= (1 << WGM52); // Enable CTC interrupt
   TCCR5B |= (1 << CS52); // enable 256 pre-scaler
   TIMSK5 |= (1 << OCIE5A);
@@ -375,31 +375,41 @@ void initializePlatformSpecificAccelCalibration() {
   safetyCheck = 0;
 }
 
+
 /*Interrupt for motor actuation
   Runs at 50Hz
 */
   ISR(TIMER1_COMPA_vect) {
-  //write directly to motor registers
+
+    //write directly to motor registers
     OCR3B = motorCommand[MOTOR3] * 2;
     OCR3C = motorCommand[MOTOR2] * 2;
     OCR3A = motorCommand[MOTOR1] * 2;
     OCR4A = motorCommand[MOTOR4] * 2;
+
   }
 
+
 /*
-Interrupt for PID computation
-  Runs at 100Hz
-  Using DELTA_T = 10ms = 0.01s
-  INV_DELTA_T = 1 / DELTA_T = 100 /s
+Interrupt for PID computation and pressure sensor reading
+  Runs at 50Hz
+  Using DELTA_T = 20ms = 0.02s
+  INV_DELTA_T = 1 / DELTA_T = 50 /s
 */
   ISR(TIMER5_COMPA_vect) {
 
-  if (dataReady) { // if new data is available
+  if (startBaroMeasure) {
 
-    u_alt = updatePID(0, &PID[ALTITUDE_PID_IDX], true);
+    measureBaroSum();
+
+  }
+
+  if (dataReady) { // if new data is available 
+
+    // u_alt = updatePID(0, &PID[ALTITUDE_PID_IDX], true);
     u_roll = updatePID(0, roll, &PID[ROLL_PID_IDX], true);
     u_pitch = updatePID(0, pitch, &PID[PITCH_PID_IDX], true);
-    u_yaw = updatePID(0, &PID[YAW_PID_IDX], true);
+    // u_yaw = updatePID(0, &PID[YAW_PID_IDX], true);
 
     dataReady = 0;
     pidReady = 1;
@@ -432,14 +442,10 @@ Interrupt for PID computation
 
   if (startBaroMeasure && frameCounter % THROTTLE_ADJUST_TASK_SPEED == 0) {
 
-    measureBaroSum();
+    // measureBaroSum();
 
   }
   
-  if (beginControl) {
-    processStabilityControl();
-  }
-
 }
 
 /*******************************************************************
@@ -449,6 +455,18 @@ Interrupt for PID computation
 
   G_Dt = (currentTime - fiftyHZpreviousTime) / 1000000.0;
   fiftyHZpreviousTime = currentTime;
+
+  if (beginControl) {
+
+    processStabilityControl();
+
+  }
+
+  if (startBaroMeasure) {
+
+    // measureBaroSum();
+
+  }
 
  }
 
@@ -461,21 +479,11 @@ Interrupt for PID computation
 
     evaluateBaroAltitude();
 
-    if (calibrateReady) {
+    if (startCalibrate) {
 
-      ENQueueSensorReading(getBaroAltitude(), 0);
+      Addz(getBaroAltitude());
 
-    }
-
-    else {
-
-      if (startCalibrate) {
-
-        Addz(getBaroAltitude());
-
-      }	
-
-    }
+    }	  
 
   }
 
@@ -490,12 +498,11 @@ Interrupt for PID computation
   lowPriorityTenHZpreviousTime = currentTime;
 
   #if defined(WirelessTelemetry)
-    // XbeeRx();
-    // XbeeTx();
+    XbeeRx();
   #else
     // Listen for configuration commands and reports telemetry
-    // readSerialCommand();
-    // sendSerialTelemetry();
+    readSerialCommand();
+    sendSerialTelemetry();
   #endif
 }
 
@@ -521,9 +528,6 @@ Interrupt for PID computation
  * 2Hz task 
  ******************************************************************/
 void process2HzTask() {
-
-  XbeeRx();
-  // XbeeTx();
 
   // Serial heartbeat code
   if (beginControl) {
@@ -562,6 +566,12 @@ void process2HzTask() {
  ******************************************************************/
  void emergencyStop() {
 
+  // set motor commands to 0
+  motorCommand[MOTOR3] = 0;
+  motorCommand[MOTOR2] = 0;
+  motorCommand[MOTOR1] = 0;
+  motorCommand[MOTOR4] = 0;
+
   // kill the motors
   OCR3B = 0;
   OCR3C = 0;
@@ -574,17 +584,11 @@ void process2HzTask() {
   // change system state (doesn't do anything yet)
   status = EMGSTOP;
 
-  // set motor commands to 0
-  motorCommand[MOTOR3] = 0;
-  motorCommand[MOTOR2] = 0;
-  motorCommand[MOTOR1] = 0;
-  motorCommand[MOTOR4] = 0;
-
   // disable all global interrupts
   // cli();
 
   // signal to base station that emergency stop occurred
-  Serial.print('^');
+  Serial.print('~');
 
   // do nothing forever
   while(1);
@@ -603,7 +607,7 @@ void process2HzTask() {
    measureCriticalSensors();
 
   //emergency stop check
-   if (countStop > 5) {
+   if (countStop > 10) {
 
     emergencyStop();
 

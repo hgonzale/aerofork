@@ -30,14 +30,6 @@
 
 /**
 * processStabilityControl
-*
-* Assumes the flight error PIDs are being updated by an interrupt.
-*
-* Uses the output from the flight error PIDs to generate motor commands.
-* Currently, we are only trying to stabilize the quadcopter.
-*
-* Once we know this flight control function is working, it will replace
-* the original flight control method.
 */
 void processStabilityControl() {
 
@@ -51,10 +43,14 @@ void processStabilityControl() {
 
   // load motor commands if PID has updated
   if (pidReady) {
+
     applyMotorCommand();
     pidReady = 0;
+
   }
+  
 }
+
 
 /**
  * calculateFlightError

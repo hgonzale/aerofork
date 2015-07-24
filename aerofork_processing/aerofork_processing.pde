@@ -31,10 +31,7 @@ int ad64H = 0x0013a200;
 int ad64L = 0x4098d9cb;
 int BAUD = 9600;
 String xbeeMessage = "";
-boolean USE_XBEE = true;
-
-const byte INT_FLAG = 0xB0;
-const byte FLOAT_FLAG = 0xB1;
+boolean USE_XBEE = false;
 
 byte[] int_buf = new byte[2];
 byte[] float_buf = new byte[4];
@@ -52,7 +49,7 @@ boolean emergencyStop = false;
 boolean calibrationComplete = false;
 boolean flightDataIncoming = false;
 int START_HERE = 185; // useful for keeping track of window sizing
-int HB_FREQ = 1; // heartbeat frequency in Hz
+int HB_FREQ = 2; // heartbeat frequency in Hz
 int previousTime = 0;
 
 
@@ -217,17 +214,24 @@ void processIncoming() {
 
   if (USE_XBEE) {
 
+    // while (myPort.available() > 0) {
+    //   print(myPort.read());
+    //   print(" ");
+    // }
+
     String thisMsg = xbee.readIncoming();
+
+    print(thisMsg);
 
     msgDisplay += thisMsg;
 
     // check for emergency stop
-    if (match(thisMsg,"^") != null) {
+    // if (match(thisMsg,"~") != null) {
 
-      emergencyStop = true;
-      status = EMGSTOP
+    //   emergencyStop = true;
+    //   status = EMGSTOP;
 
-    }
+    // }
 
     // write messages to window
     textSize(12);
@@ -243,7 +247,7 @@ void processIncoming() {
       msgDisplay += in;
 
       // check for emergency stop signal
-      if (match(in,"^") != null) {
+      if (match(in,"~") != null) {
 
         emergencyStop = true;
         status = EMGSTOP;
@@ -337,35 +341,6 @@ String getLastLines(String str, int n) {
   }
   return "";
 }
-
-
-/*********************************************************************************
-* parseXBeeMessage
-* 
-*********************************************************************************/
-// void parseXBeeMessage(String msg) {
-
-//   int token = (msg.charAt(0) == 0x7E) ? 1 : 0;
-//   int lengthMSB = int(msg.charAt(token++));
-//   int lengthLSB = int(msg.charAt(token++));
-//   int packetLength = (lengthLSB + (lengthMSB << 8));
-//   byte[] payload = new byte[packetLength - 14];
-//   token += 14;
-
-//   for (int i = 0; i < payload.length; i++) {
-//     payload[i] = byte(msg.charAt(token++));
-//   }
-
-//   msgDisplay += new String(payload);
-// }
-
-
-/*********************************************************************************
-* xBeeEvent
-* 
-* Required by XBee API. We don't use it here.
-*********************************************************************************/
-void xBeeEvent(XBeeReader xbee) {}
 
 
 /*********************************************************************************

@@ -34,6 +34,7 @@
   void initMotors(NB_Motors motorConfig) {
     initializeMotors(motorConfig); 
   }
+  
 #elif defined MOTOR_PWM_Timer
   #include <Motors_PWM_Timer.h>
   

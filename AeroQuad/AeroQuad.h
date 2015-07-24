@@ -94,6 +94,7 @@ byte previousFlightMode = ATTITUDE_FLIGHT_MODE;
  */
  volatile int pidReady = 0;
  volatile int dataReady = 0;
+ volatile boolean calcPID = 0;
 
 /**
  * Flight control variables
@@ -103,8 +104,8 @@ byte previousFlightMode = ATTITUDE_FLIGHT_MODE;
  float yk_prev[4] = {0.0, 0.0, 0.0, 0.0}; // previous motor control signal
  float yk[4] = {0.0, 0.0, 0.0, 0.0}; // current motor control signal
 
- const float DELTA_T = 0.01; // dT for PID
- const int INV_DELTA_T = 100; // 1/dT for PID
+ const float DELTA_T = 0.02; // dT for PID
+ const int INV_DELTA_T = 50; // 1/dT for PID
 
 byte flightMode = RATE_FLIGHT_MODE;
 unsigned long frameCounter = 0; // main loop executive frame counter
