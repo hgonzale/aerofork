@@ -156,6 +156,8 @@ void setup() {
   size(585,530);
 
   if (!USE_XBEE) portName = Serial.list()[0]; //port 8 on serial port.
+  
+  print("Opening port " + portName);
 
   myPort = new Serial(this, portName, BAUD);
 
@@ -204,6 +206,81 @@ void draw() {
   }
 
 }
+
+
+boolean xbeeSetup() {
+
+  myPort.write('+');
+  myPort.write('+');
+  myPort.write('+');
+
+  int timerStart = millis();
+  while (myPort.available() < 1 && (millis() - timerStart < 750)) {} // wait for ok
+
+  if (myPort.available() > 1) {
+
+    print(myPort.readChar());
+    println(myPort.readChar());
+
+  } else {
+
+    return false;
+  }
+
+  byte cr = 13;
+  char[] atnt = {'a','t','n','t'};
+  char[] atcn = {'a','t','c','n'};
+  char[] atnd = {'a','t','n','d'};
+
+  for (int i = 0; i < atnt.length; i++) { //write atnt
+
+    myPort.write(atnt[i]);
+  }
+
+  myPort.write(cr);
+
+  delay(100);
+
+  while(myPort.available() > 0) {
+    print(myPort.readChar());
+  }
+
+
+
+
+  for (int i = 0; i < atcn.length; i++) { //write atcn
+
+    myPort.write(atcn[i]);
+  }
+
+  myPort.write(cr);
+
+  delay(100);
+
+  while(myPort.available() > 0) {
+    print(myPort.readChar());
+  }
+
+
+
+
+  for (int i = 0; i < atnd.length; i++) { //write atcn
+
+    myPort.write(atnd[i]);
+  }
+
+  myPort.write(cr);
+
+  delay(1000);
+
+  while(myPort.available() > 0) {
+    print(myPort.readChar());
+  }
+
+  return true;
+
+}
+
 
 /*********************************************************************************
 * processIncoming
@@ -292,6 +369,7 @@ void processOutgoing() {
 
     println(saved);
     sendReady = false;
+    previousTime = millis();
     
   }  else { // or send just the heartbeat signal
 
@@ -601,6 +679,11 @@ void keyPressed() {
         userInp = userInp.substring(0, userInp.length() - 1);
         sendReady = false;        
       }
+      break;
+
+    case 81: // q
+      byte cr = 13;
+      myPort.write(cr);
       break;
 
     default:

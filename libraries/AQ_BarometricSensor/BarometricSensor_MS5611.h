@@ -61,11 +61,11 @@ int64_t dT;
 float pressure           = 0;
 long rawPressure         = 0;
 long rawTemperature      = 0;
-byte pressureCount       = 0;
+volatile byte pressureCount       = 0;
 float pressureFactor     = 1/5.255;
-boolean isReadPressure   = false;
-float rawPressureSum     = 0;
-byte rawPressureSumCount = 0;
+volatile boolean isReadPressure   = false;
+volatile float rawPressureSum     = 0;
+volatile byte rawPressureSumCount = 0;
 
 unsigned long startRead = 0;
 unsigned long endRead = 0;
@@ -257,7 +257,7 @@ void evaluateBaroAltitude() {
   else {
 
 	 baroAltitude = filterSmoothWithTime(baroRawAltitude, baroAltitude, baroSmoothFactor, ((startRead - endRead)/100000.0)); //100 ms per altitude read
-	
+	   // baroAltitude = filterSmooth(baroRawAltitude, baroAltitude, baroSmoothFactor);
   }
 	
   rawPressureSum = 0.0;

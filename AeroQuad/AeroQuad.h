@@ -95,6 +95,7 @@ byte previousFlightMode = ATTITUDE_FLIGHT_MODE;
  volatile int pidReady = 0;
  volatile int dataReady = 0;
  volatile boolean calcPID = 0;
+ volatile int baroReadFlag = 0;
 
 /**
  * Flight control variables
@@ -104,8 +105,8 @@ byte previousFlightMode = ATTITUDE_FLIGHT_MODE;
  float yk_prev[4] = {0.0, 0.0, 0.0, 0.0}; // previous motor control signal
  float yk[4] = {0.0, 0.0, 0.0, 0.0}; // current motor control signal
 
- const float DELTA_T = 0.02; // dT for PID
- const int INV_DELTA_T = 50; // 1/dT for PID
+ const float DELTA_T = 0.01; // dT for PID
+ const int INV_DELTA_T = 100; // 1/dT for PID
 
 byte flightMode = RATE_FLIGHT_MODE;
 unsigned long frameCounter = 0; // main loop executive frame counter
@@ -121,7 +122,7 @@ float filteredAccel[3] = {0.0,0.0,0.0};
 boolean inFlight = false; // true when motor are armed and that the user pass one time the min throttle
 boolean beginControl = false;
 boolean stopAll = false;
-boolean startBaroMeasure = false;
+volatile boolean startBaroMeasure = false;
 
 boolean startCalibrate = false;
 boolean calibrateReady = false;

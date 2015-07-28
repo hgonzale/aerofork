@@ -284,7 +284,7 @@ void initializePlatformSpecificAccelCalibration() {
   TCCR1B = 0; // same for TCCR1B register
   TCNT1 = 0; // initialize counter value to 0 (for Timer 1)
 
-  OCR1A = 1249; // 50Hz
+  OCR1A = 3124; // 50Hz
   TCCR1B |= (1 << WGM12); // Enable CTC interrupt
   TCCR1B |= (1 << CS12); // enable 256 pre-scaler
   TIMSK1 |= (1 << OCIE1A);     
@@ -294,7 +294,7 @@ void initializePlatformSpecificAccelCalibration() {
   TCCR5B = 0; // same for TCCR5B register
   TCNT5 = 0; // initialize counter value to 0 (for Timer 5)
 
-  OCR5A = 1249;
+  OCR5A = 624;
   TCCR5B |= (1 << WGM52); // Enable CTC interrupt
   TCCR5B |= (1 << CS52); // enable 256 pre-scaler
   TIMSK5 |= (1 << OCIE5A);
@@ -347,28 +347,10 @@ void initializePlatformSpecificAccelCalibration() {
   initPID();
 
   #ifdef HeadingMagHold
-  vehicleState |= HEADINGHOLD_ENABLED;
-  initializeMagnetometer();
-  initializeHeadingFusion();
-  #endif
-
-  // #if defined(BinaryWrite) || defined(BinaryWritePID)
-  //   #ifdef OpenlogBinaryWrite
-  //     binaryPort = &Serial1;
-  //     binaryPort->begin(115200);
-  //     delay(1000);
-  //   #else
-  //    binaryPort = &Serial;
-  //   #endif
-  // #endif
-  
-  #if defined(UseGPS)
-  initializeGps();
+    vehicleState |= HEADINGHOLD_ENABLED;
+    initializeMagnetometer();
+    initializeHeadingFusion();
   #endif 
-
-  // #ifdef SlowTelemetry
-  //    initSlowTelemetry();
-  // #endif
 
   previousTime = micros();
   digitalWrite(LED_Green, HIGH);
@@ -377,7 +359,7 @@ void initializePlatformSpecificAccelCalibration() {
 
 
 /*Interrupt for motor actuation
-  Runs at 50Hz
+  Runs at 20Hz
 */
   ISR(TIMER1_COMPA_vect) {
 
@@ -391,22 +373,29 @@ void initializePlatformSpecificAccelCalibration() {
 
 
 /*
-Interrupt for PID computation and pressure sensor reading
-  Runs at 50Hz
-  Using DELTA_T = 20ms = 0.02s
-  INV_DELTA_T = 1 / DELTA_T = 50 /s
+Interrupt for pressure sensor reading
+  Runs at 100Hz
+  Using DELTA_T = 10ms = 0.01s
+  INV_DELTA_T = 1 / DELTA_T = 100 /s
 */
   ISR(TIMER5_COMPA_vect) {
 
   if (startBaroMeasure) {
 
-    measureBaroSum();
+    if (digitalRead(MPUCS) != 0) {
+
+      measureBaroSum();
+
+    } else {
+
+      baroReadFlag = 1;
+    }
 
   }
 
   if (dataReady) { // if new data is available 
 
-    // u_alt = updatePID(0, &PID[ALTITUDE_PID_IDX], true);
+    u_alt = updatePID(0, &PID[ALTITUDE_PID_IDX], true);
     u_roll = updatePID(0, roll, &PID[ROLL_PID_IDX], true);
     u_pitch = updatePID(0, pitch, &PID[PITCH_PID_IDX], true);
     // u_yaw = updatePID(0, &PID[YAW_PID_IDX], true);
@@ -440,11 +429,6 @@ Interrupt for PID computation and pressure sensor reading
   // kinematicsAngle[] is updated here
   calculateKinematics(gyroRate[XAXIS], gyroRate[YAXIS], gyroRate[ZAXIS], filteredAccel[XAXIS], filteredAccel[YAXIS], filteredAccel[ZAXIS], G_Dt);
 
-  if (startBaroMeasure && frameCounter % THROTTLE_ADJUST_TASK_SPEED == 0) {
-
-    // measureBaroSum();
-
-  }
   
 }
 
@@ -464,8 +448,7 @@ Interrupt for PID computation and pressure sensor reading
 
   if (startBaroMeasure) {
 
-    // measureBaroSum();
-
+    evaluateBaroAltitude();
   }
 
  }
@@ -476,8 +459,6 @@ Interrupt for PID computation and pressure sensor reading
  void process10HzTask1() {
 
   if (startBaroMeasure) {
-
-    evaluateBaroAltitude();
 
     if (startCalibrate) {
 
@@ -601,13 +582,23 @@ void process2HzTask() {
  ******************************************************************/
  void loop () {
 
+   counterVar = micros() - currentTime;
    currentTime = micros();
    deltaTime = currentTime - previousTime;
 
    measureCriticalSensors();
 
+   if (baroReadFlag) { // check to see if we missed a baro-read
+
+    measureBaroSum();
+    baroReadFlag = 0;
+   
+   }
+
+ 
+
   //emergency stop check
-   if (countStop > 10) {
+   if (countStop > 5) {
 
     emergencyStop();
 

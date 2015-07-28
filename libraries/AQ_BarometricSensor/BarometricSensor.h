@@ -24,13 +24,13 @@
 #include "Arduino.h"
 #include "GlobalDefined.h"
 
-float baroAltitude      = 0.0; 
+volatile float baroAltitude      = 0.0; 
 float baroRawAltitude   = 0.0;
-float baroGroundAltitude = 0.0;
+volatile float baroGroundAltitude = 0.0;
 float baroSmoothFactor   = 0.2;
 
 float zSum = 0.0;
-float zBias = 0.0;
+volatile float zBias = 0.0;
 
 int zIndex = 0;
 
@@ -60,19 +60,19 @@ void measureGroundBaro() {
   
   for (int i=0; i<50; i++) {
 	
-	for (int j=0; j<25; j++) {
-	
-		measureBaroSum();
-		
-		delay(20);
+  	for (int j=0; j<25; j++) {
+  	
+  		measureBaroSum();
+  		
+  		delay(20);
 
-	}
+  	}
 
-	evaluateBaroAltitude();
+  	evaluateBaroAltitude();
 
-	altSum += baroRawAltitude;
-	numAlt++;
-	
+  	altSum += baroRawAltitude;
+  	numAlt++;
+  	
     delay(100);
 
   }

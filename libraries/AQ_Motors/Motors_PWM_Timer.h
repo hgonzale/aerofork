@@ -121,10 +121,10 @@ void commandAllMotors(int command) {
   motorCommand[MOTOR1] = command;
   motorCommand[MOTOR4] = command; 
 
-  // OCR3B = command * 2;
-  // OCR3C = command * 2;
-  // OCR3A = command * 2;
-  // OCR4A = command * 2;
+  OCR3B = command * 2;
+  OCR3C = command * 2;
+  OCR3A = command * 2;
+  OCR4A = command * 2;
 
 }
   

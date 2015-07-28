@@ -30,6 +30,8 @@
 #define _AQ_SERIAL_COMM_
 
 char queryType = 'X';
+int timeSinceLastSend = 0;
+int ct = 0;
 
 void initCommunication() {
   // do nothing here for now
@@ -460,7 +462,8 @@ void sendSerialTelemetry() {
     break;
 
   case 'c': // add pitch (for debugging)
-    pitch += -0.1;
+    // setMotorCommand(1100);
+    pulseMotors(3);
     queryType = 'X';
     break;
 
@@ -613,9 +616,12 @@ void sendSerialTelemetry() {
   break;
   
   case '?': // Custom serial command -- Used in debugging
+    // ct = millis();
+    // SERIAL_PRINT(ct - timeSinceLastSend);
+    // timeSinceLastSend = ct;
 
-    // // See calculated Euler angles
-    // PrintValueComma(getBaroAltitude());
+    // See calculated Euler angles
+    PrintValueComma(getBaroAltitude());
     PrintValueComma(kinematicsAngle[XAXIS]);
     PrintValueComma(kinematicsAngle[YAXIS]);
     SERIAL_PRINT(kinematicsAngle[ZAXIS]);
