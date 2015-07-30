@@ -95,6 +95,7 @@ void measureGroundBaro() {
   
   delay(100);
 
+
 }
 
 void Addz(float i) {
@@ -103,7 +104,7 @@ void Addz(float i) {
 
 		zSum += i;
 
-		zIndex += 1;
+		zIndex++;
 
 	}
 

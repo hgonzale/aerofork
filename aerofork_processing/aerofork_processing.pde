@@ -52,6 +52,8 @@ int START_HERE = 185; // useful for keeping track of window sizing
 int HB_FREQ = 2; // heartbeat frequency in Hz
 int previousTime = 0;
 
+int counterVar = 0;
+
 
 /*************************************************
 *          Define quadcopter states              *
@@ -155,7 +157,7 @@ void setup() {
 
   size(585,530);
 
-  if (!USE_XBEE) portName = Serial.list()[0]; //port 8 on serial port.
+//  if (!USE_XBEE) portName = Serial.list()[0]; //port 8 on serial port.
   
   print("Opening port " + portName);
 
@@ -165,17 +167,6 @@ void setup() {
 
   xbee.setTargetAddr(ad64H, ad64L);
 
-}
-
-
-void cycleState() {
- if (status == BOOTUP) {
-  status = CALIBRATE;
- } else if (status == CALIBRATE) {
-  status = FLIGHT;
- } else {
-   status = BOOTUP;
- }
 }
 
 
@@ -350,7 +341,7 @@ void processOutgoing() {
   
   if (sendReady && saved.length() > 0) { // send the custom message AND heartbeat signal
 
-    if (saved.charAt(0) != '?') {
+    if (saved.charAt(0) != '?' && status != EMGSTOP) {
 
       flightDataIncoming = false;
       defaultMsg = "x78.9";
@@ -389,6 +380,7 @@ void processOutgoing() {
         } else {
 
           myPort.write(defaultMsg);
+          println(counterVar++);
 
         }
 
@@ -630,7 +622,7 @@ void mouseClicked() {
     emergencyStop = false;
     myPort = new Serial(this, Serial.list()[0], 115200);
     
-  } else if (mouseOverRect(FLIGHTDATA_X,FLIGHTDATA_Y,FLIGHTDATA_WIDTH,FLIGHTDATA_HEIGHT)) {
+  } else if (mouseOverRect(FLIGHTDATA_X,FLIGHTDATA_Y,FLIGHTDATA_WIDTH,FLIGHTDATA_HEIGHT) && status != EMGSTOP) {
     saved = "?"; // send flight data request
     sendReady = true;
     defaultMsg = "?78.9";
@@ -653,7 +645,8 @@ void keyPressed() {
 
     case 35:
       // 'END' (emergency stop)
-      saved = "^";
+      saved = "~";
+      defaultMsg = "~78.9";
       sendReady = true;
       emergencyStop = true;
       status = EMGSTOP;

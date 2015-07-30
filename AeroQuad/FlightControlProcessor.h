@@ -34,10 +34,10 @@
 void processStabilityControl() {
 
   // update state variables
-  // altitude = getBaroAltitude();
-  // roll = kinematicsAngle[1];
-  // pitch = kinematicsAngle[0];
-  // yaw = kinematicsAngle[2];
+  altitude = getBaroAltitude();
+  roll = kinematicsAngle[1];
+  pitch = kinematicsAngle[0];
+  yaw = kinematicsAngle[2];
 
   dataReady = 1;
 

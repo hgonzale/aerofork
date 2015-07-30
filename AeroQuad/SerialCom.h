@@ -621,10 +621,10 @@ void sendSerialTelemetry() {
     // timeSinceLastSend = ct;
 
     // See calculated Euler angles
-    PrintValueComma(getBaroAltitude());
-    PrintValueComma(kinematicsAngle[XAXIS]);
-    PrintValueComma(kinematicsAngle[YAXIS]);
-    SERIAL_PRINT(kinematicsAngle[ZAXIS]);
+    // PrintValueComma(getBaroAltitude());
+    // PrintValueComma(kinematicsAngle[XAXIS]);
+    // PrintValueComma(kinematicsAngle[YAXIS]);
+    // SERIAL_PRINT(kinematicsAngle[ZAXIS]);
 
     // SERIAL_PRINT(" \t ");
     // PrintValueComma(u_alt);
@@ -638,7 +638,9 @@ void sendSerialTelemetry() {
     // PrintValueComma(yk[2]);
     // PrintValueComma(yk[3]);
 
-    SERIAL_PRINTLN();
+    // SERIAL_PRINTLN();
+
+  Serial.println(counterVar);
   break;
   
   case '>':

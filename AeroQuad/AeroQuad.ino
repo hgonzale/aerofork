@@ -27,9 +27,10 @@
    or talk to us live on IRC #aeroquad
 *****************************************************************************/
 
-
  float indic = 0.0;
  int counterVar = 0;
+ int t0 = 0;
+ int t1 = 0;
 
 
 
@@ -355,6 +356,8 @@ void initializePlatformSpecificAccelCalibration() {
   previousTime = micros();
   digitalWrite(LED_Green, HIGH);
   safetyCheck = 0;
+
+  commandAllMotors(1000);
 }
 
 
@@ -364,10 +367,10 @@ void initializePlatformSpecificAccelCalibration() {
   ISR(TIMER1_COMPA_vect) {
 
     //write directly to motor registers
-    OCR3B = motorCommand[MOTOR3] * 2;
-    OCR3C = motorCommand[MOTOR2] * 2;
-    OCR3A = motorCommand[MOTOR1] * 2;
-    OCR4A = motorCommand[MOTOR4] * 2;
+    // OCR3B = motorCommand[MOTOR3] * 2;
+    // OCR3C = motorCommand[MOTOR2] * 2;
+    // OCR3A = motorCommand[MOTOR1] * 2;
+    // OCR4A = motorCommand[MOTOR4] * 2;
 
   }
 
@@ -427,7 +430,8 @@ Interrupt for pressure sensor reading
   }
   
   // kinematicsAngle[] is updated here
-  calculateKinematics(gyroRate[XAXIS], gyroRate[YAXIS], gyroRate[ZAXIS], filteredAccel[XAXIS], filteredAccel[YAXIS], filteredAccel[ZAXIS], G_Dt);
+  // calculateKinematics(gyroRate[XAXIS], gyroRate[YAXIS], gyroRate[ZAXIS], filteredAccel[XAXIS], filteredAccel[YAXIS], filteredAccel[ZAXIS], G_Dt);
+
 
   
 }
@@ -439,6 +443,7 @@ Interrupt for pressure sensor reading
 
   G_Dt = (currentTime - fiftyHZpreviousTime) / 1000000.0;
   fiftyHZpreviousTime = currentTime;
+
 
   if (beginControl) {
 
@@ -482,8 +487,8 @@ Interrupt for pressure sensor reading
     XbeeRx();
   #else
     // Listen for configuration commands and reports telemetry
-    readSerialCommand();
-    sendSerialTelemetry();
+    // readSerialCommand();
+    // sendSerialTelemetry();
   #endif
 }
 
@@ -510,10 +515,15 @@ Interrupt for pressure sensor reading
  ******************************************************************/
 void process2HzTask() {
 
+  readSerialCommand();
+  sendSerialTelemetry();
+
   // Serial heartbeat code
   if (beginControl) {
 
     if (resetEmergencyStop) {
+
+      counterVar++;
 
       countStop = 0;
 
@@ -528,7 +538,6 @@ void process2HzTask() {
   }
 
 }
-
 
 
 /*******************************************************************
@@ -582,7 +591,6 @@ void process2HzTask() {
  ******************************************************************/
  void loop () {
 
-   counterVar = micros() - currentTime;
    currentTime = micros();
    deltaTime = currentTime - previousTime;
 
@@ -595,14 +603,10 @@ void process2HzTask() {
    
    }
 
- 
-
   //emergency stop check
-   if (countStop > 5) {
+   if (countStop > 4) {
 
     emergencyStop();
-
-    calibrateESC = 2;
 
   }
 
@@ -653,8 +657,6 @@ void process2HzTask() {
 
       process2HzTask();
     }
-
-    
 
 
    previousTime = currentTime;
