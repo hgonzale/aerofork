@@ -24,24 +24,20 @@ automatically send a message to the quadcopter triggering an emergency stop.
 
 Serial myPort;
 String portName = "/dev/ttyUSB0";
-
-/* XBee variables */
-XBeeInterpreter xbee;
-int ad64H = 0x0013a200;
-int ad64L = 0x4098d9cb;
 int BAUD = 9600;
-String xbeeMessage = "";
-boolean USE_XBEE = false;
 
-byte[] int_buf = new byte[2];
-byte[] float_buf = new byte[4];
+boolean USE_XBEE = true;
 
-String heartBeat = "78.9"; //Serial heartbeat for emergency stop.
-String defaultMsg = "x78.9";
-String saved = new String();
-String userInp = new String(); //User serial command to be sent to Arduino.
+char HEADER = '#';
+char HEARTBEAT = '$';
+
+String defaultMsg = "#x$";
+
+char saved = 0;
+char userInp = 0; //User serial command to be sent to the quadrotor
+
 String msgDisplay = new String(); //message from quadrotor
-String localMsg = new String(); //message to display locally
+String localMsg = new String(); //local message
 boolean localMsgReady = false;
 boolean sendReady = false;
 
@@ -147,7 +143,6 @@ void drawButton_RESET() {
 }
 
 
-
 /*********************************************************************************
 * setup
 *
@@ -157,15 +152,11 @@ void setup() {
 
   size(585,530);
 
-//  if (!USE_XBEE) portName = Serial.list()[0]; //port 8 on serial port.
+  if (!USE_XBEE) portName = Serial.list()[0]; //port 8 on serial port.
   
   print("Opening port " + portName);
 
   myPort = new Serial(this, portName, BAUD);
-
-  xbee = new XBeeInterpreter(this, myPort);
-
-  xbee.setTargetAddr(ad64H, ad64L);
 
 }
 
@@ -183,92 +174,7 @@ void draw() {
 
   processIncoming();
 
-  if (sendReady) {
-
-    println(saved);
-    sendReady = false;
-
-  }
-
-  if (emergencyStop) {
-
-    drawEmgStopWarning();
-
-  }
-
-}
-
-
-boolean xbeeSetup() {
-
-  myPort.write('+');
-  myPort.write('+');
-  myPort.write('+');
-
-  int timerStart = millis();
-  while (myPort.available() < 1 && (millis() - timerStart < 750)) {} // wait for ok
-
-  if (myPort.available() > 1) {
-
-    print(myPort.readChar());
-    println(myPort.readChar());
-
-  } else {
-
-    return false;
-  }
-
-  byte cr = 13;
-  char[] atnt = {'a','t','n','t'};
-  char[] atcn = {'a','t','c','n'};
-  char[] atnd = {'a','t','n','d'};
-
-  for (int i = 0; i < atnt.length; i++) { //write atnt
-
-    myPort.write(atnt[i]);
-  }
-
-  myPort.write(cr);
-
-  delay(100);
-
-  while(myPort.available() > 0) {
-    print(myPort.readChar());
-  }
-
-
-
-
-  for (int i = 0; i < atcn.length; i++) { //write atcn
-
-    myPort.write(atcn[i]);
-  }
-
-  myPort.write(cr);
-
-  delay(100);
-
-  while(myPort.available() > 0) {
-    print(myPort.readChar());
-  }
-
-
-
-
-  for (int i = 0; i < atnd.length; i++) { //write atcn
-
-    myPort.write(atnd[i]);
-  }
-
-  myPort.write(cr);
-
-  delay(1000);
-
-  while(myPort.available() > 0) {
-    print(myPort.readChar());
-  }
-
-  return true;
+  if (emergencyStop) drawEmgStopWarning();
 
 }
 
@@ -280,55 +186,28 @@ boolean xbeeSetup() {
 **********************************************************************************/
 void processIncoming() {
 
-  if (USE_XBEE) {
+  // append incoming messages to the message string
+  while (myPort.available() > 0) {
 
-    // while (myPort.available() > 0) {
-    //   print(myPort.read());
-    //   print(" ");
-    // }
+    String in = myPort.readString();
+    msgDisplay += in;
 
-    String thisMsg = xbee.readIncoming();
+    // check for emergency stop signal
+    if (match(in,"~") != null) {
 
-    print(thisMsg);
-
-    msgDisplay += thisMsg;
-
-    // check for emergency stop
-    // if (match(thisMsg,"~") != null) {
-
-    //   emergencyStop = true;
-    //   status = EMGSTOP;
-
-    // }
-
-    // write messages to window
-    textSize(12);
-    text(getLastLines(msgDisplay,15),8,START_HERE);
-
-
-  } else {
-
-    // append incoming messages to the message string
-    while (myPort.available() > 0) {
-
-      String in = myPort.readString();
-      msgDisplay += in;
-
-      // check for emergency stop signal
-      if (match(in,"~") != null) {
-
-        emergencyStop = true;
-        status = EMGSTOP;
-        
-      }
-
+      emergencyStop = true;
+      status = EMGSTOP;
+      
     }
 
-    // finally, print all incoming messages to the window
-    textSize(12);
-    text(getLastLines(msgDisplay,15),8,START_HERE);
   }
+
+  // finally, print all incoming messages to the window
+  textSize(12);
+  text(getLastLines(msgDisplay,15),8,START_HERE);
+  
 }
+
 
 /*********************************************************************************
 * processOutgoing
@@ -339,24 +218,16 @@ void processIncoming() {
 *********************************************************************************/
 void processOutgoing() {
   
-  if (sendReady && saved.length() > 0) { // send the custom message AND heartbeat signal
+  if (sendReady) { // send the custom message AND heartbeat signal
 
-    if (saved.charAt(0) != '?' && status != EMGSTOP) {
+    if (saved != '?' && status != EMGSTOP) {
 
       flightDataIncoming = false;
-      defaultMsg = "x78.9";
+      defaultMsg = "#x$";
 
     }
 
-    if (USE_XBEE) {
-
-      xbee.sendData(saved);
-
-    } else {
-
-      myPort.write(saved);
-
-    }
+    send(saved);
 
     println(saved);
     sendReady = false;
@@ -373,17 +244,7 @@ void processOutgoing() {
 
         previousTime = millis();
 
-        if (USE_XBEE) {
-
-          xbee.sendData(defaultMsg);
-
-        } else {
-
-          myPort.write(defaultMsg);
-          println(counterVar++);
-
-        }
-
+        sendDefault();
     }
   }
 }
@@ -532,19 +393,6 @@ void drawEmgStopWarning() {
   text("!!! Emergency Stop triggered !!!",80,height-10);
 }
 
-void drawHeart() {
-  int x = width - 90;
-  int y = height - 55;
-  smooth();
-  noStroke();
-  fill(206,30,30);
-  beginShape();
-  vertex(50+x, 15+y); 
-  bezierVertex(50+x, -5+y, 90+x, 5+y, 50+x, 40+y); 
-  vertex(50+x, 15+y); 
-  bezierVertex(50+x, -5+y, 10+x, 5+y, 50+x, 40+y); 
-  endShape();
-}
 
 /*********************************************************************************
 * mouseOverRect
@@ -575,30 +423,21 @@ void mouseClicked() {
     localMsg = "Calibrating...";
     localMsgReady = true;
     
-//    saved = "/"; // Serial command for baro calibration
-//    sendReady = true;
-//    
-//    calibBaro = true;
-//    
-//    localMsg = "Calibrating barometric sensor. This might take a minute...";
-//    localMsgReady = true;
-//    
   
   } else if (mouseOverRect(CALIBACCEL_X,CALIBACCEL_Y,CALIBACCEL_WIDTH,CALIBACCEL_HEIGHT)) {
     calibrationComplete = true;
     localMsg = "Calibration complete...Press 'Fly' when ready!";
-//    saved = "@";
-//    sendReady = true;
     
 
   } else if (mouseOverRect(CLEAR_X,CLEAR_Y,CLEAR_WIDTH,CLEAR_HEIGHT)) { // clear button
     // clear all messages
     msgDisplay = "";
 
+
   } else if (mouseOverRect(FLY_X,FLY_Y,FLY_WIDTH,FLY_HEIGHT) && calibrationComplete) { // fly button
      // begin flight
     status = FLIGHT;
-    saved = "]"; // Serial command for beginning control
+    saved = 'b'; // Serial command for beginning control
     sendReady = true;
     localMsg = "";
     localMsgReady = false;
@@ -614,23 +453,43 @@ void mouseClicked() {
     displayLocalMessage();
     delay(500);
     
-//    localMsg = "";
-//    localMsgReady = false;
-    
     myPort.clear();
     status = BOOTUP;
     emergencyStop = false;
     myPort = new Serial(this, Serial.list()[0], 115200);
     
   } else if (mouseOverRect(FLIGHTDATA_X,FLIGHTDATA_Y,FLIGHTDATA_WIDTH,FLIGHTDATA_HEIGHT) && status != EMGSTOP) {
-    saved = "?"; // send flight data request
+    saved = '?'; // send flight data request
     sendReady = true;
-    defaultMsg = "?78.9";
+    defaultMsg = "#x$";
     flightDataIncoming = true; 
     
   }
   
   
+}
+
+/*********************************************************************************
+* send
+*
+* c : the command to be sent
+*********************************************************************************/
+void send(char c) {
+
+  myPort.write(HEADER);
+  myPort.write(c);
+  myPort.write(HEARTBEAT);
+
+}
+
+/*********************************************************************************
+* sendDefault
+*
+* Send the default message.
+*********************************************************************************/
+void sendDefault() {
+
+  myPort.write(defaultMsg);
 }
     
 /*********************************************************************************
@@ -645,8 +504,8 @@ void keyPressed() {
 
     case 35:
       // 'END' (emergency stop)
-      saved = "~";
-      defaultMsg = "~78.9";
+      saved = '~';
+      defaultMsg = "#~$";
       sendReady = true;
       emergencyStop = true;
       status = EMGSTOP;
@@ -659,28 +518,18 @@ void keyPressed() {
     case ENTER:
       // 'ENTER'
       saved = userInp;      
-      if (status == FLIGHT) { // heartbeat signal sent only during FLIGHT state
-         saved += heartBeat; 
-      }     
-      userInp = ""; 
+      userInp = 0; 
       sendReady = true;
       break;
 
     case 8:
       // 'BACKSPACE'     
-      if (userInp.length() > 0) {
-        userInp = userInp.substring(0, userInp.length() - 1);
-        sendReady = false;        
-      }
-      break;
-
-    case 81: // q
-      byte cr = 13;
-      myPort.write(cr);
-      break;
+      userInp = 0;
+      sendReady = false;
+      break;   
 
     default:
-      userInp += key;
+      userInp = key;
       sendReady = false;
       break;
   }

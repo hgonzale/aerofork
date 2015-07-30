@@ -57,6 +57,7 @@
 #include <AQMath.h>
 #include <FourtOrderFilter.h>
 #include <XBee.h>
+#include <XBeeFSM.h>
 
 
 //********************************************************
@@ -347,6 +348,8 @@ void initializePlatformSpecificAccelCalibration() {
 
   initPID();
 
+  initXBeeFSM();
+
   #ifdef HeadingMagHold
     vehicleState |= HEADINGHOLD_ENABLED;
     initializeMagnetometer();
@@ -430,7 +433,7 @@ Interrupt for pressure sensor reading
   }
   
   // kinematicsAngle[] is updated here
-  // calculateKinematics(gyroRate[XAXIS], gyroRate[YAXIS], gyroRate[ZAXIS], filteredAccel[XAXIS], filteredAccel[YAXIS], filteredAccel[ZAXIS], G_Dt);
+  calculateKinematics(gyroRate[XAXIS], gyroRate[YAXIS], gyroRate[ZAXIS], filteredAccel[XAXIS], filteredAccel[YAXIS], filteredAccel[ZAXIS], G_Dt);
 
 
   
@@ -462,6 +465,12 @@ Interrupt for pressure sensor reading
  * 10Hz task
  ******************************************************************/
  void process10HzTask1() {
+
+  XBeeRead();
+
+  if (beginControl && !checkEmergencyStop()) emergencyStop(); 
+
+  
 
   if (startBaroMeasure) {
 
@@ -515,27 +524,27 @@ Interrupt for pressure sensor reading
  ******************************************************************/
 void process2HzTask() {
 
-  readSerialCommand();
-  sendSerialTelemetry();
+  // readSerialCommand();
+  // sendSerialTelemetry();
 
   // Serial heartbeat code
-  if (beginControl) {
+  // if (beginControl) {
 
-    if (resetEmergencyStop) {
+  //   if (resetEmergencyStop) {
 
-      counterVar++;
+  //     counterVar++;
 
-      countStop = 0;
+  //     countStop = 0;
 
-    } else {
+  //   } else {
 
-      countStop++;
+  //     countStop++;
 
-    }
+  //   }
 
-    resetEmergencyStop = false;
+  //   resetEmergencyStop = false;
 
-  }
+  // }
 
 }
 

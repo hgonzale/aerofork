@@ -127,7 +127,6 @@ volatile boolean startBaroMeasure = false;
 boolean startCalibrate = false;
 boolean calibrateReady = false;
 boolean calibrateReadyTilt = false;
-boolean resetEmergencyStop = false; //Boolean variable indicating whether xBee heartbeat was received. If true, zeros countStop for emergency stop.
 
 
 char msg = ' ';

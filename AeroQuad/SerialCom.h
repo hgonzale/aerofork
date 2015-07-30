@@ -367,7 +367,7 @@ void readSerialCommand() {
     break;
   }
       
-  resetEmergencyStop = validateSerialStatus(); //Checks for float serial verification message '78.9' for xBee connection status.
+  // resetEmergencyStop = validateSerialStatus(); //Checks for float serial verification message '78.9' for xBee connection status.
 
   }
 }

@@ -1,6 +1,16 @@
 
-int in = 0;
+char foo;
+#include <XBeeFSM.h>
+
+
+unsigned long timer;
+
 void setup() {
+
+  timer = millis();
+
+  initXBeeFSM();
+
   Serial.begin(9600);
 
 }
@@ -8,17 +18,17 @@ void setup() {
 
 void loop() {
 
-//  while (Serial.available() > 0) {
-//
-//    in = Serial.read();
-//
-//    Serial.print(in);
-//
-//  }
+	if (millis() - timer > 100) { // 10 Hz
 
+		timer = millis();
 
-  Serial.print('a');
+		XBeeRead();
 
+		if (checkEmergencyStop()) {
 
-  delay(1000);
+			Serial.print("Emergency Stop triggered!")
+		}
+
+	}
+
 }
