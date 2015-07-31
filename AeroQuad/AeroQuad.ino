@@ -57,7 +57,6 @@
 #include <AQMath.h>
 #include <FourtOrderFilter.h>
 #include <XBee.h>
-#include <XBeeFSM.h>
 
 
 //********************************************************
@@ -254,6 +253,8 @@ void initializePlatformSpecificAccelCalibration() {
 #if defined(UseGPS) || defined(BattMonitor)
   #include "LedStatusProcessor.h"
 #endif  
+
+#include <XBeeFSM.h>
 
 #if defined(MavLink)
   #include "MavLink.h"
@@ -470,7 +471,7 @@ Interrupt for pressure sensor reading
 
   if (beginControl && !checkEmergencyStop()) emergencyStop(); 
 
-  
+
 
   if (startBaroMeasure) {
 

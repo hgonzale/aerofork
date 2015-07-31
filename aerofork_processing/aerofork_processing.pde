@@ -26,7 +26,7 @@ Serial myPort;
 String portName = "/dev/ttyUSB0";
 int BAUD = 9600;
 
-boolean USE_XBEE = true;
+boolean USE_XBEE = false;
 
 char HEADER = '#';
 char HEARTBEAT = '$';
@@ -461,7 +461,7 @@ void mouseClicked() {
   } else if (mouseOverRect(FLIGHTDATA_X,FLIGHTDATA_Y,FLIGHTDATA_WIDTH,FLIGHTDATA_HEIGHT) && status != EMGSTOP) {
     saved = '?'; // send flight data request
     sendReady = true;
-    defaultMsg = "#x$";
+    defaultMsg = "#?$";
     flightDataIncoming = true; 
     
   }

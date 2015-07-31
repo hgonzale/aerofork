@@ -23,10 +23,9 @@
 /* Define constants */
 #define HEADER_BYTE 0x23
 #define HEARTBEAT 0x24
+// #define DEBUG
 
 const unsigned long EMGSTOP_MAX_MILLIS = 5000; // emergency stop timer (milliseconds)
-const int PACKET_LENGTH = 3; // expected length of incoming packets
-
 
 /* Define states of FSM */
 typedef enum { 
@@ -42,7 +41,6 @@ state_t nextState;
 signed char nextCommand;
 signed char rxByte;
 unsigned long lastHeartbeatTime;
-bool DEBUG = false;
 
 
 /*
@@ -82,7 +80,7 @@ void printState() {
 * Resets the emergency stop timer to prevent triggering an 
 * emergency stop.
 */
-void resetEmergencyStop() {
+inline void resetEmergencyStop() {
 
 	lastHeartbeatTime = millis();
 }
@@ -97,9 +95,9 @@ void resetEmergencyStop() {
 * Returning 'false' indicates that the emergency stop should be 
 * triggered.
 */
-bool checkEmergencyStop() {
+inline bool checkEmergencyStop() {
 
-	return (millis() - lastHeartbeatTime < EMGSTOP_MAX_MILLIS);
+	return (millis() - lastHeartbeatTime < EMGSTOP_MAX_MILLIS); // beware of overflow here
 }
 
 
@@ -112,11 +110,10 @@ bool checkEmergencyStop() {
 */
 void processCommand( signed char cmd ) {
 
-	if (DEBUG) {
-
+	#ifdef DEBUG
 		Serial.print("Executing command : ");
 		Serial.println(cmd);
-	}
+	#endif
 
 	switch (cmd) {
 
@@ -166,15 +163,13 @@ void XBeeComFSM( signed char thisByte ) {
 
 		case ExpectHeader:
 
-			switch(thisByte) {
+			if (thisByte == HEADER_BYTE) { // got header, wait for command
 
-				case HEADER_BYTE: // got header, wait for command
-					nextState = ExpectCommand;
-					break;
+				nextState = ExpectCommand;
 
-				default: // no header, keep waiting for it
-					nextState = ExpectHeader;
-					break;
+			} else { // no header, keep waiting for it
+
+				nextState = ExpectHeader;
 			}
 
 			break;
@@ -182,35 +177,16 @@ void XBeeComFSM( signed char thisByte ) {
 
 		case ExpectCommand:
 
-			switch(thisByte) {
+			if ( thisByte == 'a' || thisByte == 'b' || 
+				 thisByte == '?' || thisByte == 'x' ) { // all command cases go here
 
-				// all command cases go here
-				// for example...
+				nextState = ExpectHeartbeat;
+				nextCommand = thisByte;
 
-				case 'a':
-					nextState = ExpectHeartbeat;
-					nextCommand = 'a';
-					break;
+			} else { // command not recognized
 
-				case 'b':
-					nextState = ExpectHeartbeat;
-					nextCommand = 'b';
-					break;
-
-				case '?':
-					nextState =ExpectHeartbeat;
-					nextCommand = '?';
-					break;
-
-				case 'x':
-					nextState = ExpectHeartbeat;
-					nextCommand = 'x';
-					break;
-
-				default: // command not recognized
-					nextState = ExpectHeader;
-					nextCommand = 'x';
-					break;
+				nextState = ExpectHeader;
+				nextCommand = 'x';
 			}
 
 			break;
@@ -218,19 +194,17 @@ void XBeeComFSM( signed char thisByte ) {
 
 		case ExpectHeartbeat:
 
-			switch(thisByte) {
+			if (thisByte == HEARTBEAT) { // got heartbeat, wait for next packet
 
-				case HEARTBEAT: // got heartbeat, wait for next packet
-					nextState = ExpectHeader;
-					resetEmergencyStop();
+				nextState = ExpectHeader;
 
-					if (DEBUG) Serial.println("Heartbeat received");
+				resetEmergencyStop();
 
-					break;
+				processCommand(nextCommand);
 
-				default: // no heartbeat, wait for next packet
-					nextState = ExpectHeader;
-					break;
+			} else { // no heartbeat, wait for next packet
+
+				nextState = ExpectHeader;
 			}
 
 			break;
@@ -251,26 +225,24 @@ void XBeeComFSM( signed char thisByte ) {
 */
 void XBeeRead() {
 
-	if (DEBUG) Serial.println("-----------New Read------------");
+	#ifdef DEBUG
+		Serial.println("-----------New Read------------");
+	#endif
 
-	for (int i = 0; i < PACKET_LENGTH; i++) {
+	while (Serial.available() > 0) {
 
 		rxByte = (signed char) Serial.read();
 
-		if (DEBUG) {
-
+		#ifdef DEBUG
 			Serial.print("Received : ");
 			Serial.println(rxByte);
 			printState();
 			Serial.print("\t");
-			Serial.println(i);
-		}
+		#endif
 
 		XBeeComFSM(rxByte);
 
 	}
-
-	processCommand(nextCommand);
 
 }
 
