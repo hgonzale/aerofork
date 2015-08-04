@@ -176,7 +176,9 @@ void initializeBaro() {
   // measureGroundBaro();
   
   // baroAltitude = baroGroundAltitude;
-  
+
+  // Serial.println("Baro initialized");
+  // startBaroMeasure = true;
 }
 
 //

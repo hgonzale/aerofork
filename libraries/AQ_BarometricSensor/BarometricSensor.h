@@ -54,6 +54,7 @@ const float getBaroAltitude() {
  // void measureGroundBaro() {
  //  // measure initial ground pressure (multiple samples)
  //  float altSum = 0.0;
+
  //  for (int i = 0; i < 25; i++) {
  //    measureBaro();
  //    altSum += baroRawAltitude;
@@ -61,7 +62,7 @@ const float getBaroAltitude() {
  //  }
  //  baroGroundAltitude = altSum / 25;
  // }
- 
+
 void measureGroundBaro() {
   // measure initial ground pressure (multiple samples)
   float altSum = 0.0;

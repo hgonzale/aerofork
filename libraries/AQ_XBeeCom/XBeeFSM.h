@@ -25,7 +25,7 @@
 #define HEARTBEAT 0x24
 // #define DEBUG
 
-const unsigned long EMGSTOP_MAX_MILLIS = 5000; // emergency stop timer (milliseconds)
+const unsigned long EMGSTOP_MAX_MILLIS = 7000; // emergency stop timer (milliseconds)
 
 /* Define states of FSM */
 typedef enum { 
@@ -146,7 +146,7 @@ void processCommand( signed char cmd ) {
 			break;
 
 		case 'p': // re-calibrate baro
-			counter = 0;
+
 			break;
 
 		case 'q': // read PID info 2

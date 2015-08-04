@@ -26,7 +26,7 @@ Serial myPort;
 String portName = "/dev/ttyUSB0";
 int BAUD = 9600;
 
-boolean USE_XBEE = false;
+boolean USE_XBEE = true;
 
 char HEADER = '#';
 char HEARTBEAT = '$';
@@ -45,7 +45,7 @@ boolean emergencyStop = false;
 boolean calibrationComplete = false;
 boolean flightDataIncoming = false;
 int START_HERE = 185; // useful for keeping track of window sizing
-int HB_FREQ = 2; // heartbeat frequency in Hz
+int HB_FREQ = 1; // heartbeat frequency in Hz
 int previousTime = 0;
 
 int counterVar = 0;
@@ -240,7 +240,7 @@ void processOutgoing() {
     text(userInp,75,82);
 
     // Send heartbeat signal if enough time has passed, and quadcopter is in FLIGHT mode
-    if ((millis() - previousTime)/1000.0 > 1.0/HB_FREQ && status == FLIGHT) {
+    if ((millis() - previousTime)/1000.0 > 1.0/HB_FREQ && ( status == FLIGHT || flightDataIncoming )) {
 
         previousTime = millis();
 

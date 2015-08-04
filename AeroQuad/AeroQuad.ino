@@ -280,7 +280,7 @@ void initializePlatformSpecificAccelCalibration() {
   TCCR1B = 0; // same for TCCR1B register
   TCNT1 = 0; // initialize counter value to 0 (for Timer 1)
 
-  OCR1A = 624; // 20Hz
+  OCR1A = 1249; // 20Hz
   TCCR1B |= (1 << WGM12); // Enable CTC interrupt
   TCCR1B |= (1 << CS12); // enable 256 pre-scaler
   TIMSK1 |= (1 << OCIE1A);     
@@ -365,10 +365,10 @@ void initializePlatformSpecificAccelCalibration() {
   ISR(TIMER1_COMPA_vect) {
 
     //write directly to motor registers
-    // OCR3B = motorCommand[MOTOR3] * 2;
-    // OCR3C = motorCommand[MOTOR2] * 2;
-    // OCR3A = motorCommand[MOTOR1] * 2;
-    // OCR4A = motorCommand[MOTOR4] * 2;
+    OCR3B = motorCommand[MOTOR3] * 2;
+    OCR3C = motorCommand[MOTOR2] * 2;
+    OCR3A = motorCommand[MOTOR1] * 2;
+    OCR4A = motorCommand[MOTOR4] * 2;
 
   }
 
@@ -376,8 +376,8 @@ void initializePlatformSpecificAccelCalibration() {
 /*
 Interrupt for pressure sensor reading
   Runs at 100Hz
-  Using DELTA_T = 10ms = 0.01s
-  INV_DELTA_T = 1 / DELTA_T = 100 /s
+  If SPI is busy during ISR, we measure
+  the baro in the main loop
 */
   ISR(TIMER5_COMPA_vect) {
 
@@ -439,7 +439,7 @@ Interrupt for pressure sensor reading
 
   }
 
-  if (startBaroMeasure && baroDataReady) {
+  if (startBaroMeasure && baroDataReady) { 
 
     baroDataReady = 0;
 
@@ -563,10 +563,10 @@ void process2HzTask() {
 
    measureCriticalSensors();
 
-   if (baroReadFlag) { // check to see if we missed a baro-read
+   if (baroReadFlag && baroDataReady == 0) { // check to see if we missed a baro-read
 
     measureBaro();
-    baroDataReady = 0;
+    baroDataReady = 1;
     baroReadFlag = 0;
    
    }

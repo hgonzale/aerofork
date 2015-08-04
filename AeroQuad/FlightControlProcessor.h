@@ -39,28 +39,19 @@ void processStabilityControl() {
   pitch = kinematicsAngle[0];
   yaw = kinematicsAngle[2];
 
-  dataReady = 1;
+  // update PID controllers
+  u_alt = updatePID(0.4, altitude, &PID[ALTITUDE_PID_IDX], false);
+  u_roll = updatePID(0, roll, &PID[ROLL_PID_IDX], false);
+  u_pitch = updatePID(0, pitch, &PID[PITCH_PID_IDX], false);
+  // u_yaw = updatePID(0, &PID[YAW_PID_IDX], false);
 
-  if (dataReady) { // if new data is available 
+  // prepare motor commands
+  applyMotorCommand();
 
-    u_alt = updatePID(0, &PID[ALTITUDE_PID_IDX], false);
-    u_roll = updatePID(0, roll, &PID[ROLL_PID_IDX], false);
-    u_pitch = updatePID(0, pitch, &PID[PITCH_PID_IDX], false);
-    // u_yaw = updatePID(0, &PID[YAW_PID_IDX], true);
-
-    dataReady = 0;
-    pidReady = 1;
-  }
-
-  // load motor commands if PID has updated
-  if (pidReady) {
-
-    applyMotorCommand();
-    pidReady = 0;
-
-  }
-  
 }
+
+
+
 
 
 /**
