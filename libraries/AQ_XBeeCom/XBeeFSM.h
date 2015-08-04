@@ -61,11 +61,11 @@ void initXBeeFSM() {
 /* (for debugging) Prints the current state */
 void printState() {
 
-	if (currentState == ExpectHeader) {
+	if ( currentState == ExpectHeader ) {
 		Serial.print("ExpectHeader");
-	} else if (currentState == ExpectCommand) {
+	} else if ( currentState == ExpectCommand ) {
 		Serial.print("ExpectCommand");
-	} else if (currentState == ExpectHeartbeat) {
+	} else if ( currentState == ExpectHeartbeat ) {
 		Serial.print("ExpectHeartbeat");
 	} else {
 		Serial.print("State unknown");
@@ -115,17 +115,49 @@ void processCommand( signed char cmd ) {
 		Serial.println(cmd);
 	#endif
 
-	switch (cmd) {
+	switch ( cmd ) {
 
-		case 'a': // echo back command
-			Serial.println('a');
-			nextCommand = 'x';
+		case 'a': // begin imu calibration
+			status = CALIBRATE;
+			calibration();
 			break;
 
-		case 'b': // begin control
+		case 'b': // begin baro calibration
+			Serial.println("Calibrating barometer...");
+			measureGroundBaro(); // takes about 40 seconds to run
+			startBaroMeasure = true;
+			Serial.println("...finished");
+			break;
+
+		case 'c': // begin control
 			beginControl = true;
 			resetEmergencyStop(); // <-- might be unnecessary
 			nextCommand = 'x';
+			break;
+
+		case 'e': // echo back command
+			Serial.println('e');
+			nextCommand = 'x';
+			break;
+
+		case 'm': // pulse all motors
+			pulseMotors(3);
+			nextCommand = 'x';
+			break;
+
+		case 'p': // re-calibrate baro
+			counter = 0;
+			break;
+
+		case 'q': // read PID info 2
+
+			break;
+
+		case 'x': // do nothing
+			break;
+
+		case '~': // trigger emergency stop
+			emergencyStop();
 			break;
 
 		case '?': // request quadrotor state data
@@ -136,9 +168,6 @@ void processCommand( signed char cmd ) {
 			Serial.print(kinematicsAngle[YAXIS]);
 			Serial.print(", ");
 			Serial.println(kinematicsAngle[ZAXIS]);	
-			break;
-
-		case 'x': // do nothing
 			break;
 
 		default:
@@ -159,11 +188,11 @@ void processCommand( signed char cmd ) {
 */
 void XBeeComFSM( signed char thisByte ) {
 
-	switch(currentState) {
+	switch( currentState ) {
 
 		case ExpectHeader:
 
-			if (thisByte == HEADER_BYTE) { // got header, wait for command
+			if ( thisByte == HEADER_BYTE ) { // got header, wait for command
 
 				nextState = ExpectCommand;
 
@@ -178,7 +207,10 @@ void XBeeComFSM( signed char thisByte ) {
 		case ExpectCommand:
 
 			if ( thisByte == 'a' || thisByte == 'b' || 
-				 thisByte == '?' || thisByte == 'x' ) { // all command cases go here
+				 thisByte == 'c' || thisByte == 'e' ||
+				 thisByte == 'm' || thisByte == 'p' ||
+				 thisByte == 'q' || thisByte == 'x' || 
+				 thisByte == '~' || thisByte == '?' ) { // all command cases go here
 
 				nextState = ExpectHeartbeat;
 				nextCommand = thisByte;
@@ -194,7 +226,7 @@ void XBeeComFSM( signed char thisByte ) {
 
 		case ExpectHeartbeat:
 
-			if (thisByte == HEARTBEAT) { // got heartbeat, wait for next packet
+			if ( thisByte == HEARTBEAT ) { // got heartbeat, wait for next packet
 
 				nextState = ExpectHeader;
 
@@ -229,7 +261,7 @@ void XBeeRead() {
 		Serial.println("-----------New Read------------");
 	#endif
 
-	while (Serial.available() > 0) {
+	while ( Serial.available() > 0 ) {
 
 		rxByte = (signed char) Serial.read();
 

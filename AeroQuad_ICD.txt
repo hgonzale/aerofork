@@ -2,7 +2,7 @@ Aeroquad ground station interface definitions
 
 This file is justified by spaces, use monospaced font when editing.
 
-1. Serial commands:
+1a. Serial commands (for original Aeroquad code)
 
 NOTE: As a convention uppercase letters are used to set something and lowercase for queries.
 
@@ -44,6 +44,28 @@ Z                                       z       read altitude values
 8
 9
 0
+
+
+1b. Serial Commands (for aerofork code)
+
+Value   CommandValue
+
+a       begin imu calibration
+b       begin baro calibration
+c       begin control
+e       echo back command
+m       pulse all motors
+p       read PID info 1
+q       read PID info 2
+x       do nothing (default command)
+~       trigger emergency stop
+?       read quadrotor state data
+
+
+
+
+
+
 
 2. Vehicle state values
 

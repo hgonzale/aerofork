@@ -67,6 +67,7 @@ volatile boolean isReadPressure   = false;
 volatile float rawPressureSum     = 0;
 volatile byte rawPressureSumCount = 0;
 
+
 unsigned long startRead = 0;
 unsigned long endRead = 0;
 
@@ -171,9 +172,10 @@ void initializeBaro() {
   measureBaroSum(); // read pressure
   delay(10);
 	
-  //measureGroundBaro();
+  // measureGroundBaro();
+  // measureGroundBaro();
   
-  //baroAltitude = baroGroundAltitude;
+  // baroAltitude = baroGroundAltitude;
   
 }
 
@@ -201,9 +203,7 @@ void measureBaroSum() {
       pressureCount = 0;
       isReadPressure = false;
 
-    } 
-        
-	else {
+    } else {
 
       requestRawPressure();
 
@@ -215,7 +215,7 @@ void measureBaroSum() {
 
   else { // select must equal TEMPERATURE
 
-    readRawTemperature();
+    rawTemperature = readRawTemperature();
 
     requestRawPressure();
 
@@ -257,7 +257,7 @@ void evaluateBaroAltitude() {
   else {
 
 	 baroAltitude = filterSmoothWithTime(baroRawAltitude, baroAltitude, baroSmoothFactor, ((startRead - endRead)/100000.0)); //100 ms per altitude read
-	   // baroAltitude = filterSmooth(baroRawAltitude, baroAltitude, baroSmoothFactor);
+   // baroAltitude = filterSmooth(baroRawAltitude, baroAltitude, baroSmoothFactor);
   }
 	
   rawPressureSum = 0.0;

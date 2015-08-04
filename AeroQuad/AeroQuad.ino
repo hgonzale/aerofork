@@ -27,13 +27,6 @@
    or talk to us live on IRC #aeroquad
 *****************************************************************************/
 
- float indic = 0.0;
- int counterVar = 0;
- int t0 = 0;
- int t1 = 0;
-
-
-
 #include "UserConfiguration.h" // Edit this file first before uploading to the AeroQuad
 
 //
@@ -287,7 +280,7 @@ void initializePlatformSpecificAccelCalibration() {
   TCCR1B = 0; // same for TCCR1B register
   TCNT1 = 0; // initialize counter value to 0 (for Timer 1)
 
-  OCR1A = 3124; // 50Hz
+  OCR1A = 624; // 20Hz
   TCCR1B |= (1 << WGM12); // Enable CTC interrupt
   TCCR1B |= (1 << CS12); // enable 256 pre-scaler
   TIMSK1 |= (1 << OCIE1A);     
@@ -362,6 +355,7 @@ void initializePlatformSpecificAccelCalibration() {
   safetyCheck = 0;
 
   commandAllMotors(1000);
+
 }
 
 
@@ -391,24 +385,16 @@ Interrupt for pressure sensor reading
 
     if (digitalRead(MPUCS) != 0) {
 
-      measureBaroSum();
+      measureBaro();
+
+      baroDataReady = 1;
 
     } else {
 
       baroReadFlag = 1;
+
     }
 
-  }
-
-  if (dataReady) { // if new data is available 
-
-    u_alt = updatePID(0, &PID[ALTITUDE_PID_IDX], true);
-    u_roll = updatePID(0, roll, &PID[ROLL_PID_IDX], true);
-    u_pitch = updatePID(0, pitch, &PID[PITCH_PID_IDX], true);
-    // u_yaw = updatePID(0, &PID[YAW_PID_IDX], true);
-
-    dataReady = 0;
-    pidReady = 1;
   }
 
 }
@@ -435,8 +421,6 @@ Interrupt for pressure sensor reading
   
   // kinematicsAngle[] is updated here
   calculateKinematics(gyroRate[XAXIS], gyroRate[YAXIS], gyroRate[ZAXIS], filteredAccel[XAXIS], filteredAccel[YAXIS], filteredAccel[ZAXIS], G_Dt);
-
-
   
 }
 
@@ -455,9 +439,25 @@ Interrupt for pressure sensor reading
 
   }
 
-  if (startBaroMeasure) {
+  if (startBaroMeasure && baroDataReady) {
 
-    evaluateBaroAltitude();
+    baroDataReady = 0;
+
+    if ( counter > 200 && counter < 251 ) {
+
+      baroCalibSum += getBaroAltitude();
+      baroCalibSumCount++;
+
+    }
+
+    if ( counter == 251 ) {
+
+      setZBias(baroCalibSum/baroCalibSumCount);
+      Serial.println("baro calibration complete");
+
+    }
+
+    counter++;
   }
 
  }
@@ -469,19 +469,7 @@ Interrupt for pressure sensor reading
 
   XBeeRead();
 
-  if (beginControl && !checkEmergencyStop()) emergencyStop(); 
-
-
-
-  if (startBaroMeasure) {
-
-    if (startCalibrate) {
-
-      Addz(getBaroAltitude());
-
-    }	  
-
-  }
+  if ( beginControl && !checkEmergencyStop() ) emergencyStop(); 
 
 }
 
@@ -493,13 +481,6 @@ Interrupt for pressure sensor reading
   G_Dt = (currentTime - lowPriorityTenHZpreviousTime) / 1000000.0;
   lowPriorityTenHZpreviousTime = currentTime;
 
-  #if defined(WirelessTelemetry)
-    XbeeRx();
-  #else
-    // Listen for configuration commands and reports telemetry
-    // readSerialCommand();
-    // sendSerialTelemetry();
-  #endif
 }
 
 /*******************************************************************
@@ -510,13 +491,6 @@ Interrupt for pressure sensor reading
   G_Dt = (currentTime - lowPriorityTenHZpreviousTime2) / 1000000.0;
   lowPriorityTenHZpreviousTime2 = currentTime;
 
-  #if defined(UseGPS) || defined(BattMonitor)
-  processLedStatus();
-  #endif
-
-  #ifdef SlowTelemetry
-  updateSlowTelemetry10Hz();
-  #endif
 }
 
 
@@ -525,27 +499,10 @@ Interrupt for pressure sensor reading
  ******************************************************************/
 void process2HzTask() {
 
+  // XBeeRead();
+
   // readSerialCommand();
   // sendSerialTelemetry();
-
-  // Serial heartbeat code
-  // if (beginControl) {
-
-  //   if (resetEmergencyStop) {
-
-  //     counterVar++;
-
-  //     countStop = 0;
-
-  //   } else {
-
-  //     countStop++;
-
-  //   }
-
-  //   resetEmergencyStop = false;
-
-  // }
 
 }
 
@@ -608,17 +565,11 @@ void process2HzTask() {
 
    if (baroReadFlag) { // check to see if we missed a baro-read
 
-    measureBaroSum();
+    measureBaro();
+    baroDataReady = 0;
     baroReadFlag = 0;
    
    }
-
-  //emergency stop check
-   if (countStop > 4) {
-
-    emergencyStop();
-
-  }
 
   // ================================================================
   // 100Hz task loop
@@ -669,7 +620,7 @@ void process2HzTask() {
     }
 
 
-   previousTime = currentTime;
+    previousTime = currentTime;
 
  }
 

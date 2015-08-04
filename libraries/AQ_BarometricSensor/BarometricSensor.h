@@ -51,12 +51,23 @@ const float getBaroAltitude() {
 
 }
  
+ // void measureGroundBaro() {
+ //  // measure initial ground pressure (multiple samples)
+ //  float altSum = 0.0;
+ //  for (int i = 0; i < 25; i++) {
+ //    measureBaro();
+ //    altSum += baroRawAltitude;
+ //    delay(12);
+ //  }
+ //  baroGroundAltitude = altSum / 25;
+ // }
+ 
 void measureGroundBaro() {
   // measure initial ground pressure (multiple samples)
   float altSum = 0.0;
   int numAlt = 0;
   
-  delay(10000);
+  delay(5000);
   
   for (int i=0; i<50; i++) {
 	
@@ -106,9 +117,7 @@ void Addz(float i) {
 
 		zIndex++;
 
-	}
-
-	else {
+	} else {
 
 		zBias = zSum/zIndex;
 
@@ -122,5 +131,8 @@ void Addz(float i) {
 
 }
 
+void setZBias(float zb) {
+  zBias = zb;
+}
 
 #endif

@@ -437,7 +437,7 @@ void mouseClicked() {
   } else if (mouseOverRect(FLY_X,FLY_Y,FLY_WIDTH,FLY_HEIGHT) && calibrationComplete) { // fly button
      // begin flight
     status = FLIGHT;
-    saved = 'b'; // Serial command for beginning control
+    saved = 'c'; // Serial command for beginning control
     sendReady = true;
     localMsg = "";
     localMsgReady = false;

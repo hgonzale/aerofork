@@ -92,10 +92,14 @@ byte previousFlightMode = ATTITUDE_FLIGHT_MODE;
 /**
  * Flags used for task scheduling in main loop
  */
+ volatile boolean calcPID = 0;
+ volatile int evalBaro = 0;
  volatile int pidReady = 0;
  volatile int dataReady = 0;
- volatile boolean calcPID = 0;
  volatile int baroReadFlag = 0;
+ volatile int baroDataReady = 0;
+
+ int counter = 0;
 
 /**
  * Flight control variables
@@ -127,6 +131,8 @@ volatile boolean startBaroMeasure = false;
 boolean startCalibrate = false;
 boolean calibrateReady = false;
 boolean calibrateReadyTilt = false;
+float baroCalibSum = 0; // used in baro calibration
+int baroCalibSumCount = 0; // used in baro calibration
 
 
 char msg = ' ';

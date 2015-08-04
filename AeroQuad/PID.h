@@ -131,7 +131,9 @@ float updatePID(float reference, float state, struct PIDdata *PIDparameters, boo
 
   // Controller outputs the recursive discrete-time signal:
   // u(k) += (Kp + Kd/delta) * e(k) - (Kp - Ki*delta + 2*Kd/delta) * e(k-1) + (Kd/delta) * e(k-2)
-  PIDparameters->output += (PIDparameters->P + PIDparameters->D * inv_deltaPIDTime) * error - (PIDparameters->P - PIDparameters->integralSwitch * PIDparameters->I * deltaPIDTime + 2 * PIDparameters->D * inv_deltaPIDTime) * PIDparameters->lastError + (PIDparameters->D * inv_deltaPIDTime) * PIDparameters->lastLastError; 
+  PIDparameters->output += (PIDparameters->P + PIDparameters->D * inv_deltaPIDTime) * error 
+                          - (PIDparameters->P - PIDparameters->integralSwitch * PIDparameters->I * deltaPIDTime + 2 * PIDparameters->D * inv_deltaPIDTime) * PIDparameters->lastError 
+                          + (PIDparameters->D * inv_deltaPIDTime) * PIDparameters->lastLastError; 
   
   // update errors
   PIDparameters->lastLastError = PIDparameters->lastError;

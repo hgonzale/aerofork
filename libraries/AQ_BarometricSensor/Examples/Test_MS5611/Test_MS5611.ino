@@ -20,94 +20,123 @@ bool baroReady = false;
 unsigned long timer = 0;
 unsigned long timerB = 0;
 unsigned long timerC = 0;
-int counter = 0;
-bool doit = false;
+
+unsigned long start = 0;
+float calibSum = 0.0;
+int calibSumCount = 0;
+int counter= 0;
 float altitude = 0.0;
 
+int baroFlag = 0;
+int newAltReady = 0;
 
+int baroDataReady = 0;
+bool evalBaro = false;
 
-
-
-
-
+unsigned long tic = 0;
+unsigned long toc = 0;
 
 
 void setup() {
 
-	cli();
+  // cli(); //disable global interrupts for setup function
+  // // Pre-Scale values for OCRXA register (16-bit):
+  // // 624 --> 100Hz
+  // // 1249 --> 50Hz
+  // // 3124 --> 20Hz
 
-	TCCR5A = 0; // initialize TCRR5A register to 0
-	TCCR5B = 0; // same for TCCR5B register
-	TCNT5 = 0; // initialize counter value to 0 (for Timer 5)
+  // /* Timer 1 interrupt setup */
+  // TCCR1A = 0; // initialize TCRR1A register to 0
+  // TCCR1B = 0; // same for TCCR1B register
+  // TCNT1 = 0; // initialize counter value to 0 (for Timer 1)
 
-	OCR5A = 624;
-	TCCR5B |= (1 << WGM52); // Enable CTC interrupt
-	TCCR5B |= (1 << CS52); // enable 256 pre-scaler
-	TIMSK5 |= (1 << OCIE5A);
+  // OCR1A = 624; // 100Hz
+  // TCCR1B |= (1 << WGM12); // Enable CTC interrupt
+  // TCCR1B |= (1 << CS12); // enable 256 pre-scaler
+  // TIMSK1 |= (1 << OCIE1A);     
 
-	sei();
+  // /* Timer 5 interrupt setup */
+  // TCCR5A = 0; // initialize TCRR5A register to 0
+  // TCCR5B = 0; // same for TCCR5B register
+  // TCNT5 = 0; // initialize counter value to 0 (for Timer 5)
 
-	Serial.begin(9600);
+  // OCR5A = 1249;
+  // TCCR5B |= (1 << WGM52); // Enable CTC interrupt
+  // TCCR5B |= (1 << CS52); // enable 256 pre-scaler
+  // TIMSK5 |= (1 << OCIE5A);
+
+  // sei(); // re-enable global interrupts
+
+
+	Serial.begin(115200);
 	Serial.println("Barometric sensor library test (MS5611)");
 
 	Wire.begin();
 
 	initializeBaro();
-
 	Serial.println("Calibrating...");
 	measureGroundBaro();
 	startBaroMeasure = true;
 	Serial.println("...finished calibrating");
 
-	requestRawPressure();
-
-}
-
-volatile float rawSum = 0.0;
-volatile int rawSumCount = 0;
-
-
-ISR(TIMER5_COMPA_vect) {
-
-	if (startBaroMeasure) {
-
-		measureBaroSum();
-		
-	}
-
 }
 
 
+// ISR( TIMER1_COMPA_vect ) { // 100 hz
 
-void loop() {
+// 	if (startBaroMeasure) {
 
-	// if (millis() - timer > 10) { // 100 hz --> measure
+// 		measureBaroSum();
 
-	// 	timer = millis();
+// 	}
 
-	// 	measureBaroSum();
-
-	// }
+// }
 
 
-	if (millis() - timerB > 20) { // 50 hz --> evaluate
+void loop () {
 
-		timerB = millis();
-		
-		rawPressureSum = rawSum;
-		rawPressureSumCount = rawSumCount;
-
-		evaluateBaroAltitude();
-
-	}
-
-	if (millis() - timerC > 100) { // 10 hz --> print
-
+	if (millis() - timerC > 10) {
 		timerC = millis();
+
+		measureBaro();
+	}
+
+	if (millis() - timerB > 20) {
+		timerB = millis();
+
+		// evaluateBaroAltitude();
+
+
 
 		altitude = getBaroAltitude();
 
-		Serial.println(altitude);
+		if ( counter > 200 && counter < 251 ) {
+
+			calibSum += altitude;
+			calibSumCount++;
+
+		}
+
+		if ( counter == 251 ) {
+
+			setZBias(calibSum/calibSumCount);
+			Serial.println("--------------------- Bias Set ----------------------------");
+		}
+
+		// Serial.println(altitude);
+		counter++;
+
+	}
+	
+
+	if ( millis() - timer > 100 ) {
+
+		timer = millis();
+
+		Serial.print("Altitude: "); 
+		Serial.print( getBaroAltitude() );
+		Serial.print("\t Temp: ");
+		Serial.println(rawTemperature);
 	}
 
 }

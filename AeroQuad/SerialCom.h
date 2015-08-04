@@ -639,8 +639,6 @@ void sendSerialTelemetry() {
     // PrintValueComma(yk[3]);
 
     // SERIAL_PRINTLN();
-
-  Serial.println(counterVar);
   break;
   
   case '>':

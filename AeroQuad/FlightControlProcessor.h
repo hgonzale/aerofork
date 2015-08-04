@@ -41,6 +41,17 @@ void processStabilityControl() {
 
   dataReady = 1;
 
+  if (dataReady) { // if new data is available 
+
+    u_alt = updatePID(0, &PID[ALTITUDE_PID_IDX], false);
+    u_roll = updatePID(0, roll, &PID[ROLL_PID_IDX], false);
+    u_pitch = updatePID(0, pitch, &PID[PITCH_PID_IDX], false);
+    // u_yaw = updatePID(0, &PID[YAW_PID_IDX], true);
+
+    dataReady = 0;
+    pidReady = 1;
+  }
+
   // load motor commands if PID has updated
   if (pidReady) {
 
