@@ -24,7 +24,7 @@ automatically send a message to the quadcopter triggering an emergency stop.
 
 Serial myPort;
 String portName = "/dev/ttyUSB0";
-int BAUD = 9600;
+int BAUD = 115200;
 
 boolean USE_XBEE = true;
 
@@ -33,8 +33,8 @@ char HEARTBEAT = '$';
 
 String defaultMsg = "#x$";
 
-char saved = 0;
-char userInp = 0; //User serial command to be sent to the quadrotor
+String saved = "";
+String userInp = ""; //User's serial command to be sent to the quadrotor
 
 String msgDisplay = new String(); //message from quadrotor
 String localMsg = new String(); //local message
@@ -45,7 +45,7 @@ boolean emergencyStop = false;
 boolean calibrationComplete = false;
 boolean flightDataIncoming = false;
 int START_HERE = 185; // useful for keeping track of window sizing
-int HB_FREQ = 1; // heartbeat frequency in Hz
+float HB_FREQ = 2; // heartbeat frequency in Hz
 int previousTime = 0;
 
 int counterVar = 0;
@@ -65,7 +65,7 @@ int status = BOOTUP; // default state
 * Constants & functions used for building buttons *
 ***************************************************/
 // Calibrate Baro button
-int CALIBBARO_X = 491;
+int CALIBBARO_X = 556;
 int CALIBBARO_Y = 135;
 int CALIBBARO_WIDTH = 85;
 int CALIBBARO_HEIGHT = 25;
@@ -78,7 +78,7 @@ void drawButton_CALIBBARO() {
 }
 
 // Calibrate Accel button
-int CALIBACCEL_X = 491;
+int CALIBACCEL_X = 556;
 int CALIBACCEL_Y = 180;
 int CALIBACCEL_WIDTH = 85;
 int CALIBACCEL_HEIGHT = 25;
@@ -91,7 +91,7 @@ void drawButton_CALIBACCEL() {
 }
 
 // Clear button
-int CLEAR_X = 380;
+int CLEAR_X = 450;
 int CLEAR_Y = 135;
 int CLEAR_WIDTH = 80;
 int CLEAR_HEIGHT = 25;
@@ -104,7 +104,7 @@ void drawButton_CLEAR() {
 }
 
 // Fly button
-int FLY_X = 491;
+int FLY_X = 556;
 int FLY_Y = 225;
 int FLY_WIDTH = 85;
 int FLY_HEIGHT = 25;
@@ -117,7 +117,7 @@ void drawButton_FLY() {
 }
 
 // Flight data button
-int FLIGHTDATA_X = 491;
+int FLIGHTDATA_X = 556;
 int FLIGHTDATA_Y = 270;
 int FLIGHTDATA_WIDTH = 85;
 int FLIGHTDATA_HEIGHT = 25;
@@ -130,7 +130,7 @@ void drawButton_FLIGHTDATA() {
 }
 
 // Reset button
-int RESET_X = 491;
+int RESET_X = 556;
 int RESET_Y = 497;
 int RESET_WIDTH = 85;
 int RESET_HEIGHT = 25;
@@ -150,7 +150,7 @@ void drawButton_RESET() {
 *********************************************************************************/
 void setup() {
 
-  size(585,530);
+  size(650,600);
 
   if (!USE_XBEE) portName = Serial.list()[0]; //port 8 on serial port.
   
@@ -204,7 +204,7 @@ void processIncoming() {
 
   // finally, print all incoming messages to the window
   textSize(12);
-  text(getLastLines(msgDisplay,15),8,START_HERE);
+  text(getLastLines(msgDisplay,20),8,START_HERE);
   
 }
 
@@ -220,7 +220,7 @@ void processOutgoing() {
   
   if (sendReady) { // send the custom message AND heartbeat signal
 
-    if (saved != '?' && status != EMGSTOP) {
+    if (!saved.equals("?") && status != EMGSTOP) {
 
       flightDataIncoming = false;
       defaultMsg = "#x$";
@@ -437,7 +437,7 @@ void mouseClicked() {
   } else if (mouseOverRect(FLY_X,FLY_Y,FLY_WIDTH,FLY_HEIGHT) && calibrationComplete) { // fly button
      // begin flight
     status = FLIGHT;
-    saved = 'c'; // Serial command for beginning control
+    saved = "c"; // Serial command for beginning control
     sendReady = true;
     localMsg = "";
     localMsgReady = false;
@@ -459,7 +459,7 @@ void mouseClicked() {
     myPort = new Serial(this, Serial.list()[0], 115200);
     
   } else if (mouseOverRect(FLIGHTDATA_X,FLIGHTDATA_Y,FLIGHTDATA_WIDTH,FLIGHTDATA_HEIGHT) && status != EMGSTOP) {
-    saved = '?'; // send flight data request
+    saved = "?"; // send flight data request
     sendReady = true;
     defaultMsg = "#?$";
     flightDataIncoming = true; 
@@ -479,6 +479,25 @@ void send(char c) {
   myPort.write(HEADER);
   myPort.write(c);
   myPort.write(HEARTBEAT);
+
+}
+
+void send(String s) {
+
+  myPort.write(HEADER);
+  myPort.write(s.charAt(0));
+
+  if (s.length() == 6) {
+
+    for (int i = 0; i < 6; i++) {
+      myPort.write(s.charAt(i));
+    }
+
+  } else {
+
+    myPort.write(HEARTBEAT);
+
+  }
 
 }
 
@@ -504,7 +523,7 @@ void keyPressed() {
 
     case 35:
       // 'END' (emergency stop)
-      saved = '~';
+      saved = "~";
       defaultMsg = "#~$";
       sendReady = true;
       emergencyStop = true;
@@ -518,18 +537,18 @@ void keyPressed() {
     case ENTER:
       // 'ENTER'
       saved = userInp;      
-      userInp = 0; 
+      userInp = ""; 
       sendReady = true;
       break;
 
     case 8:
       // 'BACKSPACE'     
-      userInp = 0;
+      userInp = "";
       sendReady = false;
       break;   
 
     default:
-      userInp = key;
+      userInp += key;
       sendReady = false;
       break;
   }

@@ -25,13 +25,14 @@
 #define HEARTBEAT 0x24
 // #define DEBUG
 
-const unsigned long EMGSTOP_MAX_MILLIS = 7000; // emergency stop timer (milliseconds)
+const unsigned long EMGSTOP_MAX_MILLIS = 3000; // emergency stop timer (milliseconds)
 
 /* Define states of FSM */
 typedef enum { 
 	ExpectHeader, 
 	ExpectCommand, 
-	ExpectHeartbeat 
+	ExpectHeartbeat,
+	ExpectValue
 } state_t;
 
 state_t currentState;
@@ -40,6 +41,8 @@ state_t nextState;
 
 signed char nextCommand;
 signed char rxByte;
+float inValue;
+int inValueSign;
 unsigned long lastHeartbeatTime;
 
 
@@ -58,19 +61,67 @@ void initXBeeFSM() {
 }
 
 
-/* (for debugging) Prints the current state */
+/*
+* printState
+* 
+* Prints [altitude], [pitch], [roll], [yaw].
+*/
 void printState() {
 
-	if ( currentState == ExpectHeader ) {
-		Serial.print("ExpectHeader");
-	} else if ( currentState == ExpectCommand ) {
-		Serial.print("ExpectCommand");
-	} else if ( currentState == ExpectHeartbeat ) {
-		Serial.print("ExpectHeartbeat");
-	} else {
-		Serial.print("State unknown");
-	}
+	Serial.print(altitude);
+	Serial.print(", ");
+	Serial.print(kinematicsAngle[XAXIS]);
+	Serial.print(", ");
+	Serial.print(kinematicsAngle[YAXIS]);
+	Serial.print(", ");
+	Serial.print(kinematicsAngle[ZAXIS]);
+	Serial.print(" | \t ");
+}
 
+/*
+* printPID
+*
+* Prints the PID outputs and the motor commands.
+*/
+
+void printPID() {
+
+	Serial.print(u_alt);
+	Serial.print(", ");
+	Serial.print(u_roll);
+	Serial.print(", ");
+	Serial.print(u_pitch);
+	Serial.print(", ");
+	Serial.print(u_yaw);
+
+	Serial.print(" | \t ");
+
+	for (int i = 0; i < 4; i++) {
+		Serial.print(yk[i]);
+		Serial.print(", ");
+	}
+}
+
+void printQs() {
+	// Serial.print(qkmin[0]);
+	// Serial.print(", ");
+	// Serial.print(qkmin[1]);
+	// Serial.print(", ");
+	// Serial.print(qkmin[2]);
+	// Serial.print(", ");
+	// Serial.print(qkmin[3]);
+	// Serial.print(" | \t ");
+}
+
+void printMotorCommands() {
+	Serial.print(motorCommand[MOTOR1]);
+	Serial.print(", ");
+	Serial.print(motorCommand[MOTOR2]);
+	Serial.print(", ");
+	Serial.print(motorCommand[MOTOR3]);
+	Serial.print(", ");
+	Serial.print(motorCommand[MOTOR4]);
+	Serial.print(" | \t ");
 }
 
 
@@ -145,12 +196,20 @@ void processCommand( signed char cmd ) {
 			nextCommand = 'x';
 			break;
 
-		case 'p': // re-calibrate baro
-
+		case 'p': // set altitude reference --> input pX.XX where X.XX is the altitude value
+			alt_ref = inValue;
+			nextCommand = 'x';
 			break;
 
 		case 'q': // read PID info 2
+			Serial.print(alt_ref);
+			Serial.print(" \t ");
+			Serial.println(yaw_ref);
+			break;
 
+		case 'y': // set yaw reference
+			yaw_ref = inValue;
+			nextCommand = 'x';
 			break;
 
 		case 'x': // do nothing
@@ -161,13 +220,9 @@ void processCommand( signed char cmd ) {
 			break;
 
 		case '?': // request quadrotor state data
-			Serial.print(getBaroAltitude());
-			Serial.print(", ");
-			Serial.print(kinematicsAngle[XAXIS]);
-			Serial.print(", ");
-			Serial.print(kinematicsAngle[YAXIS]);
-			Serial.print(", ");
-			Serial.println(kinematicsAngle[ZAXIS]);	
+			printState();
+			printMotorCommands();
+			Serial.println("");
 			break;
 
 		default:
@@ -175,6 +230,10 @@ void processCommand( signed char cmd ) {
 
 	}
 }
+
+
+
+
 
 
 /*
@@ -208,11 +267,15 @@ void XBeeComFSM( signed char thisByte ) {
 
 			if ( thisByte == 'a' || thisByte == 'b' || 
 				 thisByte == 'c' || thisByte == 'e' ||
-				 thisByte == 'm' || thisByte == 'p' ||
-				 thisByte == 'q' || thisByte == 'x' || 
-				 thisByte == '~' || thisByte == '?' ) { // all command cases go here
+				 thisByte == 'm' || thisByte == 'q' || 
+				 thisByte == 'x' || thisByte == '~' || thisByte == '?' ) { // (almost) all command cases go here
 
 				nextState = ExpectHeartbeat;
+				nextCommand = thisByte;
+
+			} else if ( thisByte == 'p' || thisByte == 'y' ) { // command cases where we expect a value afterward
+
+				nextState = ExpectValue;
 				nextCommand = thisByte;
 
 			} else { // command not recognized
@@ -238,6 +301,33 @@ void XBeeComFSM( signed char thisByte ) {
 
 				nextState = ExpectHeader;
 			}
+
+			break;
+
+
+		case ExpectValue:
+
+			nextState = ExpectHeader;
+
+			if (Serial.available() > 4) {
+
+				if (Serial.read() == '-') {
+					inValueSign = -1;
+				} else {
+					inValueSign = 1;
+				}
+
+				inValue = ((int) Serial.read()) - 48.0; // x.00
+				Serial.read(); // '.'
+				inValue += ((int) Serial.read() - 48.0) * 0.1; // 0.x0
+				inValue += ((int) Serial.read() - 48.0) * 0.01; //0.0x
+
+				inValue = inValueSign * inValue;
+
+			}
+
+			processCommand(nextCommand);
+			inValue = 0;
 
 			break;
 
@@ -268,7 +358,6 @@ void XBeeRead() {
 		#ifdef DEBUG
 			Serial.print("Received : ");
 			Serial.println(rxByte);
-			printState();
 			Serial.print("\t");
 		#endif
 

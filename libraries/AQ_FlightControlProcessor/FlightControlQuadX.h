@@ -44,7 +44,7 @@
 #endif
 #define LASTMOTOR   (MOTOR4+1)
 
-int maxMotorValue = 1300;
+int maxMotorValue = 2000;
 int motorMaxCommand[4] = {0,0,0,0};
 int motorMinCommand[4] = {0,0,0,0};
 int motorConfiguratorCommand[4] = {0,0,0,0};

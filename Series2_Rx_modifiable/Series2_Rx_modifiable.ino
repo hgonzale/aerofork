@@ -11,7 +11,7 @@ void setup() {
 
   initXBeeFSM();
 
-  Serial.begin(9600);
+  Serial.begin(115200);
 
 }
 
@@ -23,11 +23,6 @@ void loop() {
 		timer = millis();
 
 		XBeeRead();
-
-		if (checkEmergencyStop()) {
-
-			Serial.print("Emergency Stop triggered!")
-		}
 
 	}
 

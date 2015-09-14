@@ -25,7 +25,6 @@
 
 #include "Arduino.h"
 #include "BarometricSensor.h"
-//#include "Device_I2C.h"
 #include <AQMath.h>
 
 #include <ArdupilotSPIExt.h>
@@ -41,8 +40,8 @@ ArdupilotSPIExt spiMS5611;
 #define CMD_MS5611_PROM_C5 0xAA
 #define CMD_MS5611_PROM_C6 0xAC
 #define CMD_MS5611_PROM_CRC 0xAE
-#define CMD_CONVERT_D1_OSR4096 0x48   // Maximum resolution (oversampling)
-#define CMD_CONVERT_D2_OSR4096 0x58   // Maximum resolution (oversampling)
+#define CMD_CONVERT_D1_OSR4096 0x48
+#define CMD_CONVERT_D2_OSR4096 0x58
 
 uint16_t C1;
 uint16_t C2;
@@ -51,25 +50,24 @@ uint16_t C4;
 uint16_t C5;
 uint16_t C6;
 
-long MS5611lastRawTemperature;
-long MS5611lastRawPressure;
+volatile long MS5611lastRawTemperature;
+volatile long MS5611lastRawPressure;
 
-int64_t MS5611_sens=0;
-int64_t MS5611_offset=0;
-int64_t dT;
+volatile int64_t MS5611_sens=0;
+volatile int64_t MS5611_offset=0;
+volatile int64_t dT;
 
-float pressure           = 0;
-long rawPressure         = 0;
-long rawTemperature      = 0;
+volatile float pressure           = 0;
+volatile long rawPressure         = 0;
+volatile long rawTemperature      = 0;
 volatile byte pressureCount       = 0;
 float pressureFactor     = 1/5.255;
 volatile boolean isReadPressure   = false;
 volatile float rawPressureSum     = 0;
 volatile byte rawPressureSumCount = 0;
 
-
-unsigned long startRead = 0;
-unsigned long endRead = 0;
+volatile unsigned long startRead = 0;
+volatile unsigned long endRead = 0;
 
 void requestRawTemperature() {
 
@@ -152,12 +150,7 @@ void initializeBaro() {
   C4 = spiMS5611.spi_read_16bits(CMD_MS5611_PROM_C4);
   C5 = spiMS5611.spi_read_16bits(CMD_MS5611_PROM_C5);
   C6 = spiMS5611.spi_read_16bits(CMD_MS5611_PROM_C6);
-  //
-
-  /*if(MS5611readPROM(MS5611_I2C_ADDRESS) ) {
-          vehicleState |= BARO_DETECTED;
-  }*/
-
+  
   requestRawTemperature(); // setup up next measure() for temperature
 
   isReadPressure = false;
@@ -181,16 +174,14 @@ void initializeBaro() {
   // startBaroMeasure = true;
 }
 
-//
 void measureBaro() {
 
   measureBaroSum();
   evaluateBaroAltitude();
 
 }
-//
 
-//
+
 void measureBaroSum() {
 
   // switch between pressure and temperature measurements
@@ -226,18 +217,18 @@ void measureBaroSum() {
   }
 
 }
-//
 
-//
+
+
 bool MS5611_first_read = true;
-//
 
-
-
-//return altitude
 void evaluateBaroAltitude() {
+
+  if (rawPressureSumCount == 0) { // it may occur at init time that no pressure has been read yet!
+    return;
+  }
 	  
-  if (rawPressureSumCount > 0) { // it may occur at init time that no pressure has been read yet!
+  if (rawPressureSumCount > 0) { 
 
     pressure = ((float)rawPressureSum)/ rawPressureSumCount;
 

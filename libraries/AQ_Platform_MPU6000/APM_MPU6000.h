@@ -129,7 +129,7 @@ union uMPU6000 {
 
   } data;
 
-} MPU6000, snapshot;
+} MPU6000;
 
 
 void MPU6000_SpiLowSpeed() { // 500kHz

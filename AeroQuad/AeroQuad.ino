@@ -280,7 +280,7 @@ void initializePlatformSpecificAccelCalibration() {
   TCCR1B = 0; // same for TCCR1B register
   TCNT1 = 0; // initialize counter value to 0 (for Timer 1)
 
-  OCR1A = 1249; // 20Hz
+  OCR1A = 1249; // 50Hz
   TCCR1B |= (1 << WGM12); // Enable CTC interrupt
   TCCR1B |= (1 << CS12); // enable 256 pre-scaler
   TIMSK1 |= (1 << OCIE1A);     
@@ -326,7 +326,11 @@ void initializePlatformSpecificAccelCalibration() {
   initializeReceiver(LASTCHANNEL);
   initReceiverFromEEPROM();
   
+  initializeGyro();
+
   while (!calibrateGyro()); // this make sure the craft is still befor to continue init process
+  
+  initializeAccel();
   
   if (firstTimeBoot) {
 
@@ -524,16 +528,16 @@ void process2HzTask() {
  void emergencyStop() {
 
   // set motor commands to 0
-  motorCommand[MOTOR3] = 0;
-  motorCommand[MOTOR2] = 0;
-  motorCommand[MOTOR1] = 0;
-  motorCommand[MOTOR4] = 0;
+  motorCommand[MOTOR3] = 1000;
+  motorCommand[MOTOR2] = 1000;
+  motorCommand[MOTOR1] = 1000;
+  motorCommand[MOTOR4] = 1000;
 
   // kill the motors
-  OCR3B = 0;
-  OCR3C = 0;
-  OCR3A = 0;
-  OCR4A = 0;
+  OCR3B = 2000;
+  OCR3C = 2000;
+  OCR3A = 2000;
+  OCR4A = 2000;
 
   // disable control processes
   beginControl = false;

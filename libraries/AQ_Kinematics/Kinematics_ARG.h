@@ -51,8 +51,9 @@
 
 #include <AQMath.h>
 
-float K_p = 0.2;                   					// proportional gain governs rate of convergence to accelerometer/magnetometer
-float K_i = 0.005;                   					// integral gain governs rate of convergence of gyroscope biases
+
+float K_p = 50.0;                   					// proportional gain governs rate of convergence to accelerometer/magnetometer
+float K_i = 0.1;                   					// integral gain governs rate of convergence of gyroscope biases
 float halfT = 0.0;                					// half the sample period
 float q0 = 1.0, q1 = 0.0, q2 = 0.0, q3 = 0.0;       // quaternion elements representing the estimated orientation
 float exInt = 0.0, eyInt = 0.0, ezInt = 0.0;  		// scaled integral error
@@ -96,7 +97,7 @@ float zk[4] = {0};
 // Uninitialized 4x4 roll rate matrix
 float Ok[16] = {0};
 
-// Alternate roll rate matrix? (as per Jonathan's suggestion)
+// Alternate roll rate matrix
 float M[16] = {0};
 
 // 4x4 error covariance correction
@@ -125,7 +126,6 @@ float Wk[16] = {0.1,0,0,0,
    0,0,0,0.1};
 
 float mx,my,mz;
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // argUpdate
@@ -275,7 +275,7 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
   q3 = qkmin[3];
  
 }
-  
+
 void eulerAngles()
 {
 
@@ -330,7 +330,7 @@ void calculateKinematics(float rollRate,          float pitchRate,    float yawR
   eulerAngles();
 
 }
-  
+
 float getGyroUnbias(byte axis) {
   return correctedRateVector[axis];
 }

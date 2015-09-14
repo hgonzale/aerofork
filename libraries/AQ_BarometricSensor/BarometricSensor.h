@@ -25,11 +25,11 @@
 #include "GlobalDefined.h"
 
 volatile float baroAltitude      = 0.0; 
-float baroRawAltitude   = 0.0;
+volatile float baroRawAltitude   = 0.0;
 volatile float baroGroundAltitude = 0.0;
-float baroSmoothFactor   = 0.2;
+const float baroSmoothFactor   = 0.2;
 
-float zSum = 0.0;
+volatile float zSum = 0.0;
 volatile float zBias = 0.0;
 
 int zIndex = 0;
@@ -62,6 +62,7 @@ const float getBaroAltitude() {
  //  }
  //  baroGroundAltitude = altSum / 25;
  // }
+
 
 void measureGroundBaro() {
   // measure initial ground pressure (multiple samples)

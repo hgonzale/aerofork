@@ -44,7 +44,7 @@
 //   #endif
 // #endif 
 
-#define BAUD 9600
+#define BAUD 115200
 // #if defined WirelessTelemetry
 //   #define BAUD 9600
 // #else
@@ -104,6 +104,8 @@ byte previousFlightMode = ATTITUDE_FLIGHT_MODE;
 /**
  * Flight control variables
  */
+ volatile float alt_ref = 0.0; // reference for PID control
+ volatile float yaw_ref = 0.0; // reference for PID control
  volatile float altitude, roll, pitch, yaw; // state variables
  volatile float u_alt, u_roll, u_pitch, u_yaw; // control signals
  float yk_prev[4] = {0.0, 0.0, 0.0, 0.0}; // previous motor control signal
