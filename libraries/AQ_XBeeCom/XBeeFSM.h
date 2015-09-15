@@ -192,7 +192,15 @@ void processCommand( signed char cmd ) {
 			break;
 
 		case 'm': // pulse all motors
-			pulseMotors(3);
+			motorCommand[MOTOR1] = 1200;
+			delay(1000);
+			motorCommand[MOTOR1] = 1000;
+			motorCommand[MOTOR2] = 1200;
+			delay(1000);
+			motorCommand[MOTOR2] = 1000;
+			motorCommand[MOTOR3] = 1200;
+			delay(1000);
+			motorCommand[MOTOR3] = 1000;
 			nextCommand = 'x';
 			break;
 

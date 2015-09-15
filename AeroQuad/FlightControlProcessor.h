@@ -40,9 +40,9 @@ void processStabilityControl() {
   yaw = kinematicsAngle[2];
 
   // update PID controllers
-  // u_alt = updatePID(alt_ref, altitude, &PID[ALTITUDE_PID_IDX], false);
-  // u_roll = updatePID(0, roll, &PID[ROLL_PID_IDX], false);
-  // u_pitch = updatePID(0, pitch, &PID[PITCH_PID_IDX], false);
+  u_alt = updatePID(alt_ref, altitude, &PID[ALTITUDE_PID_IDX], false);
+  u_roll = updatePID(0, roll, &PID[ROLL_PID_IDX], false);
+  u_pitch = updatePID(0, pitch, &PID[PITCH_PID_IDX], false);
   u_yaw = updatePID(0, yaw, &PID[YAW_PID_IDX], false);
 
   // prepare motor commands
