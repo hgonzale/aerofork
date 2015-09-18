@@ -364,7 +364,7 @@ void initializePlatformSpecificAccelCalibration() {
 
 
 /*Interrupt for motor actuation
-  Runs at 20Hz
+  Runs at 50Hz
 */
   ISR(TIMER1_COMPA_vect) {
 

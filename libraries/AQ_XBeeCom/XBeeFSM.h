@@ -42,7 +42,9 @@ state_t nextState;
 signed char nextCommand;
 signed char rxByte;
 float inValue;
+int inValueType;
 int inValueSign;
+int pidDataIndex;
 unsigned long lastHeartbeatTime;
 
 
@@ -95,23 +97,8 @@ void printPID() {
 	Serial.print(u_yaw);
 
 	Serial.print(" | \t ");
-
-	for (int i = 0; i < 4; i++) {
-		Serial.print(yk[i]);
-		Serial.print(", ");
-	}
 }
 
-void printQs() {
-	// Serial.print(qkmin[0]);
-	// Serial.print(", ");
-	// Serial.print(qkmin[1]);
-	// Serial.print(", ");
-	// Serial.print(qkmin[2]);
-	// Serial.print(", ");
-	// Serial.print(qkmin[3]);
-	// Serial.print(" | \t ");
-}
 
 void printMotorCommands() {
 	Serial.print(motorCommand[MOTOR1]);
@@ -201,22 +188,69 @@ void processCommand( signed char cmd ) {
 			motorCommand[MOTOR3] = 1200;
 			delay(1000);
 			motorCommand[MOTOR3] = 1000;
+			motorCommand[MOTOR4] = 1200;
+			delay(1000);
+			motorCommand[MOTOR4] = 1000;
 			nextCommand = 'x';
 			break;
 
-		case 'p': // set altitude reference --> input pX.XX where X.XX is the altitude value
-			alt_ref = inValue;
-			nextCommand = 'x';
+		case 'w': // select PID params to modify
+			// 0 --> altitude
+			// 1 --> roll
+			// 2 --> pitch
+			// 3 --> yaw
+			// 4 --> gyrox (overridden in Kinematics_ARG)
+			// 5 --> gyroy (overridden in Kinematics_ARG)
+			// 6 --> gyroz (overridden in Kinematics_ARG)
+			pidDataIndex = (int) inValue;
+			Serial.print("pidDataIndex set to ");
+			Serial.println(pidDataIndex);
 			break;
 
-		case 'q': // read PID info 2
+		case 'p': // set P value of PID
+			PID[pidDataIndex].P = inValue;
+			Serial.print("P set to ");
+			Serial.println(inValue);
+			break;
+
+		case 'i': // set I value of PID
+			PID[pidDataIndex].I = inValue;
+			Serial.print("I set to ");
+			Serial.println(inValue);
+			break;
+
+		case 'd': // set D value of PID
+			PID[pidDataIndex].D = inValue;
+			Serial.print("D set to ");
+			Serial.println(inValue);
+			break;
+
+		case 'r': // read current PID values (of selected PID)
+			Serial.print("PID values for [");
+			Serial.print(pidDataIndex);
+			Serial.print("] | P: ");
+			Serial.print(PID[pidDataIndex].P);
+			Serial.print(", I: ");
+			Serial.print(PID[pidDataIndex].I);
+			Serial.print(", D: ");
+			Serial.println(PID[pidDataIndex].D);
+			break;
+
+		case 'q': // read altitude and yaw references
+			Serial.print("Altitude: ");
 			Serial.print(alt_ref);
 			Serial.print(" \t ");
+			Serial.print("Yaw: ");
 			Serial.println(yaw_ref);
 			break;
 
 		case 'y': // set yaw reference
 			yaw_ref = inValue;
+			nextCommand = 'x';
+			break;
+
+		case 'z': // set altitude reference --> input z+X.XX where X.XX is the altitude value
+			alt_ref = inValue;
 			nextCommand = 'x';
 			break;
 
@@ -230,6 +264,7 @@ void processCommand( signed char cmd ) {
 		case '?': // request quadrotor state data
 			printState();
 			printMotorCommands();
+			printPID();
 			Serial.println("");
 			break;
 
@@ -276,13 +311,27 @@ void XBeeComFSM( signed char thisByte ) {
 			if ( thisByte == 'a' || thisByte == 'b' || 
 				 thisByte == 'c' || thisByte == 'e' ||
 				 thisByte == 'm' || thisByte == 'q' || 
-				 thisByte == 'x' || thisByte == '~' || thisByte == '?' ) { // (almost) all command cases go here
+				 thisByte == 'x' || thisByte == '~' || 
+				 thisByte == '?' || thisByte == 'r' ) { // (almost) all command cases go here
 
 				nextState = ExpectHeartbeat;
 				nextCommand = thisByte;
 
-			} else if ( thisByte == 'p' || thisByte == 'y' ) { // command cases where we expect a value afterward
+			} else if ( thisByte == 'y' || thisByte == 'z') { // command cases where we expect a value afterward
 
+				inValueType = 1;
+				nextState = ExpectValue;
+				nextCommand = thisByte;
+
+			} else if ( thisByte == 'w' ) {
+
+				inValueType = 2;
+				nextState = ExpectValue;
+				nextCommand = thisByte;
+
+			} else if ( thisByte == 'p' || thisByte == 'i' || thisByte == 'd' ) {
+
+				inValueType = 3;
 				nextState = ExpectValue;
 				nextCommand = thisByte;
 
@@ -317,21 +366,49 @@ void XBeeComFSM( signed char thisByte ) {
 
 			nextState = ExpectHeader;
 
-			if (Serial.available() > 4) {
+			if (inValueType == 1) { // +/- x.xx
 
-				if (Serial.read() == '-') {
-					inValueSign = -1;
-				} else {
-					inValueSign = 1;
+				if (Serial.available() > 4) {
+
+					if (Serial.read() == '-') {
+						inValueSign = -1;
+					} else {
+						inValueSign = 1;
+					}
+
+					inValue = ((int) Serial.read()) - 48.0; // x.00
+					Serial.read(); // '.'
+					inValue += ((int) Serial.read() - 48.0) * 0.1; // 0.x0
+					inValue += ((int) Serial.read() - 48.0) * 0.01; //0.0x
+
+					inValue = inValueSign * inValue;
+
 				}
 
-				inValue = ((int) Serial.read()) - 48.0; // x.00
-				Serial.read(); // '.'
-				inValue += ((int) Serial.read() - 48.0) * 0.1; // 0.x0
-				inValue += ((int) Serial.read() - 48.0) * 0.01; //0.0x
+			} else if (inValueType == 2) { // x
 
-				inValue = inValueSign * inValue;
+				if (Serial.available() > 0) {
 
+					inValue = Serial.read() - 48.0;
+
+					Serial.println(inValue);
+				}
+
+			} else if (inValueType == 3) { // xxx.xx
+
+				if (Serial.available() > 5) {
+
+					inValue = ((int) Serial.read() - 48.0) * 100.0; //x00.00
+					inValue += ((int) Serial.read() - 48.0) * 10.0; //0x0.00
+					inValue += ((int) Serial.read() - 48.0); //00x.00
+					Serial.read(); // '.'
+					inValue += ((int) Serial.read() - 48.0) * 0.1; //000.x0
+					inValue += ((int) Serial.read() - 48.0) * 0.01; //000.0x
+
+				}
+
+			} else {
+				nextCommand = 'x';
 			}
 
 			processCommand(nextCommand);

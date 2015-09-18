@@ -155,9 +155,9 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
   ez = (vx*ay - vy*ax);
 
   // adjusted gyroscope measurements
-  ox = gx + updatePID(ex,&PID[GYRO_X_PID_IDX], false);
-  oy = gy + updatePID(ey,&PID[GYRO_Y_PID_IDX], false);
-  oz = gz + updatePID(ez,&PID[GYRO_Z_PID_IDX], false);
+  ox = gx + updatePID(ex,&PID[GYRO_X_PID_IDX]);
+  oy = gy + updatePID(ey,&PID[GYRO_Y_PID_IDX]);
+  oz = gz + updatePID(ez,&PID[GYRO_Z_PID_IDX]);
 
   mx = halfT * gx;
   my = halfT * gy;
