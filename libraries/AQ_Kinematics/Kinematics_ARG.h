@@ -285,6 +285,81 @@ void eulerAngles()
 
 }
 
+void argUpdate2(float gx, float gy, float gz, float ax, float ay, float az, float G_Dt) {
+  
+  float norm;
+  float vx, vy, vz;
+  float q0i, q1i, q2i, q3i;
+  float ex, ey, ez;
+    
+  halfT = G_Dt/2;
+  
+  // normalise the measurements
+  norm = sqrt(ax*ax + ay*ay + az*az);       
+  ax = ax / norm;
+  ay = ay / norm;
+  az = az / norm;
+      
+  // estimated direction of gravity and flux (v and w)
+  vx = 2*(q1*q3 - q0*q2);
+  vy = 2*(q0*q1 + q2*q3);
+  vz = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+    
+  // error is sum of cross product between reference direction of fields and direction measured by sensors
+  ex = (vy*az - vz*ay);
+  ey = (vz*ax - vx*az);
+  ez = (vx*ay - vy*ax);
+    
+  // integral error scaled integral gain
+  exInt = exInt + ex*K_i;
+  if (isSwitched(previousEx,ex)) {
+    exInt = 0.0;
+  }
+  previousEx = ex;
+  
+  eyInt = eyInt + ey*K_i;
+  if (isSwitched(previousEy,ey)) {
+    eyInt = 0.0;
+  }
+  previousEy = ey;
+
+  ezInt = ezInt + ez*K_i;
+  if (isSwitched(previousEz,ez)) {
+    ezInt = 0.0;
+  }
+  previousEz = ez;
+  
+  // adjusted gyroscope measurements
+  gx = gx + K_p*ex + exInt;
+  gy = gy + K_p*ey + eyInt;
+  gz = gz + K_p*ez + ezInt;
+    
+  // integrate quaternion rate and normalise
+  q0i = (-q1*gx - q2*gy - q3*gz) * halfT;
+  q1i = ( q0*gx + q2*gz - q3*gy) * halfT;
+  q2i = ( q0*gy - q1*gz + q3*gx) * halfT;
+  q3i = ( q0*gz + q1*gy - q2*gx) * halfT;
+  q0 += q0i;
+  q1 += q1i;
+  q2 += q2i;
+  q3 += q3i;
+    
+  // normalise quaternion
+  norm = sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3);
+  q0 = q0 / norm;
+  q1 = q1 / norm;
+  q2 = q2 / norm;
+  q3 = q3 / norm;
+}
+
+
+void eulerAngles2()
+{
+  kinematicsAngle[XAXIS]  = atan2(2 * (q0*q1 + q2*q3), 1 - 2 *(q1*q1 + q2*q2));
+  kinematicsAngle[YAXIS] = asin(2 * (q0*q2 - q1*q3));
+  kinematicsAngle[ZAXIS]   = atan2(2 * (q0*q3 + q1*q2), 1 - 2 *(q2*q2 + q3*q3));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize ARG
 ////////////////////////////////////////////////////////////////////////////////
@@ -324,10 +399,10 @@ void calculateKinematics(float rollRate,          float pitchRate,    float yawR
                          float longitudinalAccel, float lateralAccel, float verticalAccel, 
                          float G_DT) {
     
-  argUpdate(rollRate,          pitchRate,    yawRate, 
+  argUpdate2(rollRate,          pitchRate,    yawRate, 
             longitudinalAccel, lateralAccel, verticalAccel,  
 		    G_Dt);
-  eulerAngles();
+  eulerAngles2();
 
 }
 

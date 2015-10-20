@@ -188,13 +188,13 @@ void initializeEEPROM() {
 
 void readEEPROM() {
 
-  readPID(ALTITUDE_PID_IDX, ALTITUDE_PID_GAIN_ADR);
-  readPID(ROLL_PID_IDX, ROLL_PID_GAIN_ADR);
-  readPID(PITCH_PID_IDX, PITCH_PID_GAIN_ADR);
-  readPID(YAW_PID_IDX, YAW_PID_GAIN_ADR);
-  readPID(GYRO_X_PID_IDX, GYRO_X_PID_GAIN_ADR);
-  readPID(GYRO_Y_PID_IDX, GYRO_Y_PID_GAIN_ADR);
-  readPID(GYRO_Z_PID_IDX, GYRO_Z_PID_GAIN_ADR);
+  // readPID(ALTITUDE_PID_IDX, ALTITUDE_PID_GAIN_ADR);
+  // readPID(ROLL_PID_IDX, ROLL_PID_GAIN_ADR);
+  // readPID(PITCH_PID_IDX, PITCH_PID_GAIN_ADR);
+  // readPID(YAW_PID_IDX, YAW_PID_GAIN_ADR);
+  // readPID(GYRO_X_PID_IDX, GYRO_X_PID_GAIN_ADR);
+  // readPID(GYRO_Y_PID_IDX, GYRO_Y_PID_GAIN_ADR);
+  // readPID(GYRO_Z_PID_IDX, GYRO_Z_PID_GAIN_ADR);
 
   rotationSpeedFactor = readFloat(ROTATION_SPEED_FACTOR_ARD);
   
@@ -263,13 +263,13 @@ void readEEPROM() {
 void writeEEPROM(){
   cli(); // Needed so that APM sensor data does not overflow
 
-  writePID(ALTITUDE_PID_IDX, ALTITUDE_PID_GAIN_ADR);
-  writePID(ROLL_PID_IDX, ROLL_PID_GAIN_ADR);
-  writePID(PITCH_PID_IDX, PITCH_PID_GAIN_ADR);
-  writePID(YAW_PID_IDX, YAW_PID_GAIN_ADR);
-  writePID(GYRO_X_PID_IDX, GYRO_X_PID_GAIN_ADR);
-  writePID(GYRO_Y_PID_IDX, GYRO_Y_PID_GAIN_ADR);
-  writePID(GYRO_Z_PID_IDX, GYRO_Z_PID_GAIN_ADR);
+  // writePID(ALTITUDE_PID_IDX, ALTITUDE_PID_GAIN_ADR);
+  // writePID(ROLL_PID_IDX, ROLL_PID_GAIN_ADR);
+  // writePID(PITCH_PID_IDX, PITCH_PID_GAIN_ADR);
+  // writePID(YAW_PID_IDX, YAW_PID_GAIN_ADR);
+  // writePID(GYRO_X_PID_IDX, GYRO_X_PID_GAIN_ADR);
+  // writePID(GYRO_Y_PID_IDX, GYRO_Y_PID_GAIN_ADR);
+  // writePID(GYRO_Z_PID_IDX, GYRO_Z_PID_GAIN_ADR);
 
   writeFloat(rotationSpeedFactor,ROTATION_SPEED_FACTOR_ARD);
   
@@ -354,6 +354,15 @@ void initSensorsZeroFromEEPROM() {
   runTimeAccelBias[YAXIS] = readFloat(YAXIS_ACCEL_BIAS_ADR);
   accelScaleFactor[ZAXIS] = readFloat(ZAXIS_ACCEL_SCALE_FACTOR_ADR);
   runTimeAccelBias[ZAXIS] = readFloat(ZAXIS_ACCEL_BIAS_ADR);
+
+  Serial.println("Read from EEPROM: ");
+  Serial.println(accelOneG);
+  Serial.println(accelScaleFactor[XAXIS]);
+  Serial.println(runTimeAccelBias[XAXIS]);
+  Serial.println(accelScaleFactor[YAXIS]);
+  Serial.println(runTimeAccelBias[YAXIS]);
+  Serial.println(accelScaleFactor[ZAXIS]);
+  Serial.println(runTimeAccelBias[ZAXIS]);
 }
 
 void storeSensorsZeroToEEPROM() {

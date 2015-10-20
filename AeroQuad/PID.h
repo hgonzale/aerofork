@@ -89,6 +89,26 @@ boolean checkSwitch(float error, float errorDif) {
 ************************************************************************************************************************************/
 void initPID() {
 
+  PID[ALTITUDE_PID_IDX].P = PIDVARS_altitude[0];
+  PID[ALTITUDE_PID_IDX].I = PIDVARS_altitude[1];
+  PID[ALTITUDE_PID_IDX].D = PIDVARS_altitude[2];
+  PID[ALTITUDE_PID_IDX].windupGuard = PIDVARS_altitude[3];
+
+  PID[ROLL_PID_IDX].P = PIDVARS_roll[0];
+  PID[ROLL_PID_IDX].I = PIDVARS_roll[1];
+  PID[ROLL_PID_IDX].D = PIDVARS_roll[2];
+  PID[ROLL_PID_IDX].windupGuard = PIDVARS_roll[3];
+
+  PID[PITCH_PID_IDX].P = PIDVARS_pitch[0];
+  PID[PITCH_PID_IDX].I = PIDVARS_pitch[1];
+  PID[PITCH_PID_IDX].D = PIDVARS_pitch[2];
+  PID[PITCH_PID_IDX].windupGuard = PIDVARS_pitch[3];
+
+  PID[YAW_PID_IDX].P = PIDVARS_yaw[0];
+  PID[YAW_PID_IDX].I = PIDVARS_yaw[1];
+  PID[YAW_PID_IDX].D = PIDVARS_yaw[2];
+  PID[YAW_PID_IDX].windupGuard = PIDVARS_yaw[3];
+
   for (byte idx; idx < LAST_PID_IDX; idx++) {
     PID[idx].lastError = 0.0;
     PID[idx].lastLastError = 0.0;

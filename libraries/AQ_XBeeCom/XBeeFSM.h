@@ -1,4 +1,3 @@
-
 #ifndef _XBEE_FSM_H_
 #define _XBEE_FSM_H_
 
@@ -210,9 +209,26 @@ void processCommand( signed char cmd ) {
 			break;
 
 		case 'q': // read PID info 2
-			Serial.print(alt_ref);
-			Serial.print(" \t ");
-			Serial.println(yaw_ref);
+			// Serial.print(alt_ref);
+			// Serial.print(" \t ");
+			// Serial.println(yaw_ref);
+
+			Serial.print(accelScaleFactor[XAXIS]);
+			Serial.print(", \t");
+			Serial.print(runTimeAccelBias[XAXIS]);
+			Serial.print(", \t");
+			Serial.print(accelScaleFactor[YAXIS]);
+			Serial.print(", \t");
+			Serial.print(runTimeAccelBias[YAXIS]);
+			Serial.print(", \t");
+			Serial.print(accelScaleFactor[ZAXIS]);
+			Serial.print(", \t");
+			Serial.print(runTimeAccelBias[ZAXIS]);
+			Serial.print(", \t");
+
+
+    		Serial.println("");	
+    		nextCommand = 'x';
 			break;
 
 		case 'y': // set yaw reference
@@ -229,7 +245,23 @@ void processCommand( signed char cmd ) {
 
 		case '?': // request quadrotor state data
 			printState();
-			printMotorCommands();
+			// printMotorCommands();
+		    // Serial.print(" \t \t ");
+		    // Serial.print(MPU6000.data.accel.x);
+		    // Serial.print(", \t ");
+		    // Serial.print(MPU6000.data.accel.y);
+		    // Serial.print(", \t ");
+		    // Serial.print(MPU6000.data.accel.z);
+		    // Serial.print(" \t \t ");
+
+		    Serial.print(meterPerSecSec[XAXIS]);
+		    Serial.print(", \t ");    
+		    Serial.print(meterPerSecSec[YAXIS]);
+		    Serial.print(", \t ");    
+		    Serial.print(meterPerSecSec[ZAXIS]);
+		    Serial.print(", \t ");
+
+
 			Serial.println("");
 			break;
 
