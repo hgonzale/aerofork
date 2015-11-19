@@ -47,13 +47,13 @@ struct PIDdata {
 */
 
 // Altitude {P, I, D, windup}
-float PIDVARS_altitude[] = {40.0, 1.0, 0.0, 100.0};
+float PIDVARS_altitude[] = {10.0, 1.0, 0.0, 100.0};
 
 // Roll {P, I, D, windup}
-float PIDVARS_roll[] = {2.0, 0.5, 0.1, 100.0};
+float PIDVARS_roll[] = {100.0, 10.0, 0.0, 100.0};
 
 // Pitch {P, I, D, windup}
-float PIDVARS_pitch[] = {20.0, 0.5, 0.5, 100.0};
+float PIDVARS_pitch[] = {100.0, 10.0, 0.0, 100.0};
 
 // Yaw {P, I, D, windup}
 float PIDVARS_yaw[] = {100.0, 30.0, 1.0, 100.0};

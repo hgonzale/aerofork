@@ -200,11 +200,14 @@ void processCommand( signed char cmd ) {
 			motorCommand[MOTOR3] = 1200;
 			delay(1000);
 			motorCommand[MOTOR3] = 1000;
+			motorCommand[MOTOR4] = 1200;
+			delay(1000);
+			motorCommand[MOTOR4] = 1000;
 			nextCommand = 'x';
 			break;
 
 		case 'p': // set altitude reference --> input pX.XX where X.XX is the altitude value
-			alt_ref = inValue;
+			// alt_ref = inValue;
 			nextCommand = 'x';
 			break;
 
@@ -245,21 +248,8 @@ void processCommand( signed char cmd ) {
 
 		case '?': // request quadrotor state data
 			printState();
-			// printMotorCommands();
-		    // Serial.print(" \t \t ");
-		    // Serial.print(MPU6000.data.accel.x);
-		    // Serial.print(", \t ");
-		    // Serial.print(MPU6000.data.accel.y);
-		    // Serial.print(", \t ");
-		    // Serial.print(MPU6000.data.accel.z);
-		    // Serial.print(" \t \t ");
-
-		    Serial.print(meterPerSecSec[XAXIS]);
-		    Serial.print(", \t ");    
-		    Serial.print(meterPerSecSec[YAXIS]);
-		    Serial.print(", \t ");    
-		    Serial.print(meterPerSecSec[ZAXIS]);
-		    Serial.print(", \t ");
+			printMotorCommands();
+			// printPID();
 
 
 			Serial.println("");

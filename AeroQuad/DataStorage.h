@@ -355,14 +355,14 @@ void initSensorsZeroFromEEPROM() {
   accelScaleFactor[ZAXIS] = readFloat(ZAXIS_ACCEL_SCALE_FACTOR_ADR);
   runTimeAccelBias[ZAXIS] = readFloat(ZAXIS_ACCEL_BIAS_ADR);
 
-  Serial.println("Read from EEPROM: ");
-  Serial.println(accelOneG);
-  Serial.println(accelScaleFactor[XAXIS]);
-  Serial.println(runTimeAccelBias[XAXIS]);
-  Serial.println(accelScaleFactor[YAXIS]);
-  Serial.println(runTimeAccelBias[YAXIS]);
-  Serial.println(accelScaleFactor[ZAXIS]);
-  Serial.println(runTimeAccelBias[ZAXIS]);
+  // Serial.println("Read from EEPROM: ");
+  // Serial.println(accelOneG);
+  // Serial.println(accelScaleFactor[XAXIS],11);
+  // Serial.println(runTimeAccelBias[XAXIS],11);
+  // Serial.println(accelScaleFactor[YAXIS],11);
+  // Serial.println(runTimeAccelBias[YAXIS],11);
+  // Serial.println(accelScaleFactor[ZAXIS],11);
+  // Serial.println(runTimeAccelBias[ZAXIS],11);
 }
 
 void storeSensorsZeroToEEPROM() {

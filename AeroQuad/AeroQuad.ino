@@ -311,13 +311,12 @@ void initializePlatformSpecificAccelCalibration() {
   readEEPROM(); // defined in DataStorage.h
   boolean firstTimeBoot = false;
 
-  if (readFloat(SOFTWARE_VERSION_ADR) != SOFTWARE_VERSION) { // If we detect the wrong soft version, we init all parameters
+  // if (readFloat(SOFTWARE_VERSION_ADR) != SOFTWARE_VERSION) { // If we detect the wrong soft version, we init all parameters
+  //   initializeEEPROM();
+  //   writeEEPROM();
+  //   firstTimeBoot = true;
 
-    initializeEEPROM();
-    writeEEPROM();
-    firstTimeBoot = true;
-
-  }
+  // }
   
   initPlatform();
   

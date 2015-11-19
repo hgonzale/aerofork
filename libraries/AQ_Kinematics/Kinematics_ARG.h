@@ -146,8 +146,10 @@ void argUpdate(float gx, float gy, float gz, float ax, float ay, float az, float
 
   // estimated direction of gravity and flux (v and w) -- from paper
   vx = 2 * (q1*q3 - q0*q2);
-  vy = 2 * (q0*q1 - q2*q3);
-  vz = q0*q0 - q1*q1 - q2*q2 - q3*q3;
+  // vy = 2 * (q0*q1 - q2*q3);
+  vy = 2*(q0*q1 + q2*q3);
+  // vz = q0*q0 - q1*q1 - q2*q2 - q3*q3;
+  vz = q0*q0 - q1*q1 - q2*q2 + q3*q3;
     
   // error is sum of cross product between reference direction of fields and direction measured by sensors
   ex = (vy*az - vz*ay);
@@ -303,7 +305,9 @@ void argUpdate2(float gx, float gy, float gz, float ax, float ay, float az, floa
   // estimated direction of gravity and flux (v and w)
   vx = 2*(q1*q3 - q0*q2);
   vy = 2*(q0*q1 + q2*q3);
+  // vy = 2*(q0*q1 - q2*q3); 
   vz = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+  // vz = q0*q0 - q1*q1 - q2*q2 - q3*q3;
     
   // error is sum of cross product between reference direction of fields and direction measured by sensors
   ex = (vy*az - vz*ay);
@@ -399,10 +403,10 @@ void calculateKinematics(float rollRate,          float pitchRate,    float yawR
                          float longitudinalAccel, float lateralAccel, float verticalAccel, 
                          float G_DT) {
     
-  argUpdate2(rollRate,          pitchRate,    yawRate, 
+  argUpdate(rollRate,          pitchRate,    yawRate, 
             longitudinalAccel, lateralAccel, verticalAccel,  
 		    G_Dt);
-  eulerAngles2();
+  eulerAngles();
 
 }
 

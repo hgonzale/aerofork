@@ -31,17 +31,24 @@
 
 #include "FlightControlVariable.h"
 
-#ifdef OLD_MOTOR_NUMBERING  
-  #define FRONT_LEFT  MOTOR1
-  #define REAR_RIGHT  MOTOR2
-  #define FRONT_RIGHT MOTOR3
-  #define REAR_LEFT   MOTOR4
-#else
-  #define FRONT_LEFT  MOTOR1
-  #define FRONT_RIGHT MOTOR2
-  #define REAR_RIGHT  MOTOR3
-  #define REAR_LEFT   MOTOR4
-#endif
+// #ifdef OLD_MOTOR_NUMBERING  
+//   #define FRONT_LEFT  MOTOR1
+//   #define REAR_RIGHT  MOTOR2
+//   #define FRONT_RIGHT MOTOR3
+//   #define REAR_LEFT   MOTOR4
+// #else
+//   #define FRONT_LEFT  MOTOR1
+//   #define FRONT_RIGHT MOTOR2
+//   #define REAR_RIGHT  MOTOR3
+//   #define REAR_LEFT   MOTOR4
+// #endif
+
+// if needed, assign motor numbers here
+#define FRONT_LEFT  MOTOR4
+#define REAR_RIGHT  MOTOR2
+#define FRONT_RIGHT MOTOR1
+#define REAR_LEFT   MOTOR3
+
 #define LASTMOTOR   (MOTOR4+1)
 
 int maxMotorValue = 2000;
@@ -63,15 +70,15 @@ void applyMotorCommand() {
 
 
   // map the control signals to the appropriate motors
-  // yk[0] = .25*u_alt + .50*u_roll + .50*u_pitch + .25*u_yaw;
-  // yk[1] = .25*u_alt - .50*u_roll + .50*u_pitch - .25*u_yaw;
-  // yk[2] = .25*u_alt - .50*u_roll - .50*u_pitch + .25*u_yaw;
-  // yk[3] = .25*u_alt + .50*u_roll - .50*u_pitch - .25*u_yaw;
+  yk[0] = .25*u_alt + .50*u_roll + .50*u_pitch + .25*u_yaw;
+  yk[1] = .25*u_alt - .50*u_roll + .50*u_pitch - .25*u_yaw;
+  yk[2] = .25*u_alt - .50*u_roll - .50*u_pitch + .25*u_yaw;
+  yk[3] = .25*u_alt + .50*u_roll - .50*u_pitch - .25*u_yaw;
 
-  yk[0] = 5*u_alt + 10*u_roll + 10*u_pitch + 5*u_yaw;
-  yk[1] = 5*u_alt - 10*u_roll + 10*u_pitch - 5*u_yaw;
-  yk[2] = 5*u_alt - 10*u_roll - 10*u_pitch + 5*u_yaw;
-  yk[3] = 5*u_alt + 10*u_roll - 10*u_pitch - 5*u_yaw;
+  // yk[0] = 5*u_alt + 10*u_roll + 10*u_pitch + 5*u_yaw;
+  // yk[1] = 5*u_alt - 10*u_roll + 10*u_pitch - 5*u_yaw;
+  // yk[2] = 5*u_alt - 10*u_roll - 10*u_pitch + 5*u_yaw;
+  // yk[3] = 5*u_alt + 10*u_roll - 10*u_pitch - 5*u_yaw;
 
 
   // Limit change in controller output

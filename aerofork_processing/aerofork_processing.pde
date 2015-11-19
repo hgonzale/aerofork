@@ -484,6 +484,7 @@ void send(char c) {
 
 void send(String s) {
 
+  if (s.length() > 0) {
   myPort.write(HEADER);
   myPort.write(s.charAt(0));
 
@@ -498,7 +499,7 @@ void send(String s) {
     myPort.write(HEARTBEAT);
 
   }
-
+  }
 }
 
 /*********************************************************************************
