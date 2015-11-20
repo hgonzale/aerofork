@@ -44,6 +44,7 @@ float inValue;
 int inValueSign;
 unsigned long lastHeartbeatTime;
 
+int dataDisplayMode = 0;
 
 /*
 * initXBeeFSM
@@ -99,6 +100,8 @@ void printPID() {
 		Serial.print(yk[i]);
 		Serial.print(", ");
 	}
+	
+	Serial.print(" | \t ");
 }
 
 void printQs() {
@@ -113,13 +116,13 @@ void printQs() {
 }
 
 void printMotorCommands() {
-	Serial.print(motorCommand[MOTOR1]);
+	Serial.print((int) motorCommand[MOTOR1]);
 	Serial.print(", ");
-	Serial.print(motorCommand[MOTOR2]);
+	Serial.print((int) motorCommand[MOTOR2]);
 	Serial.print(", ");
-	Serial.print(motorCommand[MOTOR3]);
+	Serial.print((int) motorCommand[MOTOR3]);
 	Serial.print(", ");
-	Serial.print(motorCommand[MOTOR4]);
+	Serial.print((int) motorCommand[MOTOR4]);
 	Serial.print(" | \t ");
 }
 
@@ -191,46 +194,49 @@ void processCommand( signed char cmd ) {
 			break;
 
 		case 'm': // pulse all motors
-			motorCommand[MOTOR1] = 1200;
-			delay(1000);
-			motorCommand[MOTOR1] = 1000;
-			motorCommand[MOTOR2] = 1200;
-			delay(1000);
-			motorCommand[MOTOR2] = 1000;
-			motorCommand[MOTOR3] = 1200;
-			delay(1000);
-			motorCommand[MOTOR3] = 1000;
-			motorCommand[MOTOR4] = 1200;
-			delay(1000);
-			motorCommand[MOTOR4] = 1000;
+			// motorCommand[MOTOR1] = 1200;
+			// delay(1000);
+			// motorCommand[MOTOR1] = 1000;
+			// motorCommand[MOTOR2] = 1200;
+			// delay(1000);
+			// motorCommand[MOTOR2] = 1000;
+			// motorCommand[MOTOR3] = 1200;
+			// delay(1000);
+			// motorCommand[MOTOR3] = 1000;
+			// motorCommand[MOTOR4] = 1200;
+			// delay(1000);
+			// motorCommand[MOTOR4] = 1000;
+			if (dataDisplayMode == 0) {
+				dataDisplayMode = 1;
+			} else {
+				dataDisplayMode = 0;
+			}
 			nextCommand = 'x';
 			break;
 
-		case 'p': // set altitude reference --> input pX.XX where X.XX is the altitude value
-			// alt_ref = inValue;
+		case 'p': // set altitude reference --> input p+X.XX where X.XX is the altitude value
+			alt_ref = inValue;
 			nextCommand = 'x';
 			break;
 
 		case 'q': // read PID info 2
-			// Serial.print(alt_ref);
-			// Serial.print(" \t ");
-			// Serial.println(yaw_ref);
+			Serial.print(alt_ref);
+			Serial.print(" \t ");
+			Serial.println(yaw_ref);
 
-			Serial.print(accelScaleFactor[XAXIS]);
-			Serial.print(", \t");
-			Serial.print(runTimeAccelBias[XAXIS]);
-			Serial.print(", \t");
-			Serial.print(accelScaleFactor[YAXIS]);
-			Serial.print(", \t");
-			Serial.print(runTimeAccelBias[YAXIS]);
-			Serial.print(", \t");
-			Serial.print(accelScaleFactor[ZAXIS]);
-			Serial.print(", \t");
-			Serial.print(runTimeAccelBias[ZAXIS]);
-			Serial.print(", \t");
-
-
-    		Serial.println("");	
+			// Serial.print(accelScaleFactor[XAXIS]);
+			// Serial.print(", \t");
+			// Serial.print(runTimeAccelBias[XAXIS]);
+			// Serial.print(", \t");
+			// Serial.print(accelScaleFactor[YAXIS]);
+			// Serial.print(", \t");
+			// Serial.print(runTimeAccelBias[YAXIS]);
+			// Serial.print(", \t");
+			// Serial.print(accelScaleFactor[ZAXIS]);
+			// Serial.print(", \t");
+			// Serial.print(runTimeAccelBias[ZAXIS]);
+			// Serial.print(", \t");
+			// Serial.println("");	
     		nextCommand = 'x';
 			break;
 
@@ -247,10 +253,13 @@ void processCommand( signed char cmd ) {
 			break;
 
 		case '?': // request quadrotor state data
-			printState();
-			printMotorCommands();
-			// printPID();
-
+			if (dataDisplayMode == 0) {
+				printState();
+				printMotorCommands();
+			} else {
+				printPID();
+				printMotorCommands();
+			}
 
 			Serial.println("");
 			break;

@@ -356,6 +356,7 @@ void initializePlatformSpecificAccelCalibration() {
 
   commandAllMotors(1000);
 
+  Serial.flush();
 }
 
 

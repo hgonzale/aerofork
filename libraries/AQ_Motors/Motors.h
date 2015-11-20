@@ -42,7 +42,7 @@ enum NB_Motors{
 };
 
 NB_Motors numberOfMotors = FOUR_Motors;
-volatile int motorCommand[4] = {0,0,0,0};
+volatile float motorCommand[4] = {0,0,0,0};
   
 void initializeMotors(NB_Motors numbers = FOUR_Motors);
 void writeMotors();

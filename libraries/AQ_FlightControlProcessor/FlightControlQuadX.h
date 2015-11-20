@@ -51,13 +51,14 @@
 
 #define LASTMOTOR   (MOTOR4+1)
 
-int maxMotorValue = 2000;
+int minMotorValue = 1100;
+int maxMotorValue = 1200;
 int motorMaxCommand[4] = {0,0,0,0};
 int motorMinCommand[4] = {0,0,0,0};
 int motorConfiguratorCommand[4] = {0,0,0,0};
 
 // The maximum allowable change in controller output (since the last iteration)
-const int FILTER_TOLERANCE = 30;
+const int FILTER_TOLERANCE = 1000;
 
 
 void applyMotorCommand() {
@@ -68,18 +69,11 @@ void applyMotorCommand() {
   yk_prev[2] = yk[2];
   yk_prev[3] = yk[3];
 
-
   // map the control signals to the appropriate motors
   yk[0] = .25*u_alt + .50*u_roll + .50*u_pitch + .25*u_yaw;
   yk[1] = .25*u_alt - .50*u_roll + .50*u_pitch - .25*u_yaw;
   yk[2] = .25*u_alt - .50*u_roll - .50*u_pitch + .25*u_yaw;
   yk[3] = .25*u_alt + .50*u_roll - .50*u_pitch - .25*u_yaw;
-
-  // yk[0] = 5*u_alt + 10*u_roll + 10*u_pitch + 5*u_yaw;
-  // yk[1] = 5*u_alt - 10*u_roll + 10*u_pitch - 5*u_yaw;
-  // yk[2] = 5*u_alt - 10*u_roll - 10*u_pitch + 5*u_yaw;
-  // yk[3] = 5*u_alt + 10*u_roll - 10*u_pitch - 5*u_yaw;
-
 
   // Limit change in controller output
   yk[0] = constrain(yk[0], yk_prev[0] - FILTER_TOLERANCE, yk_prev[0] + FILTER_TOLERANCE);
@@ -87,19 +81,17 @@ void applyMotorCommand() {
   yk[2] = constrain(yk[2], yk_prev[2] - FILTER_TOLERANCE, yk_prev[2] + FILTER_TOLERANCE);
   yk[3] = constrain(yk[3], yk_prev[3] - FILTER_TOLERANCE, yk_prev[3] + FILTER_TOLERANCE);
 
-
   // update motor commands -- NOTE: yk values (float) are truncated to nearest int
   motorCommand[FRONT_LEFT] += yk[0];
   motorCommand[FRONT_RIGHT] += yk[1];
   motorCommand[REAR_RIGHT] += yk[2];
   motorCommand[REAR_LEFT] += yk[3];
 
-
   // constrain motor commands
-  motorCommand[FRONT_LEFT] = constrain(motorCommand[FRONT_LEFT], 1000, maxMotorValue);
-  motorCommand[FRONT_RIGHT] = constrain(motorCommand[FRONT_RIGHT], 1000, maxMotorValue);
-  motorCommand[REAR_RIGHT] = constrain(motorCommand[REAR_RIGHT], 1000, maxMotorValue);
-  motorCommand[REAR_LEFT] = constrain(motorCommand[REAR_LEFT], 1000, maxMotorValue);
+  motorCommand[FRONT_LEFT] = constrain(motorCommand[FRONT_LEFT],minMotorValue, maxMotorValue);
+  motorCommand[FRONT_RIGHT] = constrain(motorCommand[FRONT_RIGHT],minMotorValue, maxMotorValue);
+  motorCommand[REAR_RIGHT] = constrain(motorCommand[REAR_RIGHT],minMotorValue, maxMotorValue);
+  motorCommand[REAR_LEFT] = constrain(motorCommand[REAR_LEFT],minMotorValue, maxMotorValue);
 
 }
 
@@ -112,10 +104,10 @@ void setMotorCommand(int cmd) {
   motorCommand[REAR_LEFT] = cmd;
 
   // constrain motor commands
-  motorCommand[FRONT_LEFT] = constrain(motorCommand[FRONT_LEFT], 1000, maxMotorValue);
-  motorCommand[FRONT_RIGHT] = constrain(motorCommand[FRONT_RIGHT], 1000, maxMotorValue);
-  motorCommand[REAR_RIGHT] = constrain(motorCommand[REAR_RIGHT], 1000, maxMotorValue);
-  motorCommand[REAR_LEFT] = constrain(motorCommand[REAR_LEFT], 1000, maxMotorValue);
+  motorCommand[FRONT_LEFT] = constrain(motorCommand[FRONT_LEFT],minMotorValue, maxMotorValue);
+  motorCommand[FRONT_RIGHT] = constrain(motorCommand[FRONT_RIGHT],minMotorValue, maxMotorValue);
+  motorCommand[REAR_RIGHT] = constrain(motorCommand[REAR_RIGHT],minMotorValue, maxMotorValue);
+  motorCommand[REAR_LEFT] = constrain(motorCommand[REAR_LEFT],minMotorValue, maxMotorValue);
 
 }
 
@@ -128,10 +120,10 @@ void incrementMotorCommand(int inc) {
   motorCommand[REAR_LEFT] += inc;
 
   // constrain motor commands
-  motorCommand[FRONT_LEFT] = constrain(motorCommand[FRONT_LEFT], 1000, maxMotorValue);
-  motorCommand[FRONT_RIGHT] = constrain(motorCommand[FRONT_RIGHT], 1000, maxMotorValue);
-  motorCommand[REAR_RIGHT] = constrain(motorCommand[REAR_RIGHT], 1000, maxMotorValue);
-  motorCommand[REAR_LEFT] = constrain(motorCommand[REAR_LEFT], 1000, maxMotorValue);
+  motorCommand[FRONT_LEFT] = constrain(motorCommand[FRONT_LEFT],minMotorValue, maxMotorValue);
+  motorCommand[FRONT_RIGHT] = constrain(motorCommand[FRONT_RIGHT], minMotorValue, maxMotorValue);
+  motorCommand[REAR_RIGHT] = constrain(motorCommand[REAR_RIGHT],minMotorValue, maxMotorValue);
+  motorCommand[REAR_LEFT] = constrain(motorCommand[REAR_LEFT], minMotorValue, maxMotorValue);
 
 }
 
