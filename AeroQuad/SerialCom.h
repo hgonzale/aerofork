@@ -157,7 +157,7 @@ void readSerialCommand() {
       writeEEPROM();
       storeSensorsZeroToEEPROM();
       calibrateGyro();
-      zeroIntegralError();
+      // zeroIntegralError();
       #ifdef HeadingMagHold
         initializeMagnetometer();
       #endif
@@ -273,7 +273,7 @@ void readSerialCommand() {
 
     case 'W': // Write all user configurable values to EEPROM
       writeEEPROM(); // defined in DataStorage.h
-      zeroIntegralError();
+      // zeroIntegralError();
       break;
 
     case 'X': // Stop sending messages

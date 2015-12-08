@@ -26,7 +26,7 @@ struct PIDdata {
   float lastError; // error from previous iteration (@ k-1)
   float lastLastError; // error from two iterations ago (@ k-2)
   float output;
-  float previousPIDTime;
+  unsigned long previousPIDTime;
   float integratedError;
   float satIntegratedError;
   float windupGuard;
@@ -47,16 +47,17 @@ struct PIDdata {
 */
 
 // Altitude {P, I, D, windup}
-float PIDVARS_altitude[] = {10.0, 2.0, 0.2, 100.0};
+
+float PIDVARS_altitude[] = {15.0, 0.2, 0.0, 100.0};
 
 // Roll {P, I, D, windup}
-float PIDVARS_roll[] = {1.0, 0.4, 0.0, 100.0};
+float PIDVARS_roll[] = {10.0, 0.1, 0.0, 100.0};
 
 // Pitch {P, I, D, windup}
-float PIDVARS_pitch[] = {1.0, 0.4, 0.0, 100.0};
+float PIDVARS_pitch[] = {10.0, 0.1, 0.0, 100.0};
 
 // Yaw {P, I, D, windup}
-float PIDVARS_yaw[] = {1.0, 0.4, 0.0, 100.0};
+float PIDVARS_yaw[] = {0.2, 0.05, 0.0, 100.0};
 
 // Gyro X {P, I, D, windup} --> See NOTE 2
 float PIDVARS_gyroX[] = {1.0, 1.0, 0.0, 100.0};
@@ -74,7 +75,7 @@ float PIDVARS_gyroZ[] = {1.0, 1.0, 0.0, 100.0};
 * error: the current error fed into the PID controller
 * errorDif: the difference between the true integrated error and the saturated integrated error (both from the previous iteration)
 *
-* Returns 'true' if the sign of the current error is opposite the sign of the difference in integrated errors. Simply put, returns
+* Returns 'true' if the sign of the current error is opposite the sign of the difference in integrated errors. That is, returns
 * 'true' if the current error will bring the integrated error back toward zero.
 ************************************************************************************************************************************/
 boolean checkSwitch(float error, float errorDif) {
@@ -89,6 +90,7 @@ boolean checkSwitch(float error, float errorDif) {
 ************************************************************************************************************************************/
 void initPID() {
 
+  // initialize PID terms
   PID[ALTITUDE_PID_IDX].P = PIDVARS_altitude[0];
   PID[ALTITUDE_PID_IDX].I = PIDVARS_altitude[1];
   PID[ALTITUDE_PID_IDX].D = PIDVARS_altitude[2];
@@ -109,6 +111,22 @@ void initPID() {
   PID[YAW_PID_IDX].D = PIDVARS_yaw[2];
   PID[YAW_PID_IDX].windupGuard = PIDVARS_yaw[3];
 
+  PID[GYRO_X_PID_IDX].P = PIDVARS_gyroX[0];
+  PID[GYRO_X_PID_IDX].I = PIDVARS_gyroX[1];
+  PID[GYRO_X_PID_IDX].D = PIDVARS_gyroX[2];
+  PID[GYRO_X_PID_IDX].windupGuard = PIDVARS_gyroX[3];
+
+  PID[GYRO_Y_PID_IDX].P = PIDVARS_gyroY[0];
+  PID[GYRO_Y_PID_IDX].I = PIDVARS_gyroY[1];
+  PID[GYRO_Y_PID_IDX].D = PIDVARS_gyroY[2];
+  PID[GYRO_Y_PID_IDX].windupGuard = PIDVARS_gyroY[3];
+
+  PID[GYRO_Z_PID_IDX].P = PIDVARS_gyroZ[0];
+  PID[GYRO_Z_PID_IDX].I = PIDVARS_gyroZ[1];
+  PID[GYRO_Z_PID_IDX].D = PIDVARS_gyroZ[2];
+  PID[GYRO_Z_PID_IDX].windupGuard = PIDVARS_gyroZ[3];
+
+  //initialize error terms
   for (byte idx; idx < LAST_PID_IDX; idx++) {
     PID[idx].lastError = 0.0;
     PID[idx].lastLastError = 0.0;
@@ -132,30 +150,31 @@ void initPID() {
 * Executes an iteration of PID control. Important features are the use of an integral windup guard and recursive discrete-time
 * output calculations. Additionally, the user may pass in just the error rather than the reference and state.
 ************************************************************************************************************************************/
-float updatePID(float reference, float state, struct PIDdata *PIDparameters, boolean int_flag) {
+float updatePID(float reference, float state, struct PIDdata *PIDparameters) {
 
-  // time update -- use pre-computed values if updatePID has been called by an interrupt
-  const float deltaPIDTime = (int_flag) ? DELTA_T : (currentTime - PIDparameters->previousPIDTime) / 1000000.0;
-  const float inv_deltaPIDTime = (int_flag) ? INV_DELTA_T : 1 / deltaPIDTime;
-  PIDparameters->previousPIDTime = currentTime;
+  // time update
+  const unsigned long now = micros();
+  const float deltaPIDTime = (now - PIDparameters->previousPIDTime) / 1000000.0;
+  const float inv_deltaPIDTime = 1 / deltaPIDTime;
+  PIDparameters->previousPIDTime = now;
 
   float error = reference - state;
 
   // allow for error integration if there is no windup
-  PIDparameters->integralSwitch = checkSwitch(error,PIDparameters->integratedError - PIDparameters->satIntegratedError);
+  PIDparameters->integralSwitch = checkSwitch(error, PIDparameters->integratedError - PIDparameters->satIntegratedError);
 
   if (PIDparameters->integralSwitch) PIDparameters->integratedError += error * deltaPIDTime;
 
   // saturate integratedError
-  PIDparameters->satIntegratedError = constrain(PIDparameters->integratedError,-PIDparameters->windupGuard,PIDparameters->windupGuard);
+  PIDparameters->satIntegratedError = constrain(PIDparameters->integratedError, -PIDparameters->windupGuard, PIDparameters->windupGuard);
 
   // Controller outputs the recursive discrete-time signal:
   // u(k) += (Kp + Kd/delta) * e(k) - (Kp - Ki*delta + 2*Kd/delta) * e(k-1) + (Kd/delta) * e(k-2)
   PIDparameters->output += (PIDparameters->P + PIDparameters->D * inv_deltaPIDTime) * error 
                           - (PIDparameters->P - PIDparameters->integralSwitch * PIDparameters->I * deltaPIDTime + 2 * PIDparameters->D * inv_deltaPIDTime) * PIDparameters->lastError 
-                          + (PIDparameters->D * inv_deltaPIDTime) * PIDparameters->lastLastError; 
-  
-  // update errors
+                          + (PIDparameters->D * inv_deltaPIDTime) * PIDparameters->lastLastError;
+
+  // update error terms
   PIDparameters->lastLastError = PIDparameters->lastError;
   PIDparameters->lastError = error;
 
@@ -163,25 +182,10 @@ float updatePID(float reference, float state, struct PIDdata *PIDparameters, boo
 }
 
 /*
-* Call updatePID when the error is known ahead of time.
+* updatePID function for when the error is known ahead of time.
 */
-float updatePID(float error, struct PIDdata *PIDparameters, boolean int_flag) {
-  return updatePID(error, 0, PIDparameters, int_flag);
-}
-
-
-/**
-* zeroIntegralError
-*
-* Sets the integratedError to zero for all PID controllers.
-* (Leftover from original AQ code)
-*/
-void zeroIntegralError() __attribute__ ((noinline));
-void zeroIntegralError() {
-  for (byte axis = 0; axis < LAST_PID_IDX; axis++) {
-    PID[axis].integratedError = 0;
-    PID[axis].previousPIDTime = currentTime;
-  }
+float updatePID(float error, struct PIDdata *PIDparameters) {
+  return updatePID(error, 0, PIDparameters);
 }
 
 #endif // _AQ_PID_H_
