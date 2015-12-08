@@ -356,12 +356,11 @@ void initializePlatformSpecificAccelCalibration() {
 
   commandAllMotors(1000);
 
-  Serial.flush();
 }
 
 
 /*Interrupt for motor actuation
-  Runs at 20Hz
+  Runs at 50Hz
 */
   ISR(TIMER1_COMPA_vect) {
 

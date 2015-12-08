@@ -51,14 +51,14 @@
 
 #define LASTMOTOR   (MOTOR4+1)
 
-int minMotorValue = 1100;
-int maxMotorValue = 1200;
+int minMotorValue = 1150;
+int maxMotorValue = 1450;
 int motorMaxCommand[4] = {0,0,0,0};
 int motorMinCommand[4] = {0,0,0,0};
 int motorConfiguratorCommand[4] = {0,0,0,0};
 
 // The maximum allowable change in controller output (since the last iteration)
-const int FILTER_TOLERANCE = 1000;
+const int FILTER_TOLERANCE = 10;
 
 
 void applyMotorCommand() {

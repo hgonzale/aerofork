@@ -85,7 +85,10 @@ void printState() {
 */
 
 void printPID() {
+	Serial.print(altitude);
 
+	Serial.print(" | \t ");
+	
 	Serial.print(u_alt);
 	Serial.print(", ");
 	Serial.print(u_roll);
@@ -100,7 +103,7 @@ void printPID() {
 		Serial.print(yk[i]);
 		Serial.print(", ");
 	}
-	
+
 	Serial.print(" | \t ");
 }
 
