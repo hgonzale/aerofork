@@ -1,6 +1,6 @@
 import processing.core.*;
 
- char[] commands = {'a','b','c','e','m','p','q','y','x','~','?',0,0,0,0,0};
+ char[] commands = {'a','b','c','d','e','i','m','p','q','r','x','y','z','~','?',0};
 
 
 /*********************************************************************************
@@ -13,8 +13,8 @@ import processing.core.*;
 void send( String s ) {
 
    if ( s.charAt(0)=='a'||s.charAt(0)=='b'||s.charAt(0)=='c'||s.charAt(0)=='e'||
-        s.charAt(0)=='m'||s.charAt(0)=='q'||s.charAt(0)=='x'||s.charAt(0)=='~'||
-        s.charAt(0)=='?') {
+        s.charAt(0)=='m'||s.charAt(0)=='q'||s.charAt(0)=='x'||s.charAt(0)=='r'||
+        s.charAt(0)=='~'||s.charAt(0)=='?') {
 
       int cmdNumber = -1;
 
@@ -26,42 +26,45 @@ void send( String s ) {
       }
      }
   
-   else if( s.charAt(0)=='p'||s.charAt(0)=='y' ){
+   else if( s.charAt(0)=='p'||s.charAt(0)=='i'||s.charAt(0)=='d'||
+            s.charAt(0)=='y'||s.charAt(0)=='z' ){
        int cmdNumber = -1;
-       for(int i= 0;i<16;i++){
-           if (s.charAt(0) == commands[i]){
-           cmdNumber = i;
-            }
+
+      if ( s.length() > 1 ) {
+        for(int i= 0;i<16;i++){
+          if (s.charAt(0) == commands[i]) {
+            cmdNumber = i;
+          }
         }
-   
+
         myPort.write(BuildPacket(cmdNumber));  ///send header with the command
-   
+
         int sign = 1;
         if(s.charAt(1) == '-')    sign = -1;   ///read the sign of the number
-   
+
         int position = FindDecimalPosition(s);   ///find the decimal position of the String
-  
+
         float data = Conversion(s, position, sign);  ///recover the data from char to float
-   
+
         int bits = Float.floatToIntBits(data);
         byte[] bytes = new byte[4];
         bytes[0] = (byte)(bits & 0xff);
         bytes[1] = (byte)((bits >> 8) & 0xff);
         bytes[2] = (byte)((bits >> 16) & 0xff);
         bytes[3] = (byte)((bits >> 24) & 0xff);
-   
+
         myPort.write(bytes[0]);  
         myPort.write(bytes[1]);
         myPort.write(bytes[2]);
         myPort.write(bytes[3]);
-        
+
         println(binary(bytes[0]));
         println(binary(bytes[1]));
         println(binary(bytes[2]));
         println(binary(bytes[3]));
-        
 
       }
+    }
       
    else   println("Error Command, please try again");
    

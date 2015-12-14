@@ -40,7 +40,7 @@ unsigned long lastHeartbeatTime;
 
 
 float inValue;
-signed char commands[16] = {'a','b','c','e','m','p','q','y','x','~','?',0,0,0,0,0};
+signed char commands[16] = {'a','b','c','d','e','i','m','p','q','r','x','y','z','~','?',0};
 ///last five command number reserved for future assignment
 
 // used for switching between float and byte[] representation of input values
@@ -152,67 +152,126 @@ void processCommand( signed char cmd ) {
 
 	switch ( cmd ) {
 
-		case 'a': // begin imu calibration    //0
-            Serial.write("got a");
-            status = CALIBRATE;
-			calibration();
+		case 'a': // begin imu calibration
+            Serial.write("a");
+   //          status = CALIBRATE;
+			// calibration();
 			break;
 
-		case 'b': // begin baro calibration     //1
-			Serial.println("Calibrating barometer...");
-			measureGroundBaro(); // takes about 40 seconds to run
-			startBaroMeasure = true;
-			Serial.println("...finished");
+		case 'b': // begin baro calibration
+        Serial.write('b');
+			// Serial.println("Calibrating barometer...");
+			// measureGroundBaro(); // takes about 40 seconds to run
+			// startBaroMeasure = true;
+			// Serial.println("...finished");
 			break;
 
-		case 'c': // begin control   //2
-			beginControl = true;
-			resetEmergencyStop(); // <-- might be unnecessary
+		case 'c': // begin control
+        Serial.write('c');
+			// beginControl = true;
+			// resetEmergencyStop(); // <-- might be unnecessary
 			nextCommand = 'x';
 			break;
 
-		case 'e': // echo back command   //3
+        case 'd': // set D
+            PIDVARS_altitude[2] = inValue;
+            updatePIDParams(0);
+            nextCommand = 'x';
+            break;
+
+		case 'e': // echo back command
 			Serial.println('e');
 			nextCommand = 'x';
 			break;
 
-		case 'm': // pulse all motors   //4
-            if (dataDisplayMode == 0) {
-                dataDisplayMode = 1;
-            } else {
-                dataDisplayMode = 0;
-            }
+        case 'i': // set I
+            PIDVARS_altitude[1] = inValue;
+            updatePIDParams(0);
+            nextCommand = 'x';
+            break;
+
+		case 'm': // pulse all motors
+            Serial.write('m');
+            // if (dataDisplayMode == 0) {
+            //     dataDisplayMode = 1;
+            // } else {
+            //     dataDisplayMode = 0;
+            // }
 			nextCommand = 'x';
 			break;
 
-		case 'p': // set altitude reference --> input pX.XX where X.XX is the altitude value  //5
-			alt_ref = inValue;
+		case 'p': // set P
+			PIDVARS_altitude[0] = inValue;
+            updatePIDParams(0);
 			nextCommand = 'x';
 			break;
 
-		case 'q': // read PID info 2   //6
-//			Serial.print(alt_ref);
-//			Serial.print(" \t ");
-//			Serial.println(yaw_ref);
-			break;
+        case 'q': //
+            nextCommand = 'x';
+            break;
 
-		case 'y': // set yaw reference   //7
-//			yaw_ref = inValue;
+        case 'r': // read PID values
+            Serial.print("ALTITUDE (w/ ref): ");
+            Serial.print(alt_ref);
+            Serial.print(", \t ");
+            Serial.print(PIDVARS_altitude[0]); //P
+            Serial.print(", \t ");
+            Serial.print(PIDVARS_altitude[1]); //I
+            Serial.print(", \t ");
+            Serial.println(PIDVARS_altitude[2]); //D
+
+            Serial.print("ROLL: ");
+            Serial.print(PIDVARS_roll[0]); //P
+            Serial.print(", \t ");
+            Serial.print(PIDVARS_roll[1]); //I
+            Serial.print(", \t ");
+            Serial.println(PIDVARS_roll[2]); //D
+
+            Serial.print("PITCH: ");
+            Serial.print(PIDVARS_pitch[0]); //P
+            Serial.print(", \t ");
+            Serial.print(PIDVARS_pitch[1]); //I
+            Serial.print(", \t ");
+            Serial.println(PIDVARS_pitch[2]); //D
+
+            Serial.print("YAW (w/ ref): ");
+            Serial.print(yaw_ref);
+            Serial.print(", \t ");
+            Serial.print(PIDVARS_yaw[0]); //P
+            Serial.print(", \t ");
+            Serial.print(PIDVARS_yaw[1]); //I
+            Serial.print(", \t ");
+            Serial.println(PIDVARS_yaw[2]); //D
+
+            nextCommand = 'x';
+            break;
+
+		case 'y': // set yaw reference
+			// yaw_ref = inValue;
+        Serial.write('y');
 			nextCommand = 'x';
 			break;
 
-		case 'x': // do nothing   //8
+		case 'x': // do nothing
 			break;
 
-		case '~': // trigger emergency stop   //9
-//			emergencyStop();
+        case 'z': // set alt ref
+            // alt_ref = inValue;
+        Serial.write('z');
+            nextCommand = 'x';
+            break;
+
+		case '~': // trigger emergency stop
+            Serial.write('~');
+			// emergencyStop();
 			break;
 
-		case '?': // request quadrotor state data   //10
-//			printState();
-//			Serial.print(" | \t ");
-//			printPID();
-//			Serial.println("");
+		case '?': // request quadrotor state data
+            Serial.write('?');
+			// printState();
+			// Serial.print(" | \t ");
+			// printPID();
+			// Serial.println("");
 			break;
 
 		default:
@@ -298,18 +357,21 @@ void XBeeComFSM( unsigned char thisByte ) {
                 if (nextCommand == 'a' || nextCommand == 'b' ||
                     nextCommand == 'c' || nextCommand == 'e' ||
                     nextCommand == 'm' || nextCommand == 'q' ||
-                    nextCommand == 'x' || nextCommand == '~' || nextCommand == '?' ) { // (almost) all command cases go here
+                    nextCommand == 'x' || nextCommand == '~' || 
+                    nextCommand == 'r' || nextCommand == '?' ) { // (almost) all command cases go here
                     
                     processCommand(nextCommand);
                     nextState = ExpectLeadByte;
                     
-                } else if ( nextCommand == 'p' || nextCommand == 'y' ) { // command cases where we expect a value afterward
+                } else if ( nextCommand == 'p' || nextCommand == 'i' ||
+                            nextCommand == 'd' || nextCommand == 'y' || nextCommand == 'z' ) { // command cases where we expect a value afterward
                     
                     nextState = ExpectDataByte;
                     
                 } else { // command not recognized
                     #ifdef DEBUG
-                        //Serial.println("Error Command, please try again!");
+                        Serial.print("Invalid command: ");
+                        Serial.println(nextCommand);
                     #endif
                     nextState = ExpectLeadByte;
                     nextCommand = 'x';

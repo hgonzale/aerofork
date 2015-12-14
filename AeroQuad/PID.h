@@ -47,7 +47,6 @@ struct PIDdata {
 */
 
 // Altitude {P, I, D, windup}
-
 float PIDVARS_altitude[] = {15.0, 0.2, 0.0, 100.0};
 
 // Roll {P, I, D, windup}
@@ -134,6 +133,43 @@ void initPID() {
     PID[idx].satIntegratedError = 0.0;
     PID[idx].previousPIDTime = currentTime;
     PID[idx].integralSwitch = true;
+  }
+
+}
+
+
+/**
+* Update the parameters corresponding to idx
+**/
+void updatePIDParams(int idx) {
+
+  switch ( idx ) {
+    case 0:
+      PID[ALTITUDE_PID_IDX].P = PIDVARS_altitude[0];
+      PID[ALTITUDE_PID_IDX].I = PIDVARS_altitude[1];
+      PID[ALTITUDE_PID_IDX].D = PIDVARS_altitude[2];
+      break;
+
+    case 1:
+      PID[ROLL_PID_IDX].P = PIDVARS_roll[0];
+      PID[ROLL_PID_IDX].I = PIDVARS_roll[1];
+      PID[ROLL_PID_IDX].D = PIDVARS_roll[2];
+      break;
+
+    case 2:
+      PID[PITCH_PID_IDX].P = PIDVARS_pitch[0];
+      PID[PITCH_PID_IDX].I = PIDVARS_pitch[1];
+      PID[PITCH_PID_IDX].D = PIDVARS_pitch[2];
+      break;
+
+    case 3:
+      PID[YAW_PID_IDX].P = PIDVARS_yaw[0];
+      PID[YAW_PID_IDX].I = PIDVARS_yaw[1];
+      PID[YAW_PID_IDX].D = PIDVARS_yaw[2];
+      break;
+
+    default:
+      break;
   }
 
 }

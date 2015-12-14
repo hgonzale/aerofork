@@ -102,17 +102,17 @@ void keyPressed() {
     case 16:
       // 'SHIFT'
       //myPort.write(byte(225));
-      myPort.write(byte(235)); // 11101011
-      int bits = Float.floatToIntBits(-12.45);
-      myPort.write((byte)(bits & 0xff));
-      myPort.write((byte)((bits >> 8) & 0xff));
-      myPort.write((byte)((bits >> 16) & 0xff));
-      myPort.write((byte)((bits >> 24) & 0xff));
-      println("");
-      println(binary(((byte)(bits & 0xff))));
-      println(binary((byte)((bits >> 8) & 0xff)));
-      println(binary((byte)((bits >> 16) & 0xff)));
-      println(binary((byte)((bits >> 24) & 0xff)));
+      // myPort.write(byte(235)); // 11101011
+      // int bits = Float.floatToIntBits(-12.45);
+      // myPort.write((byte)(bits & 0xff));
+      // myPort.write((byte)((bits >> 8) & 0xff));
+      // myPort.write((byte)((bits >> 16) & 0xff));
+      // myPort.write((byte)((bits >> 24) & 0xff));
+      // println("");
+      // println(binary(((byte)(bits & 0xff))));
+      // println(binary((byte)((bits >> 8) & 0xff)));
+      // println(binary((byte)((bits >> 16) & 0xff)));
+      // println(binary((byte)((bits >> 24) & 0xff)));
           
       break;
 
