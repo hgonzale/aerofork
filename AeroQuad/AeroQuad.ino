@@ -49,8 +49,6 @@
 #include "PID.h"
 #include <AQMath.h>
 #include <FourtOrderFilter.h>
-#include <XBee.h>
-
 
 //********************************************************
 //********************************************************
@@ -235,29 +233,13 @@ void initializePlatformSpecificAccelCalibration() {
 //********************************************************
 #define SERIAL_PORT Serial
 
-
 // Include this last as it contains objects from above declarations
 #include "AltitudeControlProcessor.h"
 #include "FlightControlProcessor.h"
-#include "FlightCommandProcessor.h"
 #include "HeadingHoldProcessor.h"
 #include "DataStorage.h"
 
-#if defined(UseGPS) || defined(BattMonitor)
-  #include "LedStatusProcessor.h"
-#endif  
-
-#include <XBeeFSM.h>
-
-#if defined(MavLink)
-  #include "MavLink.h"
-#else
-  #include "SerialCom.h"
-#endif
-
-#if defined WirelessTelemetry
-  #include <XBeeCom.h>
-#endif
+#include <XBeeFSMnewProtocol.h>
 
 
 
@@ -297,7 +279,6 @@ void initializePlatformSpecificAccelCalibration() {
 
   sei(); // re-enable global interrupts
 
-
   SERIAL_BEGIN(BAUD);
   #if defined WirelessTelemetry
     xbee.begin(SERIAL_PORT);
@@ -306,7 +287,6 @@ void initializePlatformSpecificAccelCalibration() {
 
   pinMode(LED_Green, OUTPUT);
   digitalWrite(LED_Green, LOW);
-  initCommunication();
 
   readEEPROM(); // defined in DataStorage.h
   boolean firstTimeBoot = false;
