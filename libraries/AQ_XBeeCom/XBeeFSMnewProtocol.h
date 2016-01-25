@@ -21,8 +21,10 @@
 // Define constants 
 //#define DEBUG
 
-#define SERIAL_PORT Serial
+// #define SERIAL_PORT Serial
 
+const int HEADER = 224;
+const int ZERO = 0;
 const unsigned long EMGSTOP_MAX_MILLIS = 3000; // emergency stop timer (milliseconds)
 
 /* Define states of FSM */
@@ -37,8 +39,7 @@ state_t nextState;
 signed char nextCommand;
 unsigned char rxByte;
 unsigned long lastHeartbeatTime;
-
-
+int dataDisplayMode = 0;
 float inValue;
 signed char commands[16] = {'a','b','c','d','e','i','m','p','q','r','x','y','z','~','?',0};
 ///last five command number reserved for future assignment
@@ -150,32 +151,38 @@ void processCommand( signed char cmd ) {
 		//Serial.println(cmd);
 	#endif
 
+    resetEmergencyStop();
+
 	switch ( cmd ) {
 
 		case 'a': // begin imu calibration
-            Serial.write("a");
-   //          status = CALIBRATE;
-			// calibration();
+            status = CALIBRATE;
+			calibration();
 			break;
 
 		case 'b': // begin baro calibration
-        Serial.write('b');
-			// Serial.println("Calibrating barometer...");
-			// measureGroundBaro(); // takes about 40 seconds to run
-			// startBaroMeasure = true;
-			// Serial.println("...finished");
+			Serial.println("Calibrating barometer...");
+			measureGroundBaro(); // takes about 40 seconds to run
+			startBaroMeasure = true;
+			Serial.println("...finished");
 			break;
 
 		case 'c': // begin control
-        Serial.write('c');
-			// beginControl = true;
-			// resetEmergencyStop(); // <-- might be unnecessary
+			beginControl = true;
 			nextCommand = 'x';
 			break;
 
         case 'd': // set D
-            PIDVARS_altitude[2] = inValue;
-            updatePIDParams(0);
+
+            // PIDVARS_altitude[2] = inValue;
+            // updatePIDParams(0);
+
+            PIDVARS_roll[2] = inValue;
+            updatePIDParams(1);
+
+            PIDVARS_pitch[2] = inValue;
+            updatePIDParams(2);
+
             nextCommand = 'x';
             break;
 
@@ -185,24 +192,39 @@ void processCommand( signed char cmd ) {
 			break;
 
         case 'i': // set I
-            PIDVARS_altitude[1] = inValue;
-            updatePIDParams(0);
+
+            // PIDVARS_altitude[1] = inValue;
+            // updatePIDParams(0);
+
+            PIDVARS_roll[1] = inValue;
+            updatePIDParams(1);
+
+            PIDVARS_pitch[1] = inValue;
+            updatePIDParams(2);
+            
             nextCommand = 'x';
             break;
 
 		case 'm': // pulse all motors
-            Serial.write('m');
-            // if (dataDisplayMode == 0) {
-            //     dataDisplayMode = 1;
-            // } else {
-            //     dataDisplayMode = 0;
-            // }
+            if (dataDisplayMode == 0) {
+                dataDisplayMode = 1;
+            } else {
+                dataDisplayMode = 0;
+            }
 			nextCommand = 'x';
 			break;
 
 		case 'p': // set P
-			PIDVARS_altitude[0] = inValue;
-            updatePIDParams(0);
+
+            // PIDVARS_altitude[0] = inValue;
+            // updatePIDParams(0);
+
+            PIDVARS_roll[0] = inValue;
+            updatePIDParams(1);
+
+			PIDVARS_pitch[0] = inValue;
+            updatePIDParams(2);
+            
 			nextCommand = 'x';
 			break;
 
@@ -247,8 +269,7 @@ void processCommand( signed char cmd ) {
             break;
 
 		case 'y': // set yaw reference
-			// yaw_ref = inValue;
-        Serial.write('y');
+			yaw_ref = inValue;
 			nextCommand = 'x';
 			break;
 
@@ -256,22 +277,23 @@ void processCommand( signed char cmd ) {
 			break;
 
         case 'z': // set alt ref
-            // alt_ref = inValue;
-        Serial.write('z');
+            alt_ref = inValue;
             nextCommand = 'x';
             break;
 
 		case '~': // trigger emergency stop
-            Serial.write('~');
-			// emergencyStop();
+			emergencyStop();
 			break;
 
 		case '?': // request quadrotor state data
-            Serial.write('?');
-			// printState();
-			// Serial.print(" | \t ");
-			// printPID();
-			// Serial.println("");
+            if (dataDisplayMode == 1) {
+                printState();
+                printMotorCommands();
+            } else {
+                printPID();
+                printMotorCommands();
+            }
+            Serial.println("");
 			break;
 
 		default:
@@ -283,9 +305,8 @@ void processCommand( signed char cmd ) {
 
 /* Checks if the byte begins with designated header value ("111......")*/
 bool CheckHeader(unsigned char Packet){
-    int Header = 224;
-    unsigned char PacketHeader = (unsigned char)(Packet & Header);  //first three bits in a byte
-    return ( PacketHeader == Header );
+    unsigned char PacketHeader = (unsigned char)(Packet & HEADER);  //first three bits in a byte
+    return ( PacketHeader == HEADER );
 }
 
 /* Compute the last bit(parity bit), of the incoming byte.
@@ -293,14 +314,13 @@ bool CheckHeader(unsigned char Packet){
  else the parity bit is zero.*/
 int computeParity(unsigned char a){
     int NumberOfOne = 0;
-    int Allzero = 0;
     unsigned char b = a;
     for (int i= 0; i<7;i++){
-        b = (unsigned char)(Allzero|b>>1);
-        if(b%2!=0) NumberOfOne+=1;
+        b = (unsigned char)(ZERO|b>>1);
+        if (b%2!=0) NumberOfOne++;
     }
     
-    if(NumberOfOne%2 != 0)   return 1;
+    if ( NumberOfOne %2 != 0 )   return 1;
     else  return 0;
 }
 
@@ -345,7 +365,7 @@ void XBeeComFSM( unsigned char thisByte ) {
 
 		case ExpectLeadByte:
             
-			if ( CheckHeader(thisByte) ) { // got header, wait for command
+			if ( CheckHeader(thisByte) ) { // got header
                 
                 int CommandNumber = parsePacket(thisByte);     //Command number ranges from 0 to 15
                 nextCommand = commands[CommandNumber];
@@ -416,8 +436,6 @@ void XBeeComFSM( unsigned char thisByte ) {
 	currentState = nextState;
 	return;
 }
-
-
 
 /*
 * XBeeRead

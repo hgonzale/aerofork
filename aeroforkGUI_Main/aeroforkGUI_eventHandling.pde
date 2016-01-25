@@ -73,7 +73,7 @@ void mouseClicked() {
   } else if (mouseOverRect(FLIGHTDATA_X,FLIGHTDATA_Y,FLIGHTDATA_WIDTH,FLIGHTDATA_HEIGHT) && status != EMGSTOP) {
     saved = "?"; // send flight data request
     sendReady = true;
-    defaultMsg = "#?$";
+    DEFAULT_MSG = -4;
     flightDataIncoming = true; 
     
   }
@@ -93,7 +93,7 @@ void keyPressed() {
     case 35:
       // 'END' (emergency stop)
       saved = "~";
-      defaultMsg = "#~$";
+      DEFAULT_MSG = -6;
       sendReady = true;
       emergencyStop = true;
       status = EMGSTOP;

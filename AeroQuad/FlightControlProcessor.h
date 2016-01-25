@@ -39,17 +39,11 @@ void processStabilityControl() {
   pitch = kinematicsAngle[0];
   yaw = kinematicsAngle[2];
 
-
-  //testing code:
-  // u_alt = updatePID(0.0, alt_ref, &PID[ALTITUDE_PID_IDX]);
-  // u_roll = updatePID(0, yaw_ref, &PID[ROLL_PID_IDX]);
-  // u_pitch = updatePID(0, 0, &PID[PITCH_PID_IDX]);
-
   // update PID controllers
   u_alt = updatePID(alt_ref, altitude, &PID[ALTITUDE_PID_IDX]);
   u_roll = updatePID(0, roll, &PID[ROLL_PID_IDX]);
   u_pitch = updatePID(0, pitch, &PID[PITCH_PID_IDX]);
-  // u_yaw = updatePID(0, yaw, &PID[YAW_PID_IDX]);
+  u_yaw = updatePID(0, yaw, &PID[YAW_PID_IDX]);
 
   // prepare motor commands
   applyMotorCommand();

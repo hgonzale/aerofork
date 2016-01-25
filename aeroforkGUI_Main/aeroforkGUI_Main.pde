@@ -25,28 +25,27 @@ Serial myPort;
 String portName = "/dev/ttyUSB0";
 int BAUD = 115200;
 
-boolean USE_XBEE = false;
+boolean USE_XBEE = true;
 
-char HEADER = '#';
-char HEARTBEAT = '$';
 
-String defaultMsg = "#x$";
+byte DEFAULT_MSG = -11;
+//245 -- 'x' (-11)
+//253 -- '?' (-4)
+
+
 
 String saved = "";
 String userInp = ""; //User's serial command to be sent to the quadrotor
-
 String msgDisplay = new String(); //message from quadrotor
 String localMsg = new String(); //local message
 boolean localMsgReady = false;
 boolean sendReady = false;
-
 boolean emergencyStop = false;
 boolean calibrationComplete = false;
 boolean flightDataIncoming = false;
 int START_HERE = 185; // useful for keeping track of window sizing
 float HB_FREQ = 2; // heartbeat frequency in Hz
 int previousTime = 0;
-
 int counterVar = 0;
 
 
@@ -66,7 +65,6 @@ int status = BOOTUP; // default state
 * Setup function of the Processing sketch.
 *********************************************************************************/
 void setup() {
-
   size(650,600);
 
   if (!USE_XBEE) portName = Serial.list()[0]; //port 8 on serial port.
@@ -141,7 +139,7 @@ void processOutgoing() {
     if (!saved.equals("?") && status != EMGSTOP) {
 
       flightDataIncoming = false;
-      defaultMsg = "#x$";
+      DEFAULT_MSG = -11;
 
     }
 

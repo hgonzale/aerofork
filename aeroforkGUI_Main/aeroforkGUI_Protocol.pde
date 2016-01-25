@@ -1,7 +1,7 @@
 import processing.core.*;
 
- char[] commands = {'a','b','c','d','e','i','m','p','q','r','x','y','z','~','?',0};
-
+char[] commands = {'a','b','c','d','e','i','m','p','q','r','x','y','z','~','?',0};
+int ASCII_ZERO = 48; // ascii code for '0'
 
 /*********************************************************************************
 * send
@@ -11,6 +11,7 @@ import processing.core.*;
 
 ///send a string in the form of "Command +/- a.bc" or just a command
 void send( String s ) {
+  if (s.length() > 0) {
 
    if ( s.charAt(0)=='a'||s.charAt(0)=='b'||s.charAt(0)=='c'||s.charAt(0)=='e'||
         s.charAt(0)=='m'||s.charAt(0)=='q'||s.charAt(0)=='x'||s.charAt(0)=='r'||
@@ -28,6 +29,7 @@ void send( String s ) {
   
    else if( s.charAt(0)=='p'||s.charAt(0)=='i'||s.charAt(0)=='d'||
             s.charAt(0)=='y'||s.charAt(0)=='z' ){
+
        int cmdNumber = -1;
 
       if ( s.length() > 1 ) {
@@ -67,6 +69,7 @@ void send( String s ) {
     }
       
    else   println("Error Command, please try again");
+ }
    
 }
 
@@ -78,7 +81,7 @@ void send( String s ) {
 *********************************************************************************/
 void sendDefault() {
 
-  myPort.write(defaultMsg);
+  myPort.write(DEFAULT_MSG);
 }
 
 ///helper function for finding the position of the decimal point
@@ -93,18 +96,19 @@ public int FindDecimalPosition(String p){
 }
 
 ///function for read the input char number as a float
+// STILL NEEDED: error checking to make sure user has entered numbers for input value
 public float Conversion(String s, int position, int sign){
     float multiplier1 = 1;
     float multiplier2 = 0.1;
     float result = 0;
     
     for(int i = position - 1;i > 1;i--){
-      result += (((int)s.charAt(i)) - 48)*multiplier1;
+      result += (((int)s.charAt(i)) - ASCII_ZERO)*multiplier1;
       multiplier1 *= 10;
     }
     
     for(int j = position+1;j<s.length();j++){
-      result += (((int)s.charAt(j)) - 48)*multiplier2;
+      result += (((int)s.charAt(j)) - ASCII_ZERO)*multiplier2;
       multiplier2 *= 0.1;
     }
     
