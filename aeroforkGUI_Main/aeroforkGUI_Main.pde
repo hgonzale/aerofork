@@ -25,7 +25,7 @@ Serial myPort;
 String portName = "/dev/ttyUSB0";
 int BAUD = 115200;
 
-boolean USE_XBEE = true;
+boolean USE_XBEE = false;
 
 
 byte DEFAULT_MSG = -11;

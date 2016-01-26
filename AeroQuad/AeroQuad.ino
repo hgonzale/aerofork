@@ -417,6 +417,14 @@ Interrupt for pressure sensor reading
 
     processStabilityControl();
 
+  } else {
+
+    //stop motors
+    motorCommand[MOTOR3] = 1000;
+    motorCommand[MOTOR2] = 1000;
+    motorCommand[MOTOR1] = 1000;
+    motorCommand[MOTOR4] = 1000;
+
   }
 
   if (startBaroMeasure && baroDataReady) { 

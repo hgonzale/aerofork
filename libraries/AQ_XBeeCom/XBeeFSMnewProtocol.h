@@ -167,8 +167,8 @@ void processCommand( signed char cmd ) {
 			Serial.println("...finished");
 			break;
 
-		case 'c': // begin control
-			beginControl = true;
+		case 'c': // begin control toggle
+			beginControl = !beginControl;
 			nextCommand = 'x';
 			break;
 
@@ -186,8 +186,11 @@ void processCommand( signed char cmd ) {
             nextCommand = 'x';
             break;
 
-		case 'e': // echo back command
-			Serial.println('e');
+		case 'e': // zero pids, resume flight (must have already stopped flight before this works)
+            if ( !beginControl ) {
+			    resetPID();
+                beginControl = true;
+            }
 			nextCommand = 'x';
 			break;
 

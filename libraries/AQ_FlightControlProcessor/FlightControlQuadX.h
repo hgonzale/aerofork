@@ -89,7 +89,6 @@ void applyMotorCommand() {
   motorCommand[REAR_LEFT] += yk[3];
 
   // constrain motor commands
-
   motorCommand[FRONT_LEFT] = constrain(motorCommand[FRONT_LEFT], minMotorValue, maxMotorValue);
   motorCommand[FRONT_RIGHT] = constrain(motorCommand[FRONT_RIGHT], minMotorValue, maxMotorValue);
   motorCommand[REAR_RIGHT] = constrain(motorCommand[REAR_RIGHT], minMotorValue, maxMotorValue);

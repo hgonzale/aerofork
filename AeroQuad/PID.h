@@ -146,25 +146,25 @@ void initPID() {
 void updatePIDParams(int idx) {
 
   switch ( idx ) {
-    case 0:
+    case 0: // altitude
       PID[ALTITUDE_PID_IDX].P = PIDVARS_altitude[0];
       PID[ALTITUDE_PID_IDX].I = PIDVARS_altitude[1];
       PID[ALTITUDE_PID_IDX].D = PIDVARS_altitude[2];
       break;
 
-    case 1:
+    case 1: // roll
       PID[ROLL_PID_IDX].P = PIDVARS_roll[0];
       PID[ROLL_PID_IDX].I = PIDVARS_roll[1];
       PID[ROLL_PID_IDX].D = PIDVARS_roll[2];
       break;
 
-    case 2:
+    case 2: // pitch
       PID[PITCH_PID_IDX].P = PIDVARS_pitch[0];
       PID[PITCH_PID_IDX].I = PIDVARS_pitch[1];
       PID[PITCH_PID_IDX].D = PIDVARS_pitch[2];
       break;
 
-    case 3:
+    case 3: // yaw
       PID[YAW_PID_IDX].P = PIDVARS_yaw[0];
       PID[YAW_PID_IDX].I = PIDVARS_yaw[1];
       PID[YAW_PID_IDX].D = PIDVARS_yaw[2];
@@ -183,7 +183,6 @@ void updatePIDParams(int idx) {
 * reference: the desired value of the variable being controlled
 * state: the current value of the variable being controlled
 * PIDparamters: the address of the PIDdata associated with the variable being controlled (e.g. &PIDdata[VAR_PID_IDX])
-* int_flag: true when updatePID is called by an interrupt. In this case, we know exactly what the 'dT' term is ahead of time.
 *
 * Executes an iteration of PID control. Important features are the use of an integral windup guard and recursive discrete-time
 * output calculations. Additionally, the user may pass in just the error rather than the reference and state.
@@ -224,6 +223,19 @@ float updatePID(float reference, float state, struct PIDdata *PIDparameters) {
 */
 float updatePID(float error, struct PIDdata *PIDparameters) {
   return updatePID(error, 0, PIDparameters);
+}
+
+void resetPID() {
+  //zero error terms
+  for (byte idx; idx < LAST_PID_IDX; idx++) {
+    PID[idx].lastError = 0.0;
+    PID[idx].lastLastError = 0.0;
+    PID[idx].integratedError = 0.0;
+    PID[idx].satIntegratedError = 0.0;
+    PID[idx].previousPIDTime = currentTime;
+    PID[idx].integralSwitch = true;
+  }
+
 }
 
 #endif // _AQ_PID_H_
