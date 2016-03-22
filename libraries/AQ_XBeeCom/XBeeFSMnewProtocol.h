@@ -209,11 +209,30 @@ void processCommand( signed char cmd ) {
             break;
 
 		case 'm': // pulse all motors
-            if (dataDisplayMode == 0) {
-                dataDisplayMode = 1;
-            } else {
-                dataDisplayMode = 0;
-            }
+            // if (dataDisplayMode == 0) {
+            //     dataDisplayMode = 1;
+            // } else {
+            //     dataDisplayMode = 0;
+            // }
+            motorCommand[FRONT_LEFT] = 1150;
+            delay(800);
+            motorCommand[FRONT_LEFT] = 1000;
+
+
+            motorCommand[FRONT_RIGHT] = 1150;
+            delay(800);
+            motorCommand[FRONT_RIGHT] = 1000;
+
+
+            motorCommand[REAR_RIGHT] = 1150;
+            delay(800);
+            motorCommand[REAR_RIGHT] = 1000;
+
+
+            motorCommand[REAR_LEFT] = 1150;
+            delay(800);
+            motorCommand[REAR_LEFT] = 1000;
+
 			nextCommand = 'x';
 			break;
 
@@ -284,8 +303,16 @@ void processCommand( signed char cmd ) {
             nextCommand = 'x';
             break;
 
-		case '~': // trigger emergency stop
-			emergencyStop();
+		case '~': // trigger emergency stop (temporarily stop motors)
+            beginControl = false;
+
+            //stop motors
+            motorCommand[MOTOR3] = 1000;
+            motorCommand[MOTOR2] = 1000;
+            motorCommand[MOTOR1] = 1000;
+            motorCommand[MOTOR4] = 1000;
+            nextCommand = 'x';
+			// emergencyStop();
 			break;
 
 		case '?': // request quadrotor state data

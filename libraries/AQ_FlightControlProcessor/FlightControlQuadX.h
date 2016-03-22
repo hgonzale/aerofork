@@ -51,8 +51,8 @@
 
 #define LASTMOTOR   (MOTOR4+1)
 
-int minMotorValue = 1150;
-int maxMotorValue = 1500;
+int minMotorValue = 1000;
+int maxMotorValue = 1150;
 
 int motorMaxCommand[4] = {0,0,0,0};
 int motorMinCommand[4] = {0,0,0,0};

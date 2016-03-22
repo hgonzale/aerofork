@@ -25,14 +25,12 @@ Serial myPort;
 String portName = "/dev/ttyUSB0";
 int BAUD = 115200;
 
-boolean USE_XBEE = false;
+boolean USE_XBEE = true;
 
 
 byte DEFAULT_MSG = -11;
 //245 -- 'x' (-11)
 //253 -- '?' (-4)
-
-
 
 String saved = "";
 String userInp = ""; //User's serial command to be sent to the quadrotor
