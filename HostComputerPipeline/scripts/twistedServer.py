@@ -49,7 +49,7 @@ class InputProtocol(object,basic.LineOnlyReceiver, InputLogger):
                 except:
                     super(InputProtocol,self).writeLog("Error reading data stream")
             if(self.count==7):
-                super(InputProtocol,self).writeLog(self.dataBuff)
+                #super(InputProtocol,self).writeLog(self.dataBuff)
                 self.outputHandle.sendMsg(self.dataBuff)
                 self.dataBuff=[]
                 self.count=0
@@ -61,18 +61,28 @@ class OutputProtocol(object,basic.LineOnlyReceiver, InputLogger):
             self.count = 0
             self.dataBuff = []
 
+        def connectionMade(self):
+            self.transport.write("hello!\r\n")
+
         def lineReceived(self,data):
             super(InputProtocol,self).writeLog(self.dataBuff)
             self.dataBuff=[]
             self.count=0
 
         def sendMsg(self,data):
+            '''#header 0x7E is new packet 
+            header = '\x7E'
+            self.transport.write('header')
+            #0x01 is sensor data 
+            packetType='\x01'
+            self.transport.write(packetType)
+            #seven values at 4 bytes each = 28 bytes in total
+            packetLength = 28
+            self.transport.write(packetLength)
             #for some reason, data is a list of tuples so we need to break it up into a string
-            parsedData = ""
+            '''
             for el in data:
-                parsedData = parsedData+str(el[0])+" "
-            #print parsedData
-            self.transport.write(parsedData)
+                self.transport.write(pack('f',el[0])+"\n")
 
 class InputProtocolFactory(ClientFactory):
     def __init__(self,outputHandle):
